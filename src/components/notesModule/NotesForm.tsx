@@ -1,6 +1,7 @@
 import React from "react";
+import { NotesForm } from "../../TS_INTERFACE/gInterface";
 
-const NoteCard = ({ note, onClick }) => {
+const NoteCard: React.FC<NotesForm> = ({ note, onClick }) => {
   return (
     <div onClick={onClick}>
       <h3>{note.title}</h3>
@@ -9,3 +10,4 @@ const NoteCard = ({ note, onClick }) => {
     </div>
   );
 };
+export default NoteCard;
