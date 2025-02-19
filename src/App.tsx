@@ -1,19 +1,9 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import NotesDashboardPage from "./components/notesModule/NotesDashboard";
+import AppRouter from "./Router/AppRouter";
+
+const jsx = <AppRouter />;
 
 function App() {
-  return (
-    <BrowserRouter>
-      <div>
-        <nav>
-          <Link to="/notes-dashboard">Go to Notes Dashboard</Link>
-        </nav>
-        <Routes>
-          <Route path="/notes-dashboard" element={<NotesDashboardPage />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
-  );
+  return <div>{jsx}</div>;
 }
 
 export default App;

@@ -1,10 +1,7 @@
 const NotesDashboardPage = () => {
   return (
     <div>
-      <h1>
-        Notes Dashboard
-        <p>Welcome to your Notes Dashboard!</p>
-      </h1>
+      <p>Welcome to your Notes Dashboard!</p>
     </div>
   );
 };
