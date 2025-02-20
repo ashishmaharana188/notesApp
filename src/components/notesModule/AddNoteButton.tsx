@@ -1,5 +1,6 @@
 import { Component } from "react";
 import NotesForm from "./NotesForm";
+import { Dispatch } from "react";
 
 class AddNoteForm extends Component<NotesForm> {
   handleSubmit = (expense: any) => {
@@ -20,3 +21,9 @@ class AddNoteForm extends Component<NotesForm> {
     );
   }
 }
+
+const mapDispatchToProps = (dispatch: Dispatch) => {
+  return {
+    onSubmit: (notes: any) => dispatch(addNote(note)),
+  };
+};
