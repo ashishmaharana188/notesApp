@@ -1,9 +1,22 @@
+import { addNote } from "./actions/AddNote";
 import AppRouter from "./Router/AppRouter";
+import configureStore from "./store/configureStore";
+import { Provider } from "react-redux";
+
+const store = configureStore();
+
+store.dispatch(
+  addNote({
+    title: "RCA",
+    noteSnippet: "Root Cause Analysis",
+    date: 1738079643538,
+  })
+);
 
 const jsx = <AppRouter />;
 
 function App() {
-  return <div>{jsx}</div>;
+  return <Provider store={store}>{jsx}</Provider>;
 }
 
 export default App;

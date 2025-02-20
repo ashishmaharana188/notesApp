@@ -1,22 +1,22 @@
 import { Component } from "react";
 import NotesForm from "./NotesForm";
-import { Dispatch } from "react";
+import { Dispatch } from "redux";
+import { connect } from "react-redux";
+import { addNote } from "../../actions/AddNote";
+import { NotesFormProp } from "../../TS_INTERFACE/gInterface";
 
-class AddNoteForm extends Component<NotesForm> {
-  handleSubmit = (expense: any) => {
+class AddNoteForm extends Component<NotesFormProp> {
+  handleSubmit = (note: any) => {
     if (this.props.onSubmit) {
-      this.props.onSubmit(expense);
-      console.log("Submitted", expense);
+      this.props.onSubmit(note);
+      console.log("Submitted", note);
     }
   };
 
   render() {
     return (
       <div>
-        <NotesForm
-          onSubmit={this.handleSubmit}
-          dispatch={this.props.dispatch}
-        />
+        <NotesForm onSubmit={this.handleSubmit} />
       </div>
     );
   }
@@ -24,6 +24,7 @@ class AddNoteForm extends Component<NotesForm> {
 
 const mapDispatchToProps = (dispatch: Dispatch) => {
   return {
-    onSubmit: (notes: any) => dispatch(addNote(note)),
+    onSubmit: (note: any) => dispatch(addNote(note)),
   };
 };
+export default connect(undefined, mapDispatchToProps)(AddNoteForm);

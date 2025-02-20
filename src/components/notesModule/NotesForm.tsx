@@ -1,4 +1,5 @@
 import React from "react";
+import moment, { Moment } from "moment";
 import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
@@ -12,7 +13,7 @@ export default class NotesForm extends React.Component<
     this.state = {
       title: props.notes?.title || "",
       noteSnippet: props.notes?.noteSnippet || "",
-      date: props.notes?.date || "",
+      date: props.notes?.date ? moment(props.notes.date) : moment(),
     };
   }
 
@@ -24,13 +25,22 @@ export default class NotesForm extends React.Component<
     const noteSnippet = e.target.value;
     this.setState(() => ({ noteSnippet }));
   };
-  onDateChange = (e: any) => {
-    const date = e.target.value;
-    this.setState(() => ({ date }));
+  onDateChange = (newDate: Moment | null) => {
+    if (newDate && newDate.isValid()) {
+      this.setState({ date: newDate });
+    }
   };
 
   onSubmit = (e: any) => {
     e.preventDefault();
+
+    if (this.props.onSubmit) {
+      this.props.onSubmit({
+        title: this.state.title,
+        noteSnippet: this.state.noteSnippet,
+        date: this.state.date.valueOf(),
+      });
+    }
   };
 
   render() {

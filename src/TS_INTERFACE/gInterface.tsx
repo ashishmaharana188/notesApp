@@ -1,23 +1,33 @@
 import { Moment } from "moment";
 
-export interface notesProps {
+import { Dispatch } from "redux";
+
+export interface notesReducerIntf {
   id: string;
   title: string;
   noteSnippet: string;
-  date: string | number | Moment;
+  date: number;
 }
 
 export interface NotesFormProp {
-  notes?: notesProps;
-  onSubmit?: (notes: {
+  note?: notesReducerIntf;
+  onSubmit?: (note: {
     id?: string;
     title: string;
     noteSnippet: string;
-    date: string | number | Moment;
+    date: number;
   }) => void;
+  dispatch?: Dispatch;
 }
 export interface NotesFormState {
   title: string;
   noteSnippet: string;
   date: Moment;
+}
+export interface notesFilterReducerIntf {
+  tag: string;
+  sortBy: string | null;
+  startDate?: Moment | null;
+  endDate?: Moment | null;
+  sortOrder: string | null;
 }
