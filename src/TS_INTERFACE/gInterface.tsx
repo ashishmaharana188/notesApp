@@ -1,10 +1,23 @@
+import { Moment } from "moment";
+
 export interface notesProps {
+  id: string;
   title: string;
   noteSnippet: string;
-  Date: string | number | Date;
+  date: string | number | Moment;
 }
 
-export interface NotesForm {
-  note: notesProps;
-  onClick: () => void;
+export interface NotesFormProp {
+  notes?: notesProps;
+  onSubmit?: (notes: {
+    id?: string;
+    title: string;
+    noteSnippet: string;
+    date: string | number | Moment;
+  }) => void;
+}
+export interface NotesFormState {
+  title: string;
+  noteSnippet: string;
+  date: Moment;
 }
