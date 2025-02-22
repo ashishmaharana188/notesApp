@@ -1,30 +1,20 @@
 import { Component } from "react";
-import NotesForm from "./NotesForm";
-import { Dispatch } from "redux";
-import { connect } from "react-redux";
-import { addNote } from "../../actions/AddNote";
-import { NotesFormProp } from "../../TS_INTERFACE/gInterface";
+import AddNoteForm from "./AddNoteForm";
 
-class AddNoteForm extends Component<NotesFormProp> {
-  handleSubmit = (note: any) => {
-    if (this.props.onSubmit) {
-      this.props.onSubmit(note);
-      console.log("Submitted", note);
-    }
-  };
+class AddNoteButton extends Component {
+  state = { isFormVisible: false };
+
+  handleOpen = () => this.setState({ isFormVisible: true });
+  handleClose = () => this.setState({ isFormVisible: false });
 
   render() {
     return (
       <div>
-        <NotesForm onSubmit={this.handleSubmit} />
+        <button onClick={this.handleOpen}>Add Note</button>
+        {this.state.isFormVisible && <AddNoteForm onClose={this.handleClose} />}
       </div>
     );
   }
 }
 
-const mapDispatchToProps = (dispatch: Dispatch) => {
-  return {
-    onSubmit: (note: any) => dispatch(addNote(note)),
-  };
-};
-export default connect(undefined, mapDispatchToProps)(AddNoteForm);
+export default AddNoteButton;

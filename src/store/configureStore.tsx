@@ -11,7 +11,9 @@ export default () => {
 
   const store = configureStore({
     reducer: rootReducer,
-    devTools: process.env.NODE_ENV !== "production",
+  });
+  store.subscribe(() => {
+    console.log("Redux Store Updated:", store.getState()); // ✅ Debug Log
   });
   return store;
 };

@@ -8,7 +8,9 @@ export interface notesReducerIntf {
   noteSnippet: string;
   date: number;
 }
-
+export interface noteCardProp {
+  note?: notesReducerIntf;
+}
 export interface NotesFormProp {
   note?: notesReducerIntf;
   onSubmit?: (note: {
@@ -18,8 +20,10 @@ export interface NotesFormProp {
     date: number;
   }) => void;
   dispatch?: Dispatch;
+  onClose?: () => void;
 }
 export interface NotesFormState {
+  id: string;
   title: string;
   noteSnippet: string;
   date: Moment;
@@ -30,4 +34,8 @@ export interface notesFilterReducerIntf {
   startDate?: Moment | null;
   endDate?: Moment | null;
   sortOrder: string | null;
+}
+
+export interface NoteListProps {
+  notes: notesReducerIntf[];
 }

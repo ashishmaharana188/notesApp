@@ -1,10 +1,12 @@
-import AddNoteForm from "./AddNoteButton";
+import AddNoteButton from "./AddNoteButton";
+import NoteList from "./NotesFilterList";
 const NotesDashboardPage = () => {
   return (
     <div>
       <p>Welcome to your Notes Dashboard!</p>
       <div>
-        <AddNoteForm />
+        <NoteList />
+        <AddNoteButton />
       </div>
     </div>
   );

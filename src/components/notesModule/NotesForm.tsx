@@ -11,6 +11,7 @@ export default class NotesForm extends React.Component<
   constructor(props: any) {
     super(props);
     this.state = {
+      id: props.notes?.id,
       title: props.notes?.title || "",
       noteSnippet: props.notes?.noteSnippet || "",
       date: props.notes?.date ? moment(props.notes.date) : moment(),
@@ -36,6 +37,7 @@ export default class NotesForm extends React.Component<
 
     if (this.props.onSubmit) {
       this.props.onSubmit({
+        id: this.state.id,
         title: this.state.title,
         noteSnippet: this.state.noteSnippet,
         date: this.state.date.valueOf(),
