@@ -3,7 +3,7 @@ import { Moment } from "moment";
 import { Dispatch } from "redux";
 
 export interface notesReducerIntf {
-  id: string;
+  id?: string;
   title: string;
   noteSnippet: string;
   date: number;
@@ -21,6 +21,7 @@ export interface NotesFormProp {
   }) => void;
   dispatch?: Dispatch;
   onClose?: () => void;
+  onSave?: () => void;
 }
 export interface NotesFormState {
   id: string;

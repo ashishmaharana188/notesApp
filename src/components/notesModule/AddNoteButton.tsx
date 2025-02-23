@@ -2,7 +2,9 @@ import { Component } from "react";
 import AddNoteForm from "./AddNoteForm";
 
 class AddNoteButton extends Component {
-  state = { isFormVisible: false };
+  state = {
+    isFormVisible: false,
+  };
 
   handleOpen = () => this.setState({ isFormVisible: true });
   handleClose = () => this.setState({ isFormVisible: false });

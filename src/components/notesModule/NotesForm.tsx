@@ -8,13 +8,15 @@ export default class NotesForm extends React.Component<
   NotesFormProp,
   NotesFormState
 > {
-  constructor(props: any) {
+  constructor(props: NotesFormProp) {
     super(props);
+    console.log("🆕 NotesForm Mounted with Note:", props.note);
+    console.log("Received Props in NotesForm:", props.note);
     this.state = {
-      id: props.notes?.id,
-      title: props.notes?.title || "",
-      noteSnippet: props.notes?.noteSnippet || "",
-      date: props.notes?.date ? moment(props.notes.date) : moment(),
+      id: props.note?.id || "",
+      title: props.note?.title || "",
+      noteSnippet: props.note?.noteSnippet || "",
+      date: props.note?.date ? moment(props.note.date) : moment(),
     };
   }
 
@@ -58,14 +60,15 @@ export default class NotesForm extends React.Component<
           />
           <textarea
             placeholder="Snippet"
-            autoFocus
             value={this.state.noteSnippet}
             onChange={this.onNoteSnippetChange}
           />
           <LocalizationProvider dateAdapter={AdapterMoment}>
             <DatePicker value={this.state.date} onChange={this.onDateChange} />
           </LocalizationProvider>
-          <button>Add Expense</button>
+          <button type="submit">
+            {this.state.id ? "Save Changes" : "Add Note"}
+          </button>
         </form>
       </div>
     );

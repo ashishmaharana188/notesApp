@@ -5,11 +5,13 @@ import { connect } from "react-redux";
 import { addNote } from "../../actions/AddNote";
 import { NotesFormProp } from "../../TS_INTERFACE/gInterface";
 
-class AddNoteForm extends Component<NotesFormProp> {
+class AddNoteForm extends Component<NotesFormProp & { dispatch?: Dispatch }> {
   handleSubmit = (note: any) => {
     if (this.props.onSubmit) {
       this.props.onSubmit(note);
-      console.log("Submitted", note);
+    }
+    if (this.props.onClose) {
+      this.props.onClose();
     }
   };
 

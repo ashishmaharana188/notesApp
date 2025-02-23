@@ -3,11 +3,12 @@ import { useEffect } from "react";
 import NotesDashboardPage from "../components/notesModule/NotesDashboard";
 import AddNoteButton from "../components/notesModule/AddNoteForm";
 import MainDashboardPage from "../components/notesModule/MainDashboardPage";
+import EditNotePage from "../components/notesModule/EditNoteCard";
 
 function RedirectOnReload() {
   useEffect(() => {
-    if (window.location.pathname !== "/home") {
-      window.location.replace("/home"); // Forces reload to /home
+    if (window.location.pathname !== "/") {
+      window.location.replace("/"); // Forces reload to /home
     }
   }, []);
 
@@ -18,9 +19,10 @@ function AppRouter() {
     <BrowserRouter>
       <RedirectOnReload />
       <Routes>
-        <Route path="/home" element={<MainDashboardPage />} />
+        <Route path="/" element={<MainDashboardPage />} />
         <Route path="/notes" element={<NotesDashboardPage />} />
         <Route path="/add" element={<AddNoteButton />} />
+        <Route path="/edit/:id" element={<EditNotePage />} />
       </Routes>
     </BrowserRouter>
   );
