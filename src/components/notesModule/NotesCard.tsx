@@ -17,9 +17,11 @@ const NoteCard = ({ note }: NotesFormProp) => {
       <p style={styles.date}>
         {note?.date ? new Date(note.date).toLocaleDateString() : "No date"}
       </p>
-      <Link to={`/edit/${note?.id}`} style={styles.button}>
-        Edit
-      </Link>
+      <button>
+        <Link to={`/edit/${note?.id}`} style={styles.button}>
+          Edit
+        </Link>
+      </button>
       <button
         onClick={() => {
           if (note?.id) {

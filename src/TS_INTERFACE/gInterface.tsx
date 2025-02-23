@@ -6,6 +6,7 @@ export interface notesReducerIntf {
   id?: string;
   title: string;
   noteSnippet: string;
+  tags: string;
   date: number;
 }
 export interface noteCardProp {
@@ -17,6 +18,7 @@ export interface NotesFormProp {
     id?: string;
     title: string;
     noteSnippet: string;
+    tags: string;
     date: number;
   }) => void;
   dispatch?: Dispatch;
@@ -27,10 +29,11 @@ export interface NotesFormState {
   id: string;
   title: string;
   noteSnippet: string;
+  tags: string;
   date: Moment;
 }
 export interface notesFilterReducerIntf {
-  tag: string;
+  tags: string;
   sortBy: string | null;
   startDate?: Moment | null;
   endDate?: Moment | null;

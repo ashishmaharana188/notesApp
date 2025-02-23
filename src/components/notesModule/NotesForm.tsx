@@ -16,6 +16,7 @@ export default class NotesForm extends React.Component<
       id: props.note?.id || "",
       title: props.note?.title || "",
       noteSnippet: props.note?.noteSnippet || "",
+      tags: props.note?.tags || "",
       date: props.note?.date ? moment(props.note.date) : moment(),
     };
   }
@@ -33,6 +34,10 @@ export default class NotesForm extends React.Component<
       this.setState({ date: newDate });
     }
   };
+  onTagsChange = (e: any) => {
+    const tags = e.target.value;
+    this.setState(() => ({ tags }));
+  };
 
   onSubmit = (e: any) => {
     e.preventDefault();
@@ -42,6 +47,7 @@ export default class NotesForm extends React.Component<
         id: this.state.id,
         title: this.state.title,
         noteSnippet: this.state.noteSnippet,
+        tags: this.state.tags,
         date: this.state.date.valueOf(),
       });
     }
@@ -62,6 +68,12 @@ export default class NotesForm extends React.Component<
             placeholder="Snippet"
             value={this.state.noteSnippet}
             onChange={this.onNoteSnippetChange}
+          />
+          <input
+            type="text"
+            placeholder="Tags"
+            value={this.state.tags}
+            onChange={this.onTagsChange}
           />
           <LocalizationProvider dateAdapter={AdapterMoment}>
             <DatePicker value={this.state.date} onChange={this.onDateChange} />
