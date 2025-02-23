@@ -24,7 +24,7 @@ const NoteCard = ({ note }: NotesFormProp) => {
         onClick={() => {
           if (note?.id) {
             dispatch(removeNote(note.id));
-            navigate("/");
+            navigate("/notes");
           } else {
             console.log("Entry not available to delete");
           }

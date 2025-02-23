@@ -28,7 +28,7 @@ const EditNotePage = () => {
         onSubmit={(note) => {
           if (id) {
             dispatch(editNote(id, note));
-            navigate("/");
+            navigate("/notes");
           } else {
             console.log(`id is not present`);
           }
@@ -39,7 +39,7 @@ const EditNotePage = () => {
         onClick={() => {
           if (id) {
             dispatch(removeNote(id));
-            navigate("/");
+            navigate("/notes");
           } else {
             console.log("Entry not available to delete");
           }
