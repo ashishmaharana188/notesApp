@@ -10,3 +10,14 @@ export const addNote = ({ title = "", noteSnippet = "", date = 0 } = {}) => ({
     date,
   },
 });
+
+export const editNote = (id: string, updates: any) => ({
+  type: "EDIT_NOTE",
+  id,
+  updates,
+});
+
+export const removeNote = (id: string) => ({
+  type: "REMOVE_NOTE" as const,
+  id,
+});
