@@ -122,6 +122,7 @@ export default class NotesForm extends React.Component<
           <Button
             type="submit"
             variant="contained"
+            onClick={this.onSubmit}
             color="primary"
             fullWidth
             sx={{ mt: 2 }}
