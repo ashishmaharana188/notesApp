@@ -9,7 +9,7 @@ const Header = () => (
       </NavLink>
     </p>
     <p>
-      <NavLink to={"/attendance"}> Attendance</NavLink>
+      <NavLink to={"/attendance"}> ATTENDANCE DASHBOARD</NavLink>
     </p>
   </header>
 );

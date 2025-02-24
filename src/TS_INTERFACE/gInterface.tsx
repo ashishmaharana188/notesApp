@@ -31,6 +31,7 @@ export interface NotesFormState {
   noteSnippet: string;
   tags: string;
   date: Moment;
+  redirect: boolean;
 }
 export interface notesFilterReducerIntf {
   tags: string;
