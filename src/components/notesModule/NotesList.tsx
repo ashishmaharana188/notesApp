@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { connect } from "react-redux";
-
+import "../../styles/components/notesModule/NoteCard.css";
 import NoteCard from "./NotesCard";
 import { NoteListProps } from "../../TS_INTERFACE/gInterface";
 
@@ -9,7 +9,7 @@ class NoteList extends Component<NoteListProps> {
     return (
       <div>
         {this.props.notes.length === 0 ? (
-          <p>No notes available</p>
+          <p className="notes-form-title">No notes available</p>
         ) : (
           this.props.notes.map((note) => <NoteCard key={note.id} note={note} />)
         )}

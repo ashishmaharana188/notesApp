@@ -1,0 +1,87 @@
+/* ✅ Main Card Styling */
+.note-card {
+  max-width: 30rem;
+  margin: 0.5rem;
+  padding: 16px;
+  background: var(--primary-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  font-family: Arial, sans-serif;
+}
+
+/* ✅ Title & Text */
+.note-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.note-snippet {
+  font-size: 1.3rem;
+  color: #555;
+}
+
+.note-date {
+  font-size: 1.3rem;
+  color: #888;
+  margin-top: 5px;
+}
+
+/* ✅ Buttons Container */
+.note-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+/* ✅ Edit Button */
+.edit-button {
+  max-width: 1rem;
+  max-height: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+  margin-right: 10px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border: 2px solid #b2ccdf;
+  border-radius: 5px;
+  color: #28415a;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.edit-button:hover {
+  background: #b2ccdf;
+  color: white;
+}
+
+/*  Delete Button */
+.delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px; /* Add padding to increase clickable area */
+}
+
+/*  Delete Icon */
+.delete-icon {
+  color: #5c1313;
+  font-size: 2rem !important; /* Make the icon larger */
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.delete-icon:hover {
+  transform: scale(1.2);
+  color: #5c1313;
+}
+.edit-icon {
+  font-size: 1.5rem !important; /* Ensure size is applied */
+  color: #b2ccdf; /* Change icon color */
+  cursor: pointer;
+}

@@ -7,8 +7,8 @@ const store = configureStore();
 
 store.dispatch(
   addNote({
-    title: "RCA",
-    noteSnippet: "Root Cause Analysis",
+    title: "NOTE1",
+    noteSnippet: "GOOD STUFF",
     date: 1738079643538,
   })
 );

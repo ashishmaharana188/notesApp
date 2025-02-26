@@ -2,9 +2,9 @@ import React from "react";
 import moment, { Moment } from "moment";
 import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { TextField, Button, Paper, Typography, Box } from "@mui/material";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { Navigate } from "react-router-dom";
+import "../../styles/components/notesModule/NoteForm.css"; // Import CSS file
 
 export default class NotesForm extends React.Component<
   NotesFormProp,
@@ -25,12 +25,10 @@ export default class NotesForm extends React.Component<
   }
 
   onTitleChange = (e: any) => {
-    const title = e.target.value;
-    this.setState(() => ({ title }));
+    this.setState({ title: e.target.value });
   };
   onNoteSnippetChange = (e: any) => {
-    const noteSnippet = e.target.value;
-    this.setState(() => ({ noteSnippet }));
+    this.setState({ noteSnippet: e.target.value });
   };
   onDateChange = (newDate: Moment | null) => {
     if (newDate && newDate.isValid()) {
@@ -38,16 +36,14 @@ export default class NotesForm extends React.Component<
     }
   };
   onTagsChange = (e: any) => {
-    const tags = e.target.value;
-    this.setState(() => ({ tags }));
+    this.setState({ tags: e.target.value });
   };
   handleCancel = () => {
-    this.setState({ redirect: true }); // ✅ Trigger navigation
+    this.setState({ redirect: true });
   };
 
   onSubmit = (e: any) => {
     e.preventDefault();
-
     if (this.props.onSubmit) {
       this.props.onSubmit({
         id: this.state.id,
@@ -61,76 +57,55 @@ export default class NotesForm extends React.Component<
 
   render() {
     if (this.state.redirect) {
-      return <Navigate to="/notes" />; // Redirect when state is true
+      return <Navigate to="/notes" />;
     }
     return (
-      <Paper elevation={4} sx={{ maxWidth: 600, mx: "auto", p: 3, mt: 5 }}>
-        <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
+      <div className="notes-form-container">
+        <h2 className="notes-form-title">
           {this.state.id ? "Edit Note" : "New Note"}
-        </Typography>
+        </h2>
 
-        {/* Title Input */}
-        <TextField
-          label="Title"
-          variant="outlined"
-          fullWidth
+        <input
+          type="text"
+          placeholder="Title"
+          className="notes-form-input"
           value={this.state.title}
           onChange={this.onTitleChange}
-          sx={{ mb: 2 }}
         />
 
-        {/* Snippet Input */}
-        <TextField
-          label="Snippet"
-          variant="outlined"
-          multiline
-          rows={4}
-          fullWidth
+        <textarea
+          placeholder="Snippet"
+          className="notes-form-input notes-form-textarea"
           value={this.state.noteSnippet}
           onChange={this.onNoteSnippetChange}
-          sx={{ mb: 2 }}
-        />
+        ></textarea>
 
-        {/* Tags Input */}
-        <TextField
-          label="Tags"
-          variant="outlined"
-          fullWidth
+        <input
+          type="text"
+          placeholder="Tags"
+          className="notes-form-input"
           value={this.state.tags}
           onChange={this.onTagsChange}
-          sx={{ mb: 2 }}
         />
 
-        {/* Date Picker */}
         <LocalizationProvider dateAdapter={AdapterMoment}>
           <DatePicker
             label="Select Date"
             value={this.state.date}
             onChange={this.onDateChange}
+            className="notes-form-datepicker"
           />
         </LocalizationProvider>
 
-        {/* Buttons */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={this.handleCancel}
-          >
+        <div className="notes-form-buttons">
+          <button className="notes-form-cancel" onClick={this.handleCancel}>
             Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            onClick={this.onSubmit}
-            color="primary"
-            fullWidth
-            sx={{ mt: 2 }}
-          >
+          </button>
+          <button className="notes-form-submit" onClick={this.onSubmit}>
             {this.state.id ? "Save Changes" : "Add Note"}
-          </Button>
-        </Box>
-      </Paper>
+          </button>
+        </div>
+      </div>
     );
   }
 }

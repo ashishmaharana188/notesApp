@@ -1,0 +1,110 @@
+/* NotesForm.css */
+
+/* Paper container */
+.notes-form-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: var(--primary-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Title */
+.notes-form-title {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
+/* Input fields */
+.notes-form-input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+/* Textarea */
+.notes-form-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Date Picker */
+.notes-form-datepicker {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Button container */
+.notes-form-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* Cancel button */
+.notes-form-cancel {
+  background: #fce4ec;
+  color: #d81b60;
+  border: 1px solid #d81b60;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 5px;
+}
+
+.notes-form-cancel:hover {
+  background: #d81b60;
+  color: white;
+}
+
+/* Submit button */
+.notes-form-submit {
+  background: #b2ccdf;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 5px;
+  width: 100%;
+  margin-left: 10px;
+}
+
+.notes-form-submit:hover {
+  background: #b2ccdf;
+}
+.add-note-button {
+  max-width: 15rem;
+  background: #678aa3;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 5px;
+  width: 100%;
+  margin-left: 0.5rem;
+  margin-top: 1rem;
+}
+/* General placeholder styling */
+.notes-form-input::placeholder,
+.notes-form-textarea::placeholder {
+  color: #aaa; /* Light gray */
+  font-style: italic;
+  font-size: 1.5rem;
+  opacity: 1; /* Ensure visibility in some browsers */
+}
+
+/* On focus, change placeholder color */
+.notes-form-input:focus::placeholder,
+.notes-form-textarea:focus::placeholder {
+  color: #777; /* Darker gray */
+}

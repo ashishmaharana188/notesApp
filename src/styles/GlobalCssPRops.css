@@ -1,0 +1,7 @@
+:root {
+  --base-rem: 62.5%;
+  --primary-color: #faf9f6; /* Sets 1rem = 10px */
+}
+html {
+  font-size: var(--base-rem); /* Now 1rem = 10px */
+}

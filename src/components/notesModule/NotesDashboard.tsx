@@ -1,9 +1,10 @@
 import AddNoteButton from "./AddNoteButton";
 import NoteList from "./NotesList";
+import "../../styles/components/notesModule/NoteDashboard.css";
 const NotesDashboardPage = () => {
   return (
     <div>
-      <p>Welcome to your Notes Dashboard!</p>
+      <p className="noteDashboard-intro">Welcome to your Notes Dashboard!</p>
       <div>
         <NoteList />
         <AddNoteButton />

@@ -1,5 +1,6 @@
 import { Component } from "react";
 import AddNoteForm from "./AddNoteForm";
+import "../../styles/components/notesModule/NoteForm.css";
 
 class AddNoteButton extends Component {
   state = {
@@ -12,7 +13,9 @@ class AddNoteButton extends Component {
   render() {
     return (
       <div>
-        <button onClick={this.handleOpen}>Add Note</button>
+        <button className="add-note-button" onClick={this.handleOpen}>
+          Add Note
+        </button>
         {this.state.isFormVisible && <AddNoteForm onClose={this.handleClose} />}
       </div>
     );
