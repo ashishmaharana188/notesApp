@@ -1,6 +1,6 @@
 import { Component } from "react";
 import AddNoteForm from "./AddNoteForm";
-import "../../styles/components/notesModule/NoteForm.css";
+import "../../styles/components/notesModule/NoteDashboard.css";
 
 class AddNoteButton extends Component {
   state = {
