@@ -1,110 +1,100 @@
-/* NotesForm.css */
-
-/* Paper container */
+/* From Uiverse.io by ahmed150up */
 .notes-form-container {
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 20px;
-  background: var(--primary-color);
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-}
-
-/* Title */
-.notes-form-title {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-}
-
-/* Input fields */
-.notes-form-input {
-  width: 100%;
-  padding: 10px;
-  margin: 8px 0;
+  width: 30rem;
+  background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 1rem;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Textarea */
-.notes-form-textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-/* Date Picker */
-.notes-form-datepicker {
-  display: block;
-  width: 100%;
-  margin-top: 10px;
-}
-
-/* Button container */
-.notes-form-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-/* Cancel button */
-.notes-form-cancel {
-  background: #fce4ec;
-  color: #d81b60;
-  border: 1px solid #d81b60;
+.notes-form-title {
+  background-color: #333;
+  color: #fff;
   padding: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  text-transform: uppercase;
-  border-radius: 5px;
+  font-size: 18px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  text-align: center;
 }
 
-.notes-form-cancel:hover {
-  background: #d81b60;
+.notes-form-title input {
+  width: 90%;
+  background: transparent;
+  border: none;
   color: white;
+  font-size: 16px;
+  text-align: center;
+  outline: none;
 }
 
-/* Submit button */
-.notes-form-submit {
-  background: #b2ccdf;
-  color: white;
+.notes-form-row {
+  margin-bottom: 10px;
+}
+
+.notes-form-textarea {
+  height: 29rem;
+  width: 27.8rem;
+  overflow-y: scroll;
   padding: 10px;
   border: none;
+  background: #f9f9f9;
+}
+
+.notes-form-tags {
+  width: 26rem;
+  padding: 1rem;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: whitesmoke;
+  margin-block: 1rem;
+  margin-inline-start: 1rem;
+}
+
+.notes-form-row.title {
+  margin-bottom: 5px;
+}
+
+.notes-form-row.textarea {
+  margin-bottom: 10px;
+}
+
+.notes-form-row.tags {
+  margin-bottom: 10px;
+}
+
+.notes-form-buttons {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.notes-form-submit {
+  border: none;
+  outline: none;
+  background-color: #333;
+  color: #fff;
+  font-size: 14px;
+  padding: 5px 10px;
   cursor: pointer;
-  font-weight: bold;
-  text-transform: uppercase;
   border-radius: 5px;
-  width: 100%;
-  margin-left: 10px;
 }
 
 .notes-form-submit:hover {
-  background: #b2ccdf;
-}
-.add-note-button {
-  max-width: 15rem;
-  background: #678aa3;
-  color: white;
-  padding: 10px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  text-transform: uppercase;
-  border-radius: 5px;
-  width: 100%;
-  margin-left: 0.5rem;
-  margin-top: 1rem;
-}
-/* General placeholder styling */
-.notes-form-input::placeholder,
-.notes-form-textarea::placeholder {
-  color: #aaa; /* Light gray */
-  font-style: italic;
-  font-size: 1.5rem;
-  opacity: 1; /* Ensure visibility in some browsers */
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.25);
 }
 
-/* On focus, change placeholder color */
-.notes-form-input:focus::placeholder,
-.notes-form-textarea:focus::placeholder {
-  color: #777; /* Darker gray */
+.notes-form-cancel {
+  border: none;
+  margin-right: 2rem;
+  outline: none;
+  background-color: #333;
+  color: #fff;
+  font-size: 14px;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
 }

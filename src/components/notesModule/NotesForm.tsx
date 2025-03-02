@@ -61,42 +61,56 @@ export default class NotesForm extends React.Component<
     }
     return (
       <div className="notes-form-container">
-        <h2 className="notes-form-title">
-          {this.state.id ? "Edit Note" : "New Note"}
-        </h2>
-
-        <input
-          type="text"
-          placeholder="Title"
-          className="notes-form-input"
-          value={this.state.title}
-          onChange={this.onTitleChange}
-        />
-
-        <textarea
-          placeholder="Snippet"
-          className="notes-form-input notes-form-textarea"
-          value={this.state.noteSnippet}
-          onChange={this.onNoteSnippetChange}
-        ></textarea>
-
-        <input
-          type="text"
-          placeholder="Tags"
-          className="notes-form-input"
-          value={this.state.tags}
-          onChange={this.onTagsChange}
-        />
-
-        <LocalizationProvider dateAdapter={AdapterMoment}>
-          <DatePicker
-            label="Select Date"
-            value={this.state.date}
-            onChange={this.onDateChange}
-            className="notes-form-datepicker"
+        <div className="notes-form-title">
+          <input
+            type="text"
+            placeholder="Title"
+            className="notes-form-input-title"
+            value={this.state.title}
+            onChange={this.onTitleChange}
           />
-        </LocalizationProvider>
+        </div>
+        <div className="notes-form-row textarea">
+          <textarea
+            className="notes-form-textarea"
+            value={this.state.noteSnippet}
+            onChange={this.onNoteSnippetChange}
+          ></textarea>
+        </div>
 
+        <div className="notes-form-row">
+          <input
+            type="text"
+            placeholder="Tags"
+            className="notes-form-tags"
+            value={this.state.tags}
+            onChange={this.onTagsChange}
+          />
+        </div>
+        <div className="notes-form-row">
+          <div className="notes-form-datepicker">
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DatePicker
+                value={this.state.date}
+                onChange={this.onDateChange}
+                className="notes-form-datepicker"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    variant: "outlined", // Ensures a full box
+                    InputProps: {
+                      sx: {
+                        fontSize: "1.5rem",
+                        height: "4rem",
+                        borderRadius: "1rem", // Ensures box looks closed
+                      },
+                    },
+                  },
+                }}
+              />
+            </LocalizationProvider>
+          </div>
+        </div>
         <div className="notes-form-buttons">
           <button className="notes-form-cancel" onClick={this.handleCancel}>
             Cancel

@@ -3,6 +3,9 @@
   max-width: 30rem;
   margin: 0.5rem;
   padding: 16px;
+  overflow: hidden;
+  word-wrap: break-word;
+  white-space: normal;
   background: var(--primary-color);
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
@@ -11,18 +14,20 @@
 
 /* ✅ Title & Text */
 .note-title {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: bold;
   margin-bottom: 5px;
 }
 
 .note-snippet {
-  font-size: 1.3rem;
-  color: #555;
+  word-wrap: break-word; /* Ensures long words break and wrap */
+  overflow-wrap: break-word; /* Ensures wrapping for long unbroken text */
+  white-space: normal;
+  font-size: 1.6rem; /* Allows text to wrap */
 }
 
 .note-date {
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   color: #888;
   margin-top: 5px;
 }

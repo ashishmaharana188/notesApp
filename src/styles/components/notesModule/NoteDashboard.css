@@ -1,3 +1,21 @@
 .noteDashboard-intro {
   font-size: 2.5rem;
 }
+.add-note-button {
+  border: none;
+  outline: none;
+  background-color: #333;
+  color: #fff;
+  font-size: 14px;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+}
+
+.add-note-button:hover {
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.25);
+}
