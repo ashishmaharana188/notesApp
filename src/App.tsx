@@ -16,7 +16,12 @@ store.dispatch(
 const jsx = <AppRouter />;
 
 function App() {
-  return <Provider store={store}>{jsx}</Provider>;
+  return (
+    <Provider store={store}>
+      {jsx}
+      <p className="text-red-500">If this text is red, Tailwind is working.</p>
+    </Provider>
+  );
 }
 
 export default App;
