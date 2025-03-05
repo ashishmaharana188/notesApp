@@ -4,7 +4,7 @@ import "../../styles/components/notesModule/NoteDashboard.css";
 const NotesDashboardPage = () => {
   return (
     <div>
-      <p className="noteDashboard-intro">Welcome to your Notes Dashboard!</p>
+      <p className="mt-10 ml-250 text-[3rem]">Dashboard!</p>
       <div>
         <NoteList />
         <AddNoteButton />

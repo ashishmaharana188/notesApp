@@ -4,7 +4,6 @@ import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { Navigate } from "react-router-dom";
-import "../../styles/components/notesModule/NoteForm.css"; // Import CSS file
 
 export default class NotesForm extends React.Component<
   NotesFormProp,
@@ -12,8 +11,6 @@ export default class NotesForm extends React.Component<
 > {
   constructor(props: NotesFormProp) {
     super(props);
-    console.log("🆕 NotesForm Mounted with Note:", props.note);
-    console.log("Received Props in NotesForm:", props.note);
     this.state = {
       id: props.note?.id || "",
       title: props.note?.title || "",
@@ -60,62 +57,65 @@ export default class NotesForm extends React.Component<
       return <Navigate to="/notes" />;
     }
     return (
-      <div className="notes-form-container">
-        <div className="notes-form-title">
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 bg-white border border-gray-300 rounded-md shadow-md p-4">
+        <div className="bg-gray-800 text-white p-2 text-lg rounded-t-md text-center">
           <input
             type="text"
             placeholder="Title"
-            className="notes-form-input-title"
+            className="w-full bg-transparent border-none text-white text-lg text-center focus:outline-none"
             value={this.state.title}
             onChange={this.onTitleChange}
           />
         </div>
-        <div className="notes-form-row textarea">
+        <div className="mb-2">
           <textarea
-            className="notes-form-textarea"
+            className="w-full h-72 p-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none"
             value={this.state.noteSnippet}
             onChange={this.onNoteSnippetChange}
+            placeholder="Write your note here..."
           ></textarea>
         </div>
-
-        <div className="notes-form-row">
+        <div className="mb-2">
           <input
             type="text"
             placeholder="Tags"
-            className="notes-form-tags"
+            className="w-full p-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none"
             value={this.state.tags}
             onChange={this.onTagsChange}
           />
         </div>
-        <div className="notes-form-row">
-          <div className="notes-form-datepicker">
-            <LocalizationProvider dateAdapter={AdapterMoment}>
-              <DatePicker
-                value={this.state.date}
-                onChange={this.onDateChange}
-                className="notes-form-datepicker"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    variant: "outlined", // Ensures a full box
-                    InputProps: {
-                      sx: {
-                        fontSize: "1.5rem",
-                        height: "4rem",
-                        borderRadius: "1rem", // Ensures box looks closed
-                      },
+        <div className="mb-2">
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <DatePicker
+              value={this.state.date}
+              onChange={this.onDateChange}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  variant: "outlined",
+                  InputProps: {
+                    sx: {
+                      fontSize: "1rem",
+                      height: "3rem",
+                      borderRadius: "0.5rem",
                     },
                   },
-                }}
-              />
-            </LocalizationProvider>
-          </div>
+                },
+              }}
+            />
+          </LocalizationProvider>
         </div>
-        <div className="notes-form-buttons">
-          <button className="notes-form-cancel" onClick={this.handleCancel}>
+        <div className="flex justify-center gap-4 border-t pt-2">
+          <button
+            className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black hover:text-white hover:shadow-md"
+            onClick={this.handleCancel}
+          >
             Cancel
           </button>
-          <button className="notes-form-submit" onClick={this.onSubmit}>
+          <button
+            className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black hover:text-white hover:shadow-md"
+            onClick={this.onSubmit}
+          >
             {this.state.id ? "Save Changes" : "Add Note"}
           </button>
         </div>
