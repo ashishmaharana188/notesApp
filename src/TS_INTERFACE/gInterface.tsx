@@ -22,6 +22,7 @@ export interface NotesFormProp {
     date: number;
   }) => void;
   dispatch?: Dispatch;
+  onOpen?: () => void;
   onClose?: () => void;
   onSave?: () => void;
 }

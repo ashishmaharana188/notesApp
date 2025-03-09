@@ -13,6 +13,7 @@ const EditNotePage = () => {
   const note = useSelector((state: any) =>
     state.notes.find((note: notesReducerIntf) => note.id === id)
   );
+
   useEffect(() => {
     console.log("🔄 EditNotePage Mounted or Re-rendered");
   });
@@ -33,6 +34,7 @@ const EditNotePage = () => {
             console.log(`id is not present`);
           }
         }}
+        onClose={() => navigate("/notes")}
       />
 
       <button

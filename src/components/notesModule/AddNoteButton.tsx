@@ -11,16 +11,10 @@ class AddNoteButton extends Component<{}, AddNoteButtonState> {
   };
 
   handleOpen = () => {
-    console.log("Opening form...");
-    this.setState({ isFormVisible: true }, () => {
-      console.log("isFormVisible:", this.state.isFormVisible);
-    });
+    this.setState({ isFormVisible: true }, () => {});
   };
   handleClose = () => {
-    console.log("Closing form...");
-    this.setState({ isFormVisible: false }, () => {
-      console.log("isFormVisible:", this.state.isFormVisible);
-    });
+    this.setState({ isFormVisible: false }, () => {});
   };
 
   render() {

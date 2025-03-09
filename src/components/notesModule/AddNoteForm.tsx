@@ -10,13 +10,6 @@ class AddNoteForm extends Component<NotesFormProp & { dispatch?: Dispatch }> {
     if (this.props.onSubmit) {
       this.props.onSubmit(note);
     }
-    if (this.props.onClose) {
-      this.props.onClose();
-    }
-    if (this.props.onClose) {
-      console.log("Calling onClose from AddNoteForm");
-      this.props.onClose();
-    }
   };
 
   render() {

@@ -37,12 +37,9 @@ export default class NotesForm extends React.Component<
   };
   handleCancel = () => {
     this.setState({ redirect: false });
-    console.log("NotesForm: Cancel button clicked");
     if (this.props.onClose) {
-      console.log("NotesForm: Calling onClose...");
-      this.props.onClose();
+      this.props.onClose(); //connected to editPage and also AddNoteForm/Button
     } else {
-      console.log("NotesForm: onClose is undefined!");
     }
   };
 
