@@ -22,7 +22,7 @@ class AddNoteForm extends Component<NotesFormProp & { dispatch?: Dispatch }> {
   render() {
     return (
       <div>
-        <NotesForm onSubmit={this.handleSubmit} />
+        <NotesForm onSubmit={this.handleSubmit} onClose={this.props.onClose} />
       </div>
     );
   }
