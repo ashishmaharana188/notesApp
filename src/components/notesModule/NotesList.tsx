@@ -7,7 +7,7 @@ import { NoteListProps } from "../../TS_INTERFACE/gInterface";
 class NoteList extends Component<NoteListProps> {
   render() {
     return (
-      <div>
+      <div className="mt-40 space-y-4">
         {this.props.notes.length === 0 ? (
           <p className="notes-form-title">No notes available</p>
         ) : (

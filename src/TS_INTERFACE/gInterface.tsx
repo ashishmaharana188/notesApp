@@ -9,9 +9,7 @@ export interface notesReducerIntf {
   tags: string;
   date: number;
 }
-export interface noteCardProp {
-  note?: notesReducerIntf;
-}
+
 export interface NotesFormProp {
   note?: notesReducerIntf;
   onSubmit?: (note: {

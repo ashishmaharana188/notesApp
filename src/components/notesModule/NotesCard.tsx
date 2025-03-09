@@ -20,7 +20,7 @@ const NoteCard = ({ note }: NotesFormProp) => {
   };
 
   return (
-    <div className="w-120 mb-2 ml-3 mt-10 bg-white rounded-lg shadow-md p-5 border border-gray-200">
+    <div className="w-120 mb-2 ml-3 bg-white rounded-lg shadow-md p-5 border border-gray-200">
       <h2 className="text-xl font-bold text-black">
         {note?.title || "Untitled Note"}
       </h2>
