@@ -33,6 +33,14 @@ const NoteCard = ({ note }: NotesFormProp) => {
         {note?.date ? new Date(note.date).toLocaleDateString() : "No date"}
       </p>
 
+      <div className="flex justify-end mt-2">
+        {" "}
+        {/* Use flex to align items to the left */}
+        <p className="inline-block p-2 pl-3 pr-3 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+          {note?.tags || "No tags"}
+        </p>
+      </div>
+
       <div className="flex justify-between items-center mt-4">
         <Link
           to={`/edit/${note?.id}`}
