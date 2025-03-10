@@ -10,6 +10,7 @@ store.dispatch(
     title: "NOTE1",
     noteSnippet: "GOOD STUFF",
     date: 1738079643538,
+    tags: "Medium",
   })
 );
 

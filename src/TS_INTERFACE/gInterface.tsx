@@ -43,3 +43,7 @@ export interface notesFilterReducerIntf {
 export interface NoteListProps {
   notes: notesReducerIntf[];
 }
+export interface RootState {
+  notes: notesReducerIntf[]; // ✅ This matches the store
+  filters: notesFilterReducerIntf;
+}
