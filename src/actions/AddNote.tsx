@@ -6,7 +6,6 @@ export const addNote = ({
   noteSnippet = "",
   date = 0,
   tags = "",
-  time = "",
 } = {}) => ({
   type: "ADD_NOTE" as const,
   note: {
@@ -15,7 +14,6 @@ export const addNote = ({
     noteSnippet,
     date,
     tags,
-    time,
   },
 });
 

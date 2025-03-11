@@ -1,11 +1,7 @@
 import React from "react";
 import moment, { Moment } from "moment";
 import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
-import {
-  DatePicker,
-  LocalizationProvider,
-  TimePicker,
-} from "@mui/x-date-pickers";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { Navigate } from "react-router-dom";
 
@@ -21,7 +17,6 @@ export default class NotesForm extends React.Component<
       noteSnippet: props.note?.noteSnippet || "",
       tags: props.note?.tags || "",
       date: props.note?.date ? moment(props.note.date) : moment(),
-      time: props.note?.time ? moment(props.note.time) : moment(),
       redirect: false,
     };
   }
@@ -35,12 +30,6 @@ export default class NotesForm extends React.Component<
   onDateChange = (newDate: Moment | null) => {
     if (newDate && newDate.isValid()) {
       this.setState({ date: newDate });
-    }
-  };
-
-  onTimeChange = (newTime: Moment | null) => {
-    if (newTime && newTime.isValid()) {
-      this.setState({ time: newTime });
     }
   };
 
@@ -64,7 +53,6 @@ export default class NotesForm extends React.Component<
         noteSnippet: this.state.noteSnippet,
         tags: this.state.tags,
         date: this.state.date.valueOf(),
-        time: this.state.time.valueOf(),
       });
     }
   };
@@ -122,27 +110,7 @@ export default class NotesForm extends React.Component<
             />
           </LocalizationProvider>
         </div>
-        <div className="mb-2">
-          <LocalizationProvider dateAdapter={AdapterMoment}>
-            <TimePicker
-              value={this.state.time}
-              onChange={this.onTimeChange}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  variant: "outlined",
-                  InputProps: {
-                    sx: {
-                      fontSize: "1rem",
-                      height: "3rem",
-                      borderRadius: "0.5rem",
-                    },
-                  },
-                },
-              }}
-            />
-          </LocalizationProvider>
-        </div>
+
         <div className="flex justify-center gap-4 border-t pt-2">
           <button
             className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black hover:text-white hover:shadow-md"
