@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import AddNoteButton from "./AddNoteButton";
-import NoteList from "./NotesList";
 import "../../styles/components/notesModule/NoteDashboard.css";
+
+import NoteCardPlot from "./NotesCardPlot";
 const NotesDashboardPage = () => {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -29,7 +30,7 @@ const NotesDashboardPage = () => {
         Dashboard!
       </p>
       <div>
-        <NoteList />
+        <NoteCardPlot />
       </div>
       <div>
         <AddNoteButton />
