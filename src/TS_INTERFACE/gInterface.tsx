@@ -8,6 +8,7 @@ export interface notesReducerIntf {
   noteSnippet: string;
   tags: string;
   date: number;
+  time: number;
 }
 
 export interface NotesFormProp {
@@ -18,6 +19,7 @@ export interface NotesFormProp {
     noteSnippet: string;
     tags: string;
     date: number;
+    time: number;
   }) => void;
   dispatch?: Dispatch;
   onOpen?: () => void;
@@ -30,6 +32,7 @@ export interface NotesFormState {
   noteSnippet: string;
   tags: string;
   date: Moment;
+  time: Moment;
   redirect: boolean;
 }
 export interface notesFilterReducerIntf {
@@ -44,6 +47,6 @@ export interface NoteListProps {
   notes: notesReducerIntf[];
 }
 export interface RootState {
-  notes: notesReducerIntf[]; // ✅ This matches the store
+  notes: notesReducerIntf[];
   filters: notesFilterReducerIntf;
 }
