@@ -8,3 +8,4 @@ html {
   font-size: var(--base-rem);
   background-color: rgb(241, 233, 221); /* Now 1rem = 10px */
 }
+/* MUI DatePicker Height Override */

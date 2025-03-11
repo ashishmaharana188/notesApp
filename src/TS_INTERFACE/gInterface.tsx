@@ -31,6 +31,8 @@ export interface NotesFormState {
   tags: string;
   date: Moment;
   redirect: boolean;
+  openDatePicker: boolean;
+  openTimePicker: boolean;
 }
 export interface notesFilterReducerIntf {
   tags: string;

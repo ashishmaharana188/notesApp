@@ -1,8 +1,15 @@
 import React from "react";
 import moment, { Moment } from "moment";
-import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  TimePicker,
+  LocalizationProvider,
+} from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { IconButton } from "@mui/material";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
 import { Navigate } from "react-router-dom";
 
 export default class NotesForm extends React.Component<
@@ -18,6 +25,8 @@ export default class NotesForm extends React.Component<
       tags: props.note?.tags || "",
       date: props.note?.date ? moment(props.note.date) : moment(),
       redirect: false,
+      openDatePicker: false,
+      openTimePicker: false,
     };
   }
 
@@ -32,7 +41,16 @@ export default class NotesForm extends React.Component<
       this.setState({ date: newDate });
     }
   };
-
+  onTimeChange = (newTime: any) => {
+    if (newTime && newTime.isValid()) {
+      this.setState({
+        date: moment(this.state.date).set({
+          hour: newTime.hour(),
+          minute: newTime.minute(),
+        }),
+      });
+    }
+  };
   onTagsChange = (e: any) => {
     this.setState({ tags: e.target.value });
   };
@@ -40,8 +58,21 @@ export default class NotesForm extends React.Component<
     this.setState({ redirect: false });
     if (this.props.onClose) {
       this.props.onClose(); //connected to editPage and also AddNoteForm/Button
-    } else {
     }
+  };
+
+  toggleDatePicker = () => {
+    this.setState({
+      openDatePicker: !this.state.openDatePicker,
+      openTimePicker: false,
+    });
+  };
+
+  toggleTimePicker = () => {
+    this.setState({
+      openTimePicker: !this.state.openTimePicker,
+      openDatePicker: false,
+    });
   };
 
   onSubmit = (e: any) => {
@@ -89,28 +120,68 @@ export default class NotesForm extends React.Component<
             onChange={this.onTagsChange}
           />
         </div>
-        <div className="mb-2">
-          <LocalizationProvider dateAdapter={AdapterMoment}>
-            <DatePicker
-              value={this.state.date}
-              onChange={this.onDateChange}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  variant: "outlined",
-                  InputProps: {
-                    sx: {
-                      fontSize: "1rem",
-                      height: "3rem",
-                      borderRadius: "0.5rem",
-                    },
-                  },
-                },
-              }}
+        <div className="mb-2 flex items-center relative">
+          {this.state.openDatePicker || this.state.openTimePicker ? (
+            <div className="flex-1 border-gray-300 rounded-md">
+              {this.state.openDatePicker && (
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <DatePicker
+                    value={this.state.date}
+                    onChange={this.onDateChange}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        style: {},
+                        InputProps: {
+                          style: {
+                            paddingLeft: "32px", // Reset padding if needed
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+              {this.state.openTimePicker && (
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <TimePicker
+                    value={this.state.date}
+                    onChange={this.onDateChange}
+                    className="custom-datepicker"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        style: {},
+                        InputProps: {
+                          style: {
+                            paddingLeft: "40px", // Moves text inside to the right
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            </div>
+          ) : (
+            <div
+              className="flex-1 p-3 border-gray-300 rounded-md cursor-pointer"
+              onClick={this.toggleDatePicker}
+            >
+              {this.state.date.format("MM/DD/YYYY hh:mm A")}
+            </div>
+          )}
+          <IconButton onClick={this.toggleDatePicker} className="z-10">
+            <CalendarTodayIcon
+              color={this.state.openDatePicker ? "primary" : "inherit"}
             />
-          </LocalizationProvider>
+          </IconButton>
+          <IconButton onClick={this.toggleTimePicker} className="z-10">
+            <AccessTimeIcon
+              color={this.state.openTimePicker ? "primary" : "inherit"}
+            />
+          </IconButton>
         </div>
-
         <div className="flex justify-center gap-4 border-t pt-2">
           <button
             className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black hover:text-white hover:shadow-md"
