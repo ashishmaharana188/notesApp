@@ -32,6 +32,9 @@ const NoteCard = ({ note }: NotesFormProp) => {
       <p className="text-gray-500 text-sm mt-2">
         {note?.date ? new Date(note.date).toLocaleDateString() : "No date"}
       </p>
+      <p className="text-gray-500 text-sm mt-2">
+        {note?.time ? new Date(note.time).toLocaleTimeString() : "No Time"}
+      </p>
 
       <div className="flex justify-end mt-2">
         {" "}

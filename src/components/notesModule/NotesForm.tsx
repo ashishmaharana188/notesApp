@@ -24,6 +24,7 @@ export default class NotesForm extends React.Component<
       noteSnippet: props.note?.noteSnippet || "",
       tags: props.note?.tags || "",
       date: props.note?.date ? moment(props.note.date) : moment(),
+      time: props.note?.time ? moment(props.note.time) : moment(),
       redirect: false,
       openDatePicker: false,
       openTimePicker: false,
@@ -44,7 +45,7 @@ export default class NotesForm extends React.Component<
   onTimeChange = (newTime: any) => {
     if (newTime && newTime.isValid()) {
       this.setState({
-        date: moment(this.state.date).set({
+        time: moment(this.state.time).set({
           hour: newTime.hour(),
           minute: newTime.minute(),
         }),
@@ -84,6 +85,7 @@ export default class NotesForm extends React.Component<
         noteSnippet: this.state.noteSnippet,
         tags: this.state.tags,
         date: this.state.date.valueOf(),
+        time: this.state.time.valueOf(),
       });
     }
   };
@@ -145,8 +147,8 @@ export default class NotesForm extends React.Component<
               {this.state.openTimePicker && (
                 <LocalizationProvider dateAdapter={AdapterMoment}>
                   <TimePicker
-                    value={this.state.date}
-                    onChange={this.onDateChange}
+                    value={this.state.time}
+                    onChange={this.onTimeChange}
                     className="custom-datepicker"
                     slotProps={{
                       textField: {

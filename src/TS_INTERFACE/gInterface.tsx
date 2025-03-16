@@ -1,5 +1,4 @@
 import { Moment } from "moment";
-
 import { Dispatch } from "redux";
 
 export interface notesReducerIntf {
@@ -8,6 +7,7 @@ export interface notesReducerIntf {
   noteSnippet: string;
   tags: string;
   date: number;
+  time: number;
 }
 
 export interface NotesFormProp {
@@ -18,6 +18,7 @@ export interface NotesFormProp {
     noteSnippet: string;
     tags: string;
     date: number;
+    time: number;
   }) => void;
   dispatch?: Dispatch;
   onOpen?: () => void;
@@ -30,6 +31,7 @@ export interface NotesFormState {
   noteSnippet: string;
   tags: string;
   date: Moment;
+  time: Moment;
   redirect: boolean;
   openDatePicker: boolean;
   openTimePicker: boolean;
@@ -48,4 +50,8 @@ export interface NoteListProps {
 export interface RootState {
   notes: notesReducerIntf[];
   filters: notesFilterReducerIntf;
+}
+
+export interface TimelineProps {
+  startTime: Date;
 }
