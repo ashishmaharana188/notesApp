@@ -45,10 +45,7 @@ export interface NoteListProps {
 }
 
 export interface noteTimelineState {
-  clickedTimes: { [key: number]: boolean };
-}
-
-// Updated TimelineProps interface
-export interface TimelineProps {
-  notes: notesReducerIntf[]; // Include notes in the props
+  clickedDot: number | null;
+  lastScrollDirection: "down" | "up" | "left" | "right";
+  activeInterval: number | null;
 }
