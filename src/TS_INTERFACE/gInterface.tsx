@@ -44,9 +44,8 @@ export interface NoteListProps {
   notes: notesReducerIntf[];
 }
 
-export interface RootState {
-  notes: notesReducerIntf[];
-  filters: notesFilterReducerIntf;
+export interface noteTimelineState {
+  clickedTimes: { [key: number]: boolean };
 }
 
 // Updated TimelineProps interface

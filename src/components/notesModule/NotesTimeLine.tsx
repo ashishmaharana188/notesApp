@@ -38,23 +38,43 @@ class NotesTimeline extends React.Component<NoteListProps> {
           });
 
           return (
-            <TimelineItem key={time}>
-              <TimelineSeparator>
+            <TimelineItem
+              key={time}
+              className={`${notesAtThisTime.length > 0 ? "mb-10" : ""}`}
+            >
+              {/* Move Dot & Connector Right if Notes Exist */}
+              <TimelineSeparator
+                className={`pb-15 relative ${
+                  notesAtThisTime.length > 0
+                    ? "translate-x-10"
+                    : "translate-x-0"
+                }`}
+              >
                 <TimelineDot />
-                <TimelineConnector />
+                <TimelineConnector className=" min-h-[100px]" />
               </TimelineSeparator>
+
+              {/* Time Label (Remains Fixed) */}
               <TimelineContent>
-                <div>
-                  <h4>{moment(time).format("HH:mm")}</h4>
-                  {notesAtThisTime.length > 0 ? (
-                    notesAtThisTime.map((note) => (
-                      <NoteCard key={note.id} note={note} /> // Render NoteCard for each matching note
-                    ))
-                  ) : (
-                    <p>No notes at this time</p>
-                  )}
-                </div>
+                <h4
+                  className={` ${
+                    notesAtThisTime.length > 0
+                      ? " mt-25 text-xl font-semibold translate-x-10"
+                      : "mt-1 text-lg font-semibold"
+                  }`}
+                >
+                  {moment(time).format("HH:mm")}
+                </h4>
               </TimelineContent>
+
+              {/* Notes Section - Doesn't affect timeline */}
+              {notesAtThisTime.length > 0 && (
+                <div className="absolute left-50 flex gap-4">
+                  {notesAtThisTime.map((note) => (
+                    <NoteCard key={note.id} note={note} />
+                  ))}
+                </div>
+              )}
             </TimelineItem>
           );
         })}
