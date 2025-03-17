@@ -6,18 +6,19 @@ import { NoteListProps } from "../../TS_INTERFACE/gInterface";
 
 class NoteList extends Component<NoteListProps> {
   render() {
+    const { notes } = this.props; // Destructure notes from props
+
     return (
       <div className="mt-40 space-y-4">
-        {this.props.notes.length === 0 ? (
+        {notes.length === 0 ? (
           <p className="notes-form-title">No notes available</p>
         ) : (
-          this.props.notes.map((note) => <NoteCard key={note.id} note={note} />)
+          notes.map((note) => <NoteCard key={note.id} note={note} />)
         )}
       </div>
     );
   }
 }
-
 const mapStateToProps = (state: any) => ({
   notes: state.notes, // `notes` should be in your Redux store
 });

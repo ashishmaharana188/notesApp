@@ -1,6 +1,7 @@
 import { Moment } from "moment";
 import { Dispatch } from "redux";
 
+// Existing interfaces
 export interface notesReducerIntf {
   id?: string;
   title: string;
@@ -12,19 +13,13 @@ export interface notesReducerIntf {
 
 export interface NotesFormProp {
   note?: notesReducerIntf;
-  onSubmit?: (note: {
-    id?: string;
-    title: string;
-    noteSnippet: string;
-    tags: string;
-    date: number;
-    time: number;
-  }) => void;
+  onSubmit?: (note: notesReducerIntf) => void;
   dispatch?: Dispatch;
   onOpen?: () => void;
   onClose?: () => void;
   onSave?: () => void;
 }
+
 export interface NotesFormState {
   id: string;
   title: string;
@@ -36,6 +31,7 @@ export interface NotesFormState {
   openDatePicker: boolean;
   openTimePicker: boolean;
 }
+
 export interface notesFilterReducerIntf {
   tags: string;
   sortBy: string | null;
@@ -47,11 +43,13 @@ export interface notesFilterReducerIntf {
 export interface NoteListProps {
   notes: notesReducerIntf[];
 }
+
 export interface RootState {
   notes: notesReducerIntf[];
   filters: notesFilterReducerIntf;
 }
 
+// Updated TimelineProps interface
 export interface TimelineProps {
-  startTime: Date;
+  notes: notesReducerIntf[]; // Include notes in the props
 }
