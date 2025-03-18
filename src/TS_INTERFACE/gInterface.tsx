@@ -46,6 +46,5 @@ export interface NoteListProps {
 
 export interface noteTimelineState {
   clickedDot: number | null;
-  lastScrollDirection: "down" | "up" | "left" | "right";
   activeInterval: number | null;
 }

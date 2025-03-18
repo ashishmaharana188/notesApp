@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 import Timeline from "@mui/lab/Timeline";
 import TimelineItem from "@mui/lab/TimelineItem";
@@ -7,139 +7,136 @@ import TimelineConnector from "@mui/lab/TimelineConnector";
 import TimelineContent from "@mui/lab/TimelineContent";
 import TimelineDot from "@mui/lab/TimelineDot";
 import NoteCard from "./NotesCard"; // Import your NoteCard component
-import {
-  NoteListProps,
-  noteTimelineState,
-} from "../../TS_INTERFACE/gInterface";
+import { NoteListProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
 
-class NotesTimeline extends React.Component<NoteListProps, noteTimelineState> {
-  constructor(props: NoteListProps) {
-    super(props);
-    this.state = {
-      clickedDot: null,
-      lastScrollDirection: "down",
-      activeInterval: null,
-    };
-  }
+const NotesTimeline = ({ notes }: NoteListProps) => {
+  const [clickedDot, setClickedDot] = useState<number | null>(null);
+  const [activeInterval, setActiveInterval] = useState<number | null>(null);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [scrolling, setScrolling] = useState(false);
 
-  generateTimeIntervals() {
+  const generateTimeIntervals = () => {
     const intervals = [];
     const startOfDay = moment().startOf("day");
-
     for (let i = 0; i < 24; i++) {
       intervals.push(startOfDay.clone().add(i, "hours").valueOf());
     }
-
     return intervals;
-  }
-
-  handleScroll = (event: WheelEvent) => {
-    const { activeInterval, lastScrollDirection } = this.state;
-    if (!activeInterval) return; // No interval selected
-
-    const scrollDirection = event.deltaY > 0 ? "down" : "up";
-    if (scrollDirection === lastScrollDirection) return; // Prevent redundant movement
-
-    console.log(`Scrolling ${scrollDirection}`);
-    this.setState({ lastScrollDirection: scrollDirection });
-
-    // Move selected interval's notes left when scrolling down
-    if (scrollDirection === "down") {
-      document
-        .getElementById(`notes-${activeInterval}`)
-        ?.classList.add("translate-x-[-400px]");
-    }
-
-    // Move selected interval's notes back when scrolling up
-    if (scrollDirection === "up") {
-      document
-        .getElementById(`notes-${activeInterval}`)
-        ?.classList.remove("translate-x-[-400px]");
-    }
   };
 
-  handleClick = (time: any) => {
+  const handleClick = (time: number) => {
     console.log(`Dot clicked at time: ${moment(time).format("HH:mm")}`);
-    this.setState({ clickedDot: time, activeInterval: time });
-
-    // Attach scroll event listener
-    window.addEventListener("wheel", this.handleScroll);
+    if (activeInterval === time) {
+      // Reset everything when toggling off
+      setActiveInterval(null);
+      setClickedDot(null);
+      setScrollOffset(0);
+      setScrolling(false);
+    } else {
+      setActiveInterval(time);
+      setClickedDot(time);
+      setScrollOffset(0);
+    }
   };
 
-  render() {
-    const { clickedDot, activeInterval } = this.state;
-    const { notes } = this.props; // Access notes from Redux store
-    const timeIntervals = this.generateTimeIntervals();
+  const handleScroll = (event: WheelEvent) => {
+    if (!activeInterval) return; // Do nothing if no active interval
 
-    return (
-      <Timeline position="right">
-        {timeIntervals.map((time) => {
-          const startOfHour = moment(time);
-          const notesAtThisTime = notes.filter((note) =>
-            moment(note.time).isSame(startOfHour, "hour")
-          );
+    event.preventDefault(); // Prevent default vertical scroll
+    setScrolling(true);
 
-          return (
-            <TimelineItem
-              key={time}
-              className={`${notesAtThisTime.length > 0 ? "mb-10" : ""}`}
+    const scrollAmount = event.deltaY > 0 ? 50 : -50; // Adjust scroll step
+    setScrollOffset((prev) => prev + scrollAmount);
+
+    // Stop scrolling smoothly
+    setTimeout(() => setScrolling(false), 300);
+  };
+
+  // Add and remove event listener for scroll
+  useEffect(() => {
+    if (activeInterval) {
+      window.addEventListener("wheel", handleScroll, { passive: false });
+    }
+    return () => {
+      window.removeEventListener("wheel", handleScroll);
+    };
+  }, [activeInterval]);
+
+  const timeIntervals = generateTimeIntervals();
+
+  return (
+    <Timeline position="right">
+      {timeIntervals.map((time) => {
+        const startOfHour = moment(time);
+        const notesAtThisTime = notes.filter((note) =>
+          moment(note.time).isSame(startOfHour, "hour")
+        );
+
+        return (
+          <TimelineItem
+            key={time}
+            className={`${notesAtThisTime.length > 0 ? "mb-10" : ""}`}
+          >
+            <TimelineSeparator
+              className={`pb-15 relative ${
+                notesAtThisTime.length > 0 ? "translate-x-10" : "translate-x-0"
+              }`}
             >
-              <TimelineSeparator
-                className={`pb-15 relative ${
+              <TimelineDot
+                className={`cursor-pointer transition-transform duration-300 ${
+                  clickedDot === time ? "animate-bounce" : ""
+                }`}
+                onClick={() => handleClick(time)}
+              />
+              <TimelineConnector
+                className={`min-h-[100px] cursor-pointer transition-transform duration-300 ${
+                  clickedDot === time ? "animate-bounce" : ""
+                }`}
+                onClick={() => handleClick(time)}
+              />
+            </TimelineSeparator>
+
+            <TimelineContent>
+              <h4
+                className={`${
                   notesAtThisTime.length > 0
-                    ? "translate-x-10"
-                    : "translate-x-0"
+                    ? "mt-25 text-xl font-semibold translate-x-10"
+                    : "mt-1 text-lg font-semibold"
                 }`}
               >
-                <TimelineDot
-                  className={`cursor-pointer transition-transform duration-300 ${
-                    clickedDot === time ? "animate-bounce" : ""
-                  }`}
-                  onClick={() => this.handleClick(time)}
-                />
-                <TimelineConnector
-                  className={`min-h-[100px] cursor-pointer transition-transform duration-300 ${
-                    clickedDot === time ? "animate-bounce" : ""
-                  }`}
-                  onClick={() => this.handleClick(time)}
-                />
-              </TimelineSeparator>
+                {moment(time).format("HH:mm")}
+              </h4>
+            </TimelineContent>
 
-              <TimelineContent>
-                <h4
-                  className={`${
-                    notesAtThisTime.length > 0
-                      ? " mt-25 text-xl font-semibold translate-x-10"
-                      : "mt-1 text-lg font-semibold"
-                  }`}
-                >
-                  {moment(time).format("HH:mm")}
-                </h4>
-              </TimelineContent>
-
-              {notesAtThisTime.length > 0 && (
-                <div
-                  id={`notes-${time}`}
-                  className={`absolute left-50 flex gap-4 transition-transform duration-500 ${
-                    activeInterval === time ? "translate-x-0" : ""
-                  }`}
-                >
-                  {notesAtThisTime.map((note) => (
-                    <NoteCard key={note.id} note={note} />
-                  ))}
-                </div>
-              )}
-            </TimelineItem>
-          );
-        })}
-      </Timeline>
-    );
-  }
-}
+            {notesAtThisTime.length > 0 && (
+              <div
+                id={`notes-${time}`}
+                className={`absolute left-50 flex gap-4 transition-transform duration-500 ease-out`}
+                style={{
+                  transform:
+                    activeInterval === time
+                      ? `translateX(${scrollOffset}px)`
+                      : "translateX(0px)",
+                  transition: scrolling
+                    ? "transform 0.3s ease-out"
+                    : "transform 0.5s ease-out",
+                }}
+              >
+                {notesAtThisTime.map((note) => (
+                  <NoteCard key={note.id} note={note} />
+                ))}
+              </div>
+            )}
+          </TimelineItem>
+        );
+      })}
+    </Timeline>
+  );
+};
 
 const mapStateToProps = (state: any) => ({
   notes: state.notes,
 });
 
-export default connect(mapStateToProps)(NotesTimeline);
+export default connect(mapStateToProps)(React.memo(NotesTimeline));
