@@ -22,10 +22,10 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   const [scrollPositions, setScrollPositions] = useState<{
     [key: number]: number;
   }>({});
-  const [previouslyUsedIntervals, setPreviouslyUsedIntervals] = useState<
-    Set<number>
-  >(new Set());
-
+  const [preservedIntervals, setPreservedIntervals] = useState<Set<number>>(
+    new Set()
+  );
+  const [isElastic, setIsElastic] = useState(false);
   const timelineRef = useRef<HTMLUListElement | null>(null);
 
   const timeIntervals = useMemo(() => {
@@ -34,31 +34,34 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
     );
   }, []);
 
-  const handleClick = useCallback(
-    (time: number) => {
-      const notesAtThisTime = notes.filter((note) =>
-        moment(note.time).isSame(moment(time), "hour")
+  /** Finds the next or previous valid interval */
+  const findAdjacentInterval = useCallback(
+    (current: number, direction: "next" | "prev"): number | null => {
+      const index = timeIntervals.indexOf(current);
+      if (index === -1) return null;
+      const range =
+        direction === "next"
+          ? timeIntervals.slice(index + 1)
+          : timeIntervals.slice(0, index).reverse();
+      return (
+        range.find((time) =>
+          notes.some((note) => moment(note.time).isSame(moment(time), "hour"))
+        ) || null
       );
-      const noteCount = notesAtThisTime.length;
-
-      setScrollPositions((prev) => {
-        const previousScroll = prev[time] || 0;
-        return noteCount < 10 || previousScroll < 11 * 180
-          ? { ...prev, [time]: 0 }
-          : prev;
-      });
-
-      if (activeInterval === time) {
-        setActiveInterval(null);
-        setClickedDot(null);
-      } else {
-        setActiveInterval(time);
-        setClickedDot(time);
-      }
     },
-    [activeInterval, notes]
+    [notes, timeIntervals]
   );
 
+  /** Handles clicking on a time interval */
+  const handleClick = useCallback(
+    (time: number) => {
+      setActiveInterval(activeInterval === time ? null : time);
+      setClickedDot(activeInterval === time ? null : time);
+    },
+    [activeInterval]
+  );
+
+  /** Handles scrolling behavior */
   const handleScroll = useCallback(
     (event: WheelEvent) => {
       if (!activeInterval) return;
@@ -72,33 +75,60 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
       const maxOffset = -((notesAtThisTime.length - 1) * 180);
       const newOffset =
         (scrollPositions[activeInterval] || 0) + (event.deltaY > 0 ? -50 : 50);
-      const updatedOffset = Math.max(maxOffset, Math.min(newOffset, 0));
+      const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
 
       setScrollPositions((prev) => ({
         ...prev,
         [activeInterval]: updatedOffset,
       }));
 
-      if (Math.abs(updatedOffset) / 180 >= 10) {
-        setPreviouslyUsedIntervals(
-          (prev) => new Set([...prev, activeInterval])
-        );
+      if (updatedOffset <= maxOffset - 10) {
+        setPreservedIntervals((prev) => new Set([...prev, activeInterval]));
+        setIsElastic(true);
+        setTimeout(() => {
+          setIsElastic(false);
+          const nextInterval = findAdjacentInterval(activeInterval, "next");
+          if (nextInterval) {
+            setActiveInterval(nextInterval);
+            setClickedDot(nextInterval);
+          }
+        }, 300);
+      } else if (updatedOffset >= 10) {
+        setIsElastic(true);
+        setTimeout(() => {
+          setIsElastic(false);
+          const prevInterval = findAdjacentInterval(activeInterval, "prev");
+          if (prevInterval) {
+            setActiveInterval(prevInterval);
+            setClickedDot(prevInterval);
+          }
+        }, 300);
       }
     },
-    [activeInterval, notes, scrollPositions]
+    [activeInterval, notes, scrollPositions, findAdjacentInterval]
   );
 
+  /** Adds/removes scroll event listener */
   useEffect(() => {
     if (activeInterval) {
       window.addEventListener("wheel", handleScroll, { passive: false });
     } else {
-      setScrollPositions({});
+      setScrollPositions((prev) => {
+        const newPositions: { [key: number]: number } = {};
+        Object.keys(prev).forEach((key) => {
+          const timeKey = parseInt(key, 10);
+          if (preservedIntervals.has(timeKey)) {
+            newPositions[timeKey] = prev[timeKey];
+          }
+        });
+        return newPositions;
+      });
     }
 
     return () => {
       window.removeEventListener("wheel", handleScroll);
     };
-  }, [activeInterval, handleScroll]);
+  }, [activeInterval, handleScroll, preservedIntervals]);
 
   return (
     <Timeline ref={timelineRef} position="right">
@@ -113,27 +143,45 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
             className={notesAtThisTime.length > 0 ? "mb-10" : ""}
           >
             <TimelineSeparator>
-              <TimelineDot
-                className={`cursor-pointer ${
-                  clickedDot === time ? "animate-bounce" : ""
-                } ${previouslyUsedIntervals.has(time) ? "bg-gray-800" : ""}`}
-                onClick={() => handleClick(time)}
-              />
-              <TimelineConnector
-                className="min-h-[100px] cursor-pointer"
-                onClick={() => handleClick(time)}
-              />
+              {/* Timeline Dot with Floating Holder */}
+              <div className="relative flex flex-col items-center">
+                <TimelineDot
+                  className={`cursor-pointer ${
+                    clickedDot === time ? "animate-bounce" : ""
+                  } ${
+                    preservedIntervals.has(time) ? "bg-gray-800 shadow-lg" : ""
+                  }`}
+                  onClick={() => handleClick(time)}
+                />
+                <TimelineConnector
+                  className="min-h-[100px] cursor-pointer"
+                  onClick={() => handleClick(time)}
+                />
+                {/* Floating Button Holder */}
+                <div className="absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10">
+                  <button
+                    className="text-white text-sm px-3 py-1"
+                    onClick={() => handleClick(time)}
+                  >
+                    {moment(time).format("HH:mm")}
+                  </button>
+                </div>
+              </div>
             </TimelineSeparator>
 
+            {/* Time Label */}
             <TimelineContent>
               <h4 className="mt-1 text-lg font-semibold">
                 {moment(time).format("HH:mm")}
               </h4>
             </TimelineContent>
 
+            {/* Notes Section */}
             {notesAtThisTime.length > 0 && (
               <div
-                className="absolute left-50 top-10 flex gap-4 transition-transform duration-500"
+                className={`absolute left-50 top-10 flex gap-4 transition-transform ${
+                  isElastic ? "duration-200 ease-out" : "duration-500 ease-out"
+                }`}
                 style={{
                   transform: `translateX(${scrollPositions[time] || 0}px)`,
                 }}
