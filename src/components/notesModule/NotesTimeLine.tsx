@@ -55,10 +55,26 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   /** Handles clicking on a time interval */
   const handleClick = useCallback(
     (time: number) => {
-      setActiveInterval(activeInterval === time ? null : time);
-      setClickedDot(activeInterval === time ? null : time);
+      if (activeInterval === time) {
+        // ✅ Reset when clicking the same interval
+        setActiveInterval(null);
+        setClickedDot(null);
+        setScrollPositions((prev) => {
+          const newPositions: { [key: number]: number } = {};
+          Object.keys(prev).forEach((key) => {
+            const timeKey = parseInt(key, 10);
+            if (preservedIntervals.has(timeKey)) {
+              newPositions[timeKey] = prev[timeKey];
+            }
+          });
+          return newPositions;
+        });
+      } else {
+        setActiveInterval(time);
+        setClickedDot(time);
+      }
     },
-    [activeInterval]
+    [activeInterval, preservedIntervals]
   );
 
   /** Handles scrolling behavior */
@@ -83,6 +99,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
       }));
 
       if (updatedOffset <= maxOffset - 10) {
+        // ✅ Preserve this interval if fully scrolled
         setPreservedIntervals((prev) => new Set([...prev, activeInterval]));
         setIsElastic(true);
         setTimeout(() => {
@@ -94,34 +111,50 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
           }
         }, 300);
       } else if (updatedOffset >= 10) {
-        setIsElastic(true);
-        setTimeout(() => {
-          setIsElastic(false);
-          const prevInterval = findAdjacentInterval(activeInterval, "prev");
-          if (prevInterval) {
-            setActiveInterval(prevInterval);
-            setClickedDot(prevInterval);
-          }
-        }, 300);
+        // ✅ Only switch to an upper interval if it's preserved
+        if (preservedIntervals.has(activeInterval)) {
+          setIsElastic(true);
+          setTimeout(() => {
+            setIsElastic(false);
+            const prevInterval = findAdjacentInterval(activeInterval, "prev");
+            if (prevInterval) {
+              setActiveInterval(prevInterval);
+              setClickedDot(prevInterval);
+            }
+          }, 300);
+        }
       }
     },
-    [activeInterval, notes, scrollPositions, findAdjacentInterval]
+    [
+      activeInterval,
+      notes,
+      scrollPositions,
+      findAdjacentInterval,
+      preservedIntervals,
+    ]
   );
 
-  /** Adds/removes scroll event listener */
   useEffect(() => {
     if (activeInterval) {
       window.addEventListener("wheel", handleScroll, { passive: false });
     } else {
       setScrollPositions((prev) => {
+        // ✅ Only update state if something changes
         const newPositions: { [key: number]: number } = {};
+        let hasChanges = false;
+
         Object.keys(prev).forEach((key) => {
           const timeKey = parseInt(key, 10);
           if (preservedIntervals.has(timeKey)) {
             newPositions[timeKey] = prev[timeKey];
           }
         });
-        return newPositions;
+
+        if (Object.keys(newPositions).length !== Object.keys(prev).length) {
+          hasChanges = true;
+        }
+
+        return hasChanges ? newPositions : prev;
       });
     }
 
@@ -140,7 +173,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
         return (
           <TimelineItem
             key={time}
-            className={notesAtThisTime.length > 0 ? "mb-10" : ""}
+            className={notesAtThisTime.length > 0 ? "mb-10 mt-10" : ""}
           >
             <TimelineSeparator>
               {/* Timeline Dot with Floating Holder */}
@@ -179,7 +212,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
             {/* Notes Section */}
             {notesAtThisTime.length > 0 && (
               <div
-                className={`absolute left-50 top-10 flex gap-4 transition-transform ${
+                className={`absolute left-50 -top-5 flex gap-4 transition-transform ${
                   isElastic ? "duration-200 ease-out" : "duration-500 ease-out"
                 }`}
                 style={{
