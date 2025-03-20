@@ -48,3 +48,12 @@ export interface noteTimelineState {
   clickedDot: number | null;
   activeInterval: number | null;
 }
+
+export interface TimelineFilterProps {
+  onIntervalChange: (interval: "6h" | "12h" | "24h") => void;
+  onSortOrderChange: (order: "asc" | "desc") => void;
+  onAMPMChange: (ampm: "AM" | "PM") => void;
+  currentInterval: "6h" | "12h";
+  currentSortOrder: "asc" | "desc";
+  currentAMPM: "AM" | "PM";
+}

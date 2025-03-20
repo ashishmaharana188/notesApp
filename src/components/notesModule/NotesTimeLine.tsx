@@ -15,8 +15,14 @@ import TimelineDot from "@mui/lab/TimelineDot";
 import NoteCard from "./NotesCard";
 import { NoteListProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
+import TimelineFilter from "./NotesTimelineFilter";
 
 const NotesTimeline = ({ notes }: NoteListProps) => {
+  //TimeLine FIlter State
+  const [interval, setInterval] = useState<"6h" | "12h" | "24h">("12h");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedAMPM, setSelectedAMPM] = useState<"AM" | "PM">("AM");
+
   const [clickedDot, setClickedDot] = useState<number | null>(null);
   const [activeInterval, setActiveInterval] = useState<number | null>(null);
   const [scrollPositions, setScrollPositions] = useState<{
@@ -56,7 +62,6 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   const handleClick = useCallback(
     (time: number) => {
       if (activeInterval === time) {
-        // ✅ Reset when clicking the same interval
         setActiveInterval(null);
         setClickedDot(null);
         setScrollPositions((prev) => {
@@ -99,7 +104,6 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
       }));
 
       if (updatedOffset <= maxOffset - 10) {
-        // ✅ Preserve this interval if fully scrolled
         setPreservedIntervals((prev) => new Set([...prev, activeInterval]));
         setIsElastic(true);
         setTimeout(() => {
@@ -111,7 +115,6 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
           }
         }, 300);
       } else if (updatedOffset >= 10) {
-        // ✅ Only switch to an upper interval if it's preserved
         if (preservedIntervals.has(activeInterval)) {
           setIsElastic(true);
           setTimeout(() => {
@@ -139,10 +142,8 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
       window.addEventListener("wheel", handleScroll, { passive: false });
     } else {
       setScrollPositions((prev) => {
-        // ✅ Only update state if something changes
         const newPositions: { [key: number]: number } = {};
         let hasChanges = false;
-
         Object.keys(prev).forEach((key) => {
           const timeKey = parseInt(key, 10);
           if (preservedIntervals.has(timeKey)) {
