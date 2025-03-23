@@ -1,57 +1,80 @@
 import React from "react";
-import { TimelineFilterProps } from "./../../TS_INTERFACE/gInterface";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+} from "@mui/material";
 
-const TimelineFilter: React.FC<TimelineFilterProps> = ({
-  onIntervalChange,
-  onSortOrderChange,
-  onAMPMChange,
-  currentInterval,
-  currentSortOrder,
-  currentAMPM,
+interface NotesTimelineFilterProps {
+  interval: "6h" | "12h" | "24h";
+  setInterval: (value: "6h" | "12h" | "24h") => void;
+  selectedAMPM: "AM" | "PM";
+  setSelectedAMPM: (value: "AM" | "PM") => void;
+  sortOrder: "asc" | "desc";
+  setSortOrder: (value: "asc" | "desc") => void;
+  is24Hour: boolean;
+  setIs24Hour: (value: boolean) => void;
+}
+
+const NotesTimelineFilter: React.FC<NotesTimelineFilterProps> = ({
+  interval,
+  setInterval,
+  selectedAMPM,
+  setSelectedAMPM,
+  sortOrder,
+  setSortOrder,
+  is24Hour,
+  setIs24Hour,
 }) => {
   return (
-    <div className="timeline-filter">
-      <div>
-        <label>
-          Interval:
-          <select
-            value={currentInterval}
-            onChange={(e) =>
-              onIntervalChange(e.target.value as "6h" | "12h" | "24h")
-            }
-          >
-            <option value="6h">6 Hour</option>
-            <option value="12h">12 Hour</option>
-            <option value="24h">24 Hour</option>
-          </select>
-        </label>
-        <label>
-          Sort Order:
-          <select
-            value={currentSortOrder}
-            onChange={(e) =>
-              onSortOrderChange(e.target.value as "asc" | "desc")
-            }
-          >
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-          </select>
-        </label>
-        {currentInterval === "12h" && (
-          <label>
-            AM/PM:
-            <select
-              value={currentAMPM}
-              onChange={(e) => onAMPMChange(e.target.value as "AM" | "PM")}
-            >
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </label>
-        )}
+    <div className="flex justify-between items-center p-4 bg-white shadow-md rounded-lg mb-4">
+      {/* Interval Filter */}
+      <FormControl size="small">
+        <InputLabel>Interval</InputLabel>
+        <Select
+          value={interval}
+          onChange={(e) => setInterval(e.target.value as "6h" | "12h" | "24h")}
+        >
+          <MenuItem value="6h">6 Hours</MenuItem>
+          <MenuItem value="12h">12 Hours</MenuItem>
+          <MenuItem value="24h">24 Hours</MenuItem>
+        </Select>
+      </FormControl>
+
+      {/* AM/PM Filter */}
+      <FormControl size="small">
+        <InputLabel>AM/PM</InputLabel>
+        <Select
+          value={selectedAMPM}
+          onChange={(e) => setSelectedAMPM(e.target.value as "AM" | "PM")}
+        >
+          <MenuItem value="AM">AM</MenuItem>
+          <MenuItem value="PM">PM</MenuItem>
+        </Select>
+      </FormControl>
+
+      {/* Sort Order */}
+      <FormControl size="small">
+        <InputLabel>Sort Order</InputLabel>
+        <Select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+        >
+          <MenuItem value="asc">Ascending</MenuItem>
+          <MenuItem value="desc">Descending</MenuItem>
+        </Select>
+      </FormControl>
+
+      {/* 12h/24h Switch */}
+      <div className="flex items-center">
+        <span className="text-gray-600 mr-2">12H</span>
+        <Switch checked={is24Hour} onChange={() => setIs24Hour(!is24Hour)} />
+        <span className="text-gray-600 ml-2">24H</span>
       </div>
     </div>
   );
 };
 
-export default TimelineFilter;
+export default NotesTimelineFilter;

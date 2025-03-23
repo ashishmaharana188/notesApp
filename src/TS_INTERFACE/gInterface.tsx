@@ -49,11 +49,13 @@ export interface noteTimelineState {
   activeInterval: number | null;
 }
 
-export interface TimelineFilterProps {
-  onIntervalChange: (interval: "6h" | "12h" | "24h") => void;
-  onSortOrderChange: (order: "asc" | "desc") => void;
-  onAMPMChange: (ampm: "AM" | "PM") => void;
-  currentInterval: "6h" | "12h";
-  currentSortOrder: "asc" | "desc";
-  currentAMPM: "AM" | "PM";
+export interface NotesTimelineFilterProps {
+  interval: "6h" | "12h" | "24h";
+  setInterval: (value: "6h" | "12h" | "24h") => void;
+  selectedAMPM: "AM" | "PM";
+  setSelectedAMPM: (value: "AM" | "PM") => void;
+  sortOrder: "asc" | "desc";
+  setSortOrder: (value: "asc" | "desc") => void;
+  is24Hour: boolean;
+  setIs24Hour: (value: boolean) => void;
 }
