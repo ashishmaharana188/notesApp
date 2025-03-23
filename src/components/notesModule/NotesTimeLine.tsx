@@ -33,7 +33,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   const [isElastic, setIsElastic] = useState(false);
   const timelineRef = useRef<HTMLUListElement | null>(null);
 
-  // Filtered notes based on selected AM/PM and sorting order
+  // Filter and sort notes based on selection
   const filteredNotes = useMemo(() => {
     let filtered = notes;
 
@@ -50,31 +50,31 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
     );
   }, [notes, sortOrder, selectedAMPM, is24Hour]);
 
-  // Generate timeline intervals based on selected interval setting
+  // Generate and sort time intervals
   const timeIntervals = useMemo(() => {
     let intervals = [];
 
     if (interval === "6h") {
-      // If "6h" is selected, generate 6 one-hour slots
       const startHour = selectedAMPM === "AM" ? 0 : 12;
       for (let i = startHour; i < startHour + 6; i++) {
         intervals.push(moment().startOf("day").add(i, "hours").valueOf());
       }
     } else if (interval === "12h") {
-      // If "12h" is selected, generate 12 one-hour slots
       const startHour = selectedAMPM === "AM" ? 0 : 12;
       for (let i = startHour; i < startHour + 12; i++) {
         intervals.push(moment().startOf("day").add(i, "hours").valueOf());
       }
     } else {
-      // If "24h" is selected, generate 24 one-hour slots
       for (let i = 0; i < 24; i++) {
         intervals.push(moment().startOf("day").add(i, "hours").valueOf());
       }
     }
 
-    return intervals;
-  }, [interval, selectedAMPM]);
+    // Apply sorting based on ascending or descending order
+    return sortOrder === "asc"
+      ? intervals.sort((a, b) => a - b)
+      : intervals.sort((a, b) => b - a);
+  }, [interval, selectedAMPM, sortOrder]);
 
   return (
     <div>
