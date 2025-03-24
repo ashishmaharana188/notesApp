@@ -226,7 +226,9 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
           return (
             <TimelineItem
               key={time}
-              className={notesAtThisTime.length > 0 ? "mb-10 mt-10" : ""}
+              className={
+                notesAtThisTime.length > 0 ? "mb-10 mt-10 -ml-80" : "-ml-100"
+              }
             >
               <TimelineSeparator>
                 <div className="relative flex flex-col items-center">
@@ -263,7 +265,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
 
               {notesAtThisTime.length > 0 && (
                 <div
-                  className={`absolute left-50 -top-5 flex gap-4 transition-transform ${
+                  className={`absolute left-150 -top-5 flex gap-4 transition-transform ${
                     isElastic
                       ? "duration-200 ease-out"
                       : "duration-500 ease-out"
