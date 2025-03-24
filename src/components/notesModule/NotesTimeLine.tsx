@@ -27,6 +27,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   const [scrollPositions, setScrollPositions] = useState<{
     [key: number]: number;
   }>({});
+  const [activeInterval, setActiveInterval] = useState<number | null>(null);
   const [preservedIntervals, setPreservedIntervals] = useState<Set<number>>(
     new Set()
   );
@@ -76,6 +77,134 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
       : intervals.sort((a, b) => b - a);
   }, [interval, selectedAMPM, sortOrder]);
 
+  const findAdjacentInterval = useCallback(
+    (current: number, direction: "next" | "prev"): number | null => {
+      const index = timeIntervals.indexOf(current);
+      if (index === -1) return null;
+      const range =
+        direction === "next"
+          ? timeIntervals.slice(index + 1)
+          : timeIntervals.slice(0, index).reverse();
+      return (
+        range.find((time) =>
+          notes.some((note) => moment(note.time).isSame(moment(time), "hour"))
+        ) || null
+      );
+    },
+    [notes, timeIntervals]
+  );
+
+  /** Handles clicking on a time interval */
+  const handleClick = useCallback(
+    (time: number) => {
+      if (activeInterval === time) {
+        // Reset when clicking the same interval
+        setActiveInterval(null);
+        setClickedDot(null);
+        setScrollPositions((prev) => {
+          const newPositions: { [key: number]: number } = {};
+          Object.keys(prev).forEach((key) => {
+            const timeKey = parseInt(key, 10);
+            if (preservedIntervals.has(timeKey)) {
+              newPositions[timeKey] = prev[timeKey];
+            }
+          });
+          return newPositions;
+        });
+      } else {
+        setActiveInterval(time);
+        setClickedDot(time);
+      }
+    },
+    [activeInterval, preservedIntervals]
+  );
+
+  /** Handles scrolling behavior */
+  const handleScroll = useCallback(
+    (event: WheelEvent) => {
+      if (!activeInterval) return;
+      event.preventDefault();
+
+      const notesAtThisTime = notes.filter((note) =>
+        moment(note.time).isSame(moment(activeInterval), "hour")
+      );
+      if (notesAtThisTime.length === 0) return;
+
+      const maxOffset = -((notesAtThisTime.length - 1) * 180);
+      const newOffset =
+        (scrollPositions[activeInterval] || 0) + (event.deltaY > 0 ? -50 : 50);
+      const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
+
+      setScrollPositions((prev) => ({
+        ...prev,
+        [activeInterval]: updatedOffset,
+      }));
+
+      if (updatedOffset <= maxOffset - 10) {
+        // Preserve this interval if fully scrolled
+        setPreservedIntervals((prev) => new Set([...prev, activeInterval]));
+        setIsElastic(true);
+        setTimeout(() => {
+          setIsElastic(false);
+          const nextInterval = findAdjacentInterval(activeInterval, "next");
+          if (nextInterval) {
+            setActiveInterval(nextInterval);
+            setClickedDot(nextInterval);
+          }
+        }, 300);
+      } else if (updatedOffset >= 10) {
+        // Only switch to an upper interval if it's preserved
+        if (preservedIntervals.has(activeInterval)) {
+          setIsElastic(true);
+          setTimeout(() => {
+            setIsElastic(false);
+            const prevInterval = findAdjacentInterval(activeInterval, "prev");
+            if (prevInterval) {
+              setActiveInterval(prevInterval);
+              setClickedDot(prevInterval); // Set the clicked dot to the previous interval
+            }
+          }, 300);
+        }
+      }
+    },
+    [
+      activeInterval,
+      notes,
+      scrollPositions,
+      findAdjacentInterval,
+      preservedIntervals,
+    ]
+  );
+
+  useEffect(() => {
+    if (activeInterval) {
+      window.addEventListener("wheel", handleScroll, { passive: false });
+    } else {
+      // Reset scroll positions if no active interval
+      setScrollPositions((prev) => {
+        const newPositions: { [key: number]: number } = {};
+        let hasChanges = false;
+
+        Object.keys(prev).forEach((key) => {
+          const timeKey = parseInt(key, 10);
+          if (preservedIntervals.has(timeKey)) {
+            newPositions[timeKey] = prev[timeKey];
+          }
+        });
+
+        if (Object.keys(newPositions).length !== Object.keys(prev).length) {
+          hasChanges = true;
+        }
+
+        return hasChanges ? newPositions : prev;
+      });
+    }
+
+    return () => {
+      window.removeEventListener("wheel", handleScroll);
+    };
+  }, [activeInterval, handleScroll, preservedIntervals]);
+
   return (
     <div>
       <NotesTimelineFilter
@@ -109,16 +238,16 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
                         ? "bg-gray-800 shadow-lg"
                         : ""
                     }`}
-                    onClick={() => setClickedDot(time)}
+                    onClick={() => handleClick(time)}
                   />
                   <TimelineConnector
                     className="min-h-[100px] cursor-pointer"
-                    onClick={() => setClickedDot(time)}
+                    onClick={() => handleClick(time)}
                   />
                   <div className="absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10">
                     <button
                       className="text-white text-sm px-3 py-1"
-                      onClick={() => setClickedDot(time)}
+                      onClick={() => handleClick(time)}
                     >
                       {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
                     </button>
