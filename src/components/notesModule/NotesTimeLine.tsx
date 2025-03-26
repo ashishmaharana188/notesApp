@@ -27,14 +27,17 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   const [scrollPositions, setScrollPositions] = useState<{
     [key: number]: number;
   }>({});
+  const [preservedScrollPositions, setPreservedScrollPositions] = useState<
+    Set<number>
+  >(new Set());
   const [activeInterval, setActiveInterval] = useState<number | null>(null);
   const [preservedIntervals, setPreservedIntervals] = useState<Set<number>>(
     new Set()
   );
   const [isElastic, setIsElastic] = useState(false);
   const timelineRef = useRef<HTMLUListElement | null>(null);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Filter and sort notes based on selection
   const filteredNotes = useMemo(() => {
     let filtered = notes;
 
@@ -51,17 +54,15 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
     );
   }, [notes, sortOrder, selectedAMPM, is24Hour]);
 
-  // Generate and sort time intervals
   const timeIntervals = useMemo(() => {
     let intervals = [];
+    const startHour = selectedAMPM === "AM" ? 0 : 12;
 
     if (interval === "6h") {
-      const startHour = selectedAMPM === "AM" ? 0 : 12;
       for (let i = startHour; i < startHour + 6; i++) {
         intervals.push(moment().startOf("day").add(i, "hours").valueOf());
       }
     } else if (interval === "12h") {
-      const startHour = selectedAMPM === "AM" ? 0 : 12;
       for (let i = startHour; i < startHour + 12; i++) {
         intervals.push(moment().startOf("day").add(i, "hours").valueOf());
       }
@@ -71,7 +72,6 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
       }
     }
 
-    // Apply sorting based on ascending or descending order
     return sortOrder === "asc"
       ? intervals.sort((a, b) => a - b)
       : intervals.sort((a, b) => b - a);
@@ -94,36 +94,77 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
     [notes, timeIntervals]
   );
 
-  /** Handles clicking on a time interval */
+  /** Handles clicking on a time interval (single & double click) */
   const handleClick = useCallback(
     (time: number) => {
-      if (activeInterval === time) {
-        // Reset when clicking the same interval
-        setActiveInterval(null);
-        setClickedDot(null);
-        setScrollPositions((prev) => {
-          const newPositions: { [key: number]: number } = {};
-          Object.keys(prev).forEach((key) => {
-            const timeKey = parseInt(key, 10);
-            if (preservedIntervals.has(timeKey)) {
-              newPositions[timeKey] = prev[timeKey];
-            }
-          });
-          return newPositions;
+      if (clickTimeoutRef.current) {
+        // Double-click detected
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+
+        setPreservedScrollPositions((prev) => {
+          const newSet = new Set(prev);
+          if (newSet.has(time)) {
+            console.log(
+              `Double-click detected: Removing preserved time ${time}`
+            );
+
+            setScrollPositions((prevPositions) => {
+              const updatedPositions = { ...prevPositions };
+              delete updatedPositions[time]; // Reset scroll position
+              console.log(
+                `Resetting scroll position for time ${time}, new positions:`,
+                updatedPositions
+              );
+              return updatedPositions;
+            });
+
+            newSet.delete(time); // Unpreserve
+          } else {
+            console.log(`Double-click detected: Preserving time ${time}`);
+            newSet.add(time); // Preserve
+          }
+          return newSet;
         });
       } else {
-        setActiveInterval(time);
-        setClickedDot(time);
+        // Single-click logic
+        console.log(`Single-click detected on time: ${time}`);
+        clickTimeoutRef.current = setTimeout(() => {
+          setClickedDot((prev) => {
+            console.log(
+              `Toggling clickedDot from ${prev} to ${
+                prev === time ? null : time
+              }`
+            );
+            return prev === time ? null : time;
+          });
+
+          setActiveInterval((prev) => {
+            console.log(
+              `Toggling activeInterval from ${prev} to ${
+                prev === time ? null : time
+              }`
+            );
+            return prev === time ? null : time;
+          });
+
+          clickTimeoutRef.current = null;
+        }, 300);
       }
     },
-    [activeInterval, preservedIntervals]
+    [preservedScrollPositions, scrollPositions]
   );
 
   /** Handles scrolling behavior */
   const handleScroll = useCallback(
     (event: WheelEvent) => {
       if (!activeInterval) return;
+
+      // Stop the page from scrolling instantly
       event.preventDefault();
+      event.stopPropagation();
+
+      console.log(`Scrolling on interval: ${activeInterval}`);
 
       const notesAtThisTime = notes.filter((note) =>
         moment(note.time).isSame(moment(activeInterval), "hour")
@@ -135,36 +176,30 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
         (scrollPositions[activeInterval] || 0) + (event.deltaY > 0 ? -50 : 50);
       const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
 
+      console.log(
+        `Updated scroll position for ${activeInterval}: ${updatedOffset}`
+      );
+
       setScrollPositions((prev) => ({
         ...prev,
         [activeInterval]: updatedOffset,
       }));
 
+      // Automatically move to the next interval when scrolled fully
       if (updatedOffset <= maxOffset - 10) {
-        // Preserve this interval if fully scrolled
-        setPreservedIntervals((prev) => new Set([...prev, activeInterval]));
+        console.log(`Fully scrolled on interval: ${activeInterval}`);
+        setPreservedIntervals(new Set([...preservedIntervals, activeInterval]));
         setIsElastic(true);
+
         setTimeout(() => {
           setIsElastic(false);
           const nextInterval = findAdjacentInterval(activeInterval, "next");
           if (nextInterval) {
+            console.log(`Moving to next interval: ${nextInterval}`);
             setActiveInterval(nextInterval);
             setClickedDot(nextInterval);
           }
-        }, 300);
-      } else if (updatedOffset >= 10) {
-        // Only switch to an upper interval if it's preserved
-        if (preservedIntervals.has(activeInterval)) {
-          setIsElastic(true);
-          setTimeout(() => {
-            setIsElastic(false);
-            const prevInterval = findAdjacentInterval(activeInterval, "prev");
-            if (prevInterval) {
-              setActiveInterval(prevInterval);
-              setClickedDot(prevInterval); // Set the clicked dot to the previous interval
-            }
-          }, 300);
-        }
+        }, 100); // Reduced timeout for quicker response
       }
     },
     [
@@ -177,33 +212,20 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   );
 
   useEffect(() => {
-    if (activeInterval) {
+    if (activeInterval !== null) {
       window.addEventListener("wheel", handleScroll, { passive: false });
     } else {
-      // Reset scroll positions if no active interval
-      setScrollPositions((prev) => {
-        const newPositions: { [key: number]: number } = {};
-        let hasChanges = false;
-
-        Object.keys(prev).forEach((key) => {
-          const timeKey = parseInt(key, 10);
-          if (preservedIntervals.has(timeKey)) {
-            newPositions[timeKey] = prev[timeKey];
-          }
-        });
-
-        if (Object.keys(newPositions).length !== Object.keys(prev).length) {
-          hasChanges = true;
-        }
-
-        return hasChanges ? newPositions : prev;
-      });
+      window.removeEventListener("wheel", handleScroll);
     }
 
     return () => {
       window.removeEventListener("wheel", handleScroll);
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
     };
-  }, [activeInterval, handleScroll, preservedIntervals]);
+  }, [activeInterval, handleScroll]);
 
   return (
     <div>
