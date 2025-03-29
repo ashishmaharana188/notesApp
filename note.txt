@@ -1,3 +1,160 @@
-add filters feature
-add CSSProperties
-new module
+
+
+  const handleClick = useCallback(
+    (time: number) => {
+      console.log(`🖱 Click detected on time: ${time}`);
+
+      if (clickTimeoutRef.current) {
+        console.log(`🟢 Double-click detected on time: ${time}`);
+
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+
+        // ✅ Toggle preserved scroll positions on double-click
+        setPreservedScrollPositions((prev) => {
+          const newSet = new Set(prev);
+          if (newSet.has(time)) {
+            console.log(`🔄 Removing preserved scroll for ${time}`);
+            setScrollPositions((prevPositions) => {
+              const updatedPositions = { ...prevPositions };
+              delete updatedPositions[time];
+              return updatedPositions;
+            });
+            newSet.delete(time);
+          } else {
+            console.log(`📌 Adding preserved scroll for ${time}`);
+            newSet.add(time);
+          }
+          return newSet;
+        });
+
+        return; // ✅ Exit early for double-click
+      }
+
+      console.log(`⏳ Waiting for second click (Double-click detection open)`);
+
+      // ✅ Store event time instead of using `Date.now()`
+      lastToggleTimeRef.current = performance.now();
+
+      clickTimeoutRef.current = setTimeout(() => {
+        console.log(
+          `⏳ Double-click window expired → Treating as single click.`
+        );
+        clickTimeoutRef.current = null;
+
+        console.log(`✅ Single-click confirmed on time: ${time}`);
+
+        if (activeInterval === time) {
+          console.log("🔄 Deactivating interval & restoring normal scrolling");
+
+          setIsHorizontalScrolling(false);
+          setActiveInterval(null);
+          setClickedDot(null);
+
+          // ✅ Restore default scrolling if no active interval
+          setTimeout(() => {
+            if (!activeInterval) {
+              console.log(
+                "🛑 No active interval → Restoring default scrolling"
+              );
+              window.removeEventListener("wheel", preventDefaultScroll);
+            }
+          }, 10);
+
+          return;
+        }
+
+        // ✅ Activate new interval & block scrolling
+        console.log("➡️ Activating horizontal scrolling for time:", time);
+        window.addEventListener("wheel", preventDefaultScroll, {
+          passive: false,
+        });
+
+        setIsHorizontalScrolling(true);
+        setClickedDot(time);
+        setActiveInterval(time);
+      }, 300); // ✅ 300ms double-click detection
+    },
+    [activeInterval, preventDefaultScroll]
+  );
+
+  /** Handles scrolling behavior */
+  const handleScroll = useCallback(
+    (event: WheelEvent) => {
+      if (!activeInterval) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      console.log(`🌀 Scrolling on interval: ${activeInterval}`);
+
+      const notesAtThisTime = notes.filter((note) =>
+        moment(note.time).isSame(moment(activeInterval), "hour")
+      );
+
+      if (notesAtThisTime.length === 0) return;
+
+      const maxOffset = -((notesAtThisTime.length - 1) * 180);
+      const newOffset =
+        (scrollPositions[activeInterval] || 0) + (event.deltaY > 0 ? -50 : 50);
+      const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
+
+      console.log(
+        `📍 Updated scroll position for ${activeInterval}: ${updatedOffset}`
+      );
+
+      setScrollPositions((prev) => ({
+        ...prev,
+        [activeInterval]: updatedOffset,
+      }));
+
+      if (updatedOffset <= maxOffset - 10) {
+        console.log(`✅ Fully scrolled on interval: ${activeInterval}`);
+
+        setPreservedIntervals(new Set([...preservedIntervals, activeInterval]));
+        setIsElastic(true);
+
+        setTimeout(() => {
+          setIsElastic(false);
+          const nextInterval = findAdjacentInterval(activeInterval, "next");
+
+          if (nextInterval) {
+            console.log(`➡️ Moving to next interval: ${nextInterval}`);
+
+            setActiveInterval(nextInterval);
+            setClickedDot(nextInterval);
+          }
+        }, 200);
+      }
+    },
+    [
+      activeInterval,
+      notes,
+      scrollPositions,
+      findAdjacentInterval,
+      preservedIntervals,
+    ]
+  );
+
+  /** Manage event listeners */
+  useEffect(() => {
+    if (isHorizontalScrolling) {
+      window.addEventListener("wheel", handleScroll, { passive: false });
+      window.addEventListener("wheel", preventDefaultScroll, {
+        passive: false,
+      });
+    } else {
+      window.removeEventListener("wheel", handleScroll);
+      window.removeEventListener("wheel", preventDefaultScroll);
+    }
+
+    return () => {
+      window.removeEventListener("wheel", handleScroll);
+      window.removeEventListener("wheel", preventDefaultScroll);
+
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
+    };
+  }, [isHorizontalScrolling, handleScroll, preventDefaultScroll]);
