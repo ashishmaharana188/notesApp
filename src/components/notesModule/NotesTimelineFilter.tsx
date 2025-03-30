@@ -6,17 +6,7 @@ import {
   MenuItem,
   Switch,
 } from "@mui/material";
-
-interface NotesTimelineFilterProps {
-  interval: "6h" | "12h" | "24h";
-  setInterval: (value: "6h" | "12h" | "24h") => void;
-  selectedAMPM: "AM" | "PM";
-  setSelectedAMPM: (value: "AM" | "PM") => void;
-  sortOrder: "asc" | "desc";
-  setSortOrder: (value: "asc" | "desc") => void;
-  is24Hour: boolean;
-  setIs24Hour: (value: boolean) => void;
-}
+import { NotesTimelineFilterProps } from "../../TS_INTERFACE/gInterface";
 
 const NotesTimelineFilter: React.FC<NotesTimelineFilterProps> = ({
   interval,
