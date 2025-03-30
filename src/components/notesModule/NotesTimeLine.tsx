@@ -13,16 +13,16 @@ import TimelineConnector from "@mui/lab/TimelineConnector";
 import TimelineContent from "@mui/lab/TimelineContent";
 import TimelineDot from "@mui/lab/TimelineDot";
 import NoteCard from "./NotesCard";
-import { NoteListProps } from "../../TS_INTERFACE/gInterface";
+import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
-import NotesTimelineFilter from "./NotesTimelineFilter";
 
-const NotesTimeline = ({ notes }: NoteListProps) => {
-  const [interval, setInterval] = useState<"6h" | "12h" | "24h">("12h");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [selectedAMPM, setSelectedAMPM] = useState<"AM" | "PM">("AM");
-  const [is24Hour, setIs24Hour] = useState(false);
-
+const NotesTimeline = ({
+  notes,
+  interval,
+  sortOrder,
+  selectedAMPM,
+  is24Hour,
+}: NotesTimelineProps) => {
   const [clickedDot, setClickedDot] = useState<number | null>(null);
   const [scrollPositions, setScrollPositions] = useState<{
     [key: number]: number;
@@ -39,6 +39,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isHorizontalScrolling, setIsHorizontalScrolling] = useState(false);
 
+  // Filtered notes (applies only if filters are set)
   const filteredNotes = useMemo(() => {
     let filtered = notes;
 
@@ -56,6 +57,11 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
   }, [notes, sortOrder, selectedAMPM, is24Hour]);
 
   const timeIntervals = useMemo(() => {
+    console.log("🔄 Computing time intervals...");
+    console.log("⏳ Interval Type:", interval);
+    console.log("🕒 Selected AM/PM:", selectedAMPM);
+    console.log("🔼 Sort Order:", sortOrder);
+
     let intervals = [];
     const startHour = selectedAMPM === "AM" ? 0 : 12;
 
@@ -72,6 +78,8 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
         intervals.push(moment().startOf("day").add(i, "hours").valueOf());
       }
     }
+
+    console.log("🕰 Generated Time Intervals:", intervals);
 
     return sortOrder === "asc"
       ? intervals.sort((a, b) => a - b)
@@ -286,18 +294,11 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
 
   return (
     <div>
-      <NotesTimelineFilter
-        interval={interval}
-        setInterval={setInterval}
-        selectedAMPM={selectedAMPM}
-        setSelectedAMPM={setSelectedAMPM}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-        is24Hour={is24Hour}
-        setIs24Hour={setIs24Hour}
-      />
       <Timeline ref={timelineRef} position="right">
         {timeIntervals.map((time) => {
+          console.log(
+            `📌 Creating TimelineItem for: ${moment(time).format("hh:mm A")}`
+          );
           const notesAtThisTime = filteredNotes.filter((note) =>
             moment(note.time).isSame(moment(time), "hour")
           );
@@ -306,7 +307,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
             <TimelineItem
               key={time}
               className={
-                notesAtThisTime.length > 0 ? "mb-10 mt-10 -ml-80" : "-ml-100"
+                notesAtThisTime.length > 0 ? "mb-10 mt-10 -mr-10" : "-ml-10"
               }
             >
               <TimelineSeparator>
@@ -344,7 +345,7 @@ const NotesTimeline = ({ notes }: NoteListProps) => {
 
               {notesAtThisTime.length > 0 && (
                 <div
-                  className={`absolute left-150 -top-5 flex gap-4 transition-transform ${
+                  className={`absolute left-65 -top-5 flex gap-4 transition-transform ${
                     isElastic
                       ? "duration-200 ease-out"
                       : "duration-500 ease-out"

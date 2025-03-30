@@ -59,3 +59,10 @@ export interface NotesTimelineFilterProps {
   is24Hour: boolean;
   setIs24Hour: (value: boolean) => void;
 }
+
+export interface NotesTimelineProps extends NoteListProps {
+  interval: "6h" | "12h" | "24h";
+  sortOrder: "asc" | "desc";
+  selectedAMPM: "AM" | "PM";
+  is24Hour: boolean;
+}
