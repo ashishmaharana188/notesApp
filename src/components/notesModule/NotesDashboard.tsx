@@ -71,7 +71,7 @@ const NotesDashboardPage = () => {
 
       {/* 🎛️ Filter Panel (Appears above the buttons) */}
       {filterButton && (
-        <div className="absolute bottom-24 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200">
+        <div className="fixed bottom-40 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200">
           <NotesTimelineFilter
             interval={interval}
             setInterval={setInterval}
