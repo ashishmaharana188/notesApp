@@ -158,3 +158,142 @@
       }
     };
   }, [isHorizontalScrolling, handleScroll, preventDefaultScroll]);
+
+
+  -> user clicks notedashboardpage
+-> page loads with timeline of with the current time depending on the intervals.
+-> user can select 6hr 12hr and 24hr interval.
+-> when 6hr interval has load next and previous buttons
+-> user selects 6hr and clicks on loadmore to go ahead when ever user skips a full day. say the inception was 5pm 31st march, then if user clicks load more and keeps on forwarading/loading 6hours more and goes to 1st april. then it should be stored in a state wth object, that has cuurent date and the full days intervals. 
+-> user clicks load previous, this state is used to load the previous as per selected interval. so if user selcts 12hr at 1st april 1 am as top time in the interval, then previous should subtract 12 fromand clicks previous then the previous 12hours should show 
+
+
+the prevuious day and all its intervals should be stored somewhere and the currentimeline should be updated with next days full intervals. so when we switch back, we check if the next batch of intervals include a time from previous day if so then. if the  number of time stamp from previous days is >2 which means that if 1st paril 3.am is the top timestamp and user clicks previous load then it check if the 6 hours - 3am loads times that lie on 31st. then if count of those time is > 2 then fetch that many, so if user it at 1stapril 3am and they select 12hr as interval and click load previous, then it should take the current interval - 12hours and check, when it check it will find that 3 lie in 1st april and 9 lie in 31st paril, so wil will fetch the prvious stored that of 31st april that has all 24hr times and we will take the end 9time stamps and + it to the start of current timestamp and show the value. What is mean to do with this is, the load more and previous only sotre previous and next for the current intervals, that way we can reduce load and keep application switching fast. So if current timeline that is active is on 31st march then it has two states to manage with the next logic, when ever user goes to 1st april it should store the current timeline is previous state and store the 1st april in current state. If he goes to 30 march from 31st march isntead of 1st april then 31st goes t previous state and current is 30th march.  when they go to 31st again it uses previous state since previous state since 31st is available in previous state, so current = prev, and prev is replaced with 30th's 24hr time. Then when user goes to 30th again is can do the same thing but if user goes to 1st april the current is 1st april and prev is 31st. get this? dont code lets talk
+
+
+
+
+  // NEW: Handle Next Day
+  const handleNextDay = useCallback(() => {
+    console.log("➡️ Loading next day");
+
+    // Check if we're navigating to the previously stored day
+    if (
+      prevStateIntervals.length > 0 &&
+      prevStateDate.isSame(moment(currentDate).add(1, "day"), "day")
+    ) {
+      console.log("♻️ Using cached next day data");
+      swapTimelineStates();
+    } else {
+      // Store current state before moving to next day
+      setPrevStateDate(moment(currentDate));
+      setPrevStateIntervals([...currentTimeline]);
+
+      // Move to next day
+      setCurrentDate(moment(currentDate).add(1, "day"));
+
+      // Generate new intervals for next day
+      const nextDay = moment(currentDate).add(1, "day");
+      const newIntervals = generateTimeIntervals(nextDay, interval);
+      setCurrentTimeline(newIntervals);
+    }
+
+    // Reset UI state
+    setClickedDot(null);
+    setActiveInterval(null);
+    setIsHorizontalScrolling(false);
+  }, [
+    currentDate,
+    currentTimeline,
+    prevStateDate,
+    prevStateIntervals,
+    swapTimelineStates,
+    interval,
+    generateTimeIntervals,
+  ]);
+
+  // NEW: Handle Previous Day
+  const handlePrevDay = useCallback(() => {
+    console.log("⬅️ Loading previous day");
+
+    // Calculate how many intervals would come from previous day
+    const timeToSubtract = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
+
+    // Check if currentTimeline is empty
+    if (currentTimeline.length === 0) {
+      console.log(
+        "⚠️ Current timeline is empty, generating intervals for previous day"
+      );
+      const prevDay = moment().subtract(1, "day");
+      const newIntervals = generateTimeIntervals(prevDay, interval);
+      setCurrentTimeline(newIntervals);
+      setCurrentDate(prevDay);
+      return;
+    }
+
+    const firstCurrentTime = currentTimeline[0]; // Get first timestamp
+    const calculatedPrevDayTime = moment(firstCurrentTime).subtract(
+      timeToSubtract,
+      "hours"
+    );
+
+    // Count how many timestamps would be from previous day
+    const prevDayTimeCount = timeToSubtract - calculatedPrevDayTime.hour();
+
+    // If we have enough timestamps from previous day AND that day is stored
+    if (
+      prevDayTimeCount >= 2 &&
+      prevStateIntervals.length > 0 &&
+      prevStateDate.isSame(moment(currentDate).subtract(1, "day"), "day")
+    ) {
+      console.log(
+        `♻️ Using ${prevDayTimeCount} cached timestamps from previous day`
+      );
+
+      // Get needed timestamps from previous day
+      const neededPrevDayIntervals =
+        sortOrder === "asc"
+          ? prevStateIntervals.slice(-prevDayTimeCount)
+          : prevStateIntervals.slice(0, prevDayTimeCount);
+
+      // Get timestamps from current day we want to keep
+      const keptCurrentIntervals =
+        sortOrder === "asc"
+          ? currentTimeline.slice(0, currentTimeline.length - prevDayTimeCount)
+          : currentTimeline.slice(prevDayTimeCount);
+
+      // Create new timeline with combined intervals
+      const newTimeline =
+        sortOrder === "asc"
+          ? [...neededPrevDayIntervals, ...keptCurrentIntervals]
+          : [...keptCurrentIntervals, ...neededPrevDayIntervals];
+
+      setCurrentTimeline(newTimeline);
+
+      // Don't change the current date but update what's shown
+    } else {
+      // Standard day switching logic
+      setPrevStateDate(moment(currentDate));
+      setPrevStateIntervals([...currentTimeline]);
+
+      // Move to previous day and generate new intervals
+      const prevDay = moment(currentDate).subtract(1, "day");
+      setCurrentDate(prevDay);
+
+      const newIntervals = generateTimeIntervals(prevDay, interval);
+      setCurrentTimeline(newIntervals);
+    }
+
+    // Reset UI state
+    setClickedDot(null);
+    setActiveInterval(null);
+    setIsHorizontalScrolling(false);
+  }, [
+    currentDate,
+    currentTimeline,
+    prevStateDate,
+    prevStateIntervals,
+    interval,
+    sortOrder,
+    generateTimeIntervals,
+  ]);

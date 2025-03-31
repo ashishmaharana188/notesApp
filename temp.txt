@@ -45,49 +45,25 @@ const NotesTimeline = ({
   const [currentStartTime, setCurrentStartTime] = useState(
     moment().startOf("day")
   ); // Stores the active interval start time
-  type CachedDayData = {
-    timeIntervals: number[];
-    scrollPositions: Record<number, number>;
-  };
-
-  // Update the state definition
-  const [cachedDays, setCachedDays] = useState<Record<string, CachedDayData>>(
-    {}
-  );
+  const [cachedDays, setCachedDays] = useState<Record<string, number[]>>({}); // Cache to store full-day notes
 
   const timeIntervals = useMemo(() => {
-    const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
-    const intervals = new Set<number>();
+    let intervals = new Set<number>();
+    let intervalSize = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
 
-    // Add regular intervals within the current window
-    for (let i = 0; i < intervalHours; i++) {
-      const intervalTime = moment(currentStartTime)
-        .add(i, "hours")
-        .startOf("hour")
-        .valueOf();
-      intervals.add(intervalTime);
+    for (let i = 0; i < intervalSize; i++) {
+      intervals.add(
+        moment(currentStartTime).add(i, "hours").startOf("hour").valueOf()
+      );
     }
 
-    // Find notes within the current day AND time range
-    const currentEndTime = moment(currentStartTime).add(intervalHours, "hours");
-
+    // ✅ Include any notes within the selected day if they are in the current time range
     notes.forEach((note) => {
-      const noteTime = moment(note.date);
-
-      // Only add intervals for notes within the visible time range
-      if (
-        noteTime.isSame(moment(currentStartTime), "day") &&
-        noteTime.isSameOrAfter(currentStartTime) &&
-        noteTime.isBefore(currentEndTime)
-      ) {
-        intervals.add(noteTime.startOf("hour").valueOf());
-        console.log(
-          `📌 Added interval for note at ${noteTime.format("HH:mm")}`
-        );
+      if (moment(note.time).isSame(moment(currentStartTime), "day")) {
+        intervals.add(moment(note.time).startOf("hour").valueOf());
       }
     });
 
-    // Sort intervals based on user preference
     return sortOrder === "asc"
       ? Array.from(intervals).sort((a, b) => a - b)
       : Array.from(intervals).sort((a, b) => b - a);
@@ -114,53 +90,32 @@ const NotesTimeline = ({
     event.preventDefault();
   }, []);
 
-  // Update the filteredNotes useMemo function
   const filteredNotes = useMemo(() => {
-    console.log("📝 Original Notes:", notes);
+    console.log("📝 Original Notes:", notes); // Log the original notes to see the entire data
 
     const notesFilteredByDate = notes.filter((note) => {
-      // Use note.date for date comparison
       const noteDate = moment(note.date).startOf("day");
-      const currentDate = moment(currentStartTime).startOf("day");
-      const isSameDay = noteDate.isSame(currentDate, "day");
-      console.log(
-        `Note ID: ${note.id} Date Filter:`,
-        isSameDay,
-        noteDate.format("YYYY-MM-DD"),
-        "vs",
-        currentDate.format("YYYY-MM-DD")
-      );
+      const isSameDay = noteDate.isSame(moment(currentStartTime), "day");
+      console.log(`Note ID: ${note.id} Date Filter:`, isSameDay); // Log whether the note matches the same day
       return isSameDay;
     });
 
     console.log("📅 Filtered by Date (Same Day):", notesFilteredByDate);
 
     const notesFilteredByTime = notesFilteredByDate.filter((note) => {
-      // Make sure we have both date and time information for the note
-      const noteHour = moment(note.date).startOf("hour");
-
-      // Check if this hour falls within our visible time intervals
-      const isInTimeIntervals = timeIntervals.some((interval) =>
-        moment(interval).isSame(noteHour, "hour")
-      );
-
-      console.log(
-        `Note ID: ${note.id} Time Filter:`,
-        isInTimeIntervals,
-        `Note hour: ${noteHour.format("HH:mm")}`
-      );
-
+      const noteTime = moment(note.date).startOf("hour").valueOf(); // Ensure correct field
+      const isInTimeIntervals = timeIntervals.includes(noteTime);
+      console.log(`Note ID: ${note.id} Time Filter:`, isInTimeIntervals); // Log whether the note time matches the interval
       return isInTimeIntervals;
     });
 
     console.log("⏳ Filtered by Time Intervals:", notesFilteredByTime);
 
-    // Continue with AMPM filtering and sorting as before
     const notesFilteredByAMPM = notesFilteredByTime.filter((note) => {
       const matchesAMPM = is24Hour
         ? true
         : moment(note.date).format("A") === selectedAMPM;
-      console.log(`Note ID: ${note.id} AMPM Filter:`, matchesAMPM);
+      console.log(`Note ID: ${note.id} AMPM Filter:`, matchesAMPM); // Log whether the note matches the AM/PM condition
       return matchesAMPM;
     });
 
@@ -172,7 +127,8 @@ const NotesTimeline = ({
         : moment(b.date).valueOf() - moment(a.date).valueOf()
     );
 
-    console.log("🔀 Sorted Notes:", sortedNotes);
+    console.log("🔀 Sorted Notes:", sortedNotes); // Log the sorted notes
+
     return sortedNotes;
   }, [
     notes,
@@ -213,86 +169,105 @@ const NotesTimeline = ({
       );
     });
   }, [filteredNotes, timeIntervals, currentStartTime]);
-  // Then in the navigation handlers:
+
   const handleNextInterval = () => {
     console.log("➡️ Next button clicked!");
-    const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
-    let nextStartTime = moment(currentStartTime).add(intervalHours, "hours");
 
-    // Cache current day's data before moving
-    const currentDayKey = moment(currentStartTime).format("YYYY-MM-DD");
-    setCachedDays((prev) => ({
-      ...prev,
-      [currentDayKey]: {
-        timeIntervals: timeIntervals,
-        scrollPositions: { ...scrollPositions },
-      },
-    }));
+    let nextStartTime = moment(currentStartTime).add(
+      interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
+      "hours"
+    );
 
-    // Check if we're moving to a new day
+    console.log(
+      "⏳ Calculated Next Start Time:",
+      nextStartTime.format("YYYY-MM-DD HH:mm")
+    );
+
     if (nextStartTime.isAfter(moment(currentStartTime).endOf("day"))) {
+      console.log("🗓 Moving to the next day...");
+
+      // Cache today's data before switching
+      console.log("📌 Caching today's timeline:", timeIntervals);
+      setCachedDays((prev) => ({
+        ...prev,
+        [moment(currentStartTime).format("YYYY-MM-DD")]: timeIntervals,
+      }));
+
+      // Move to the first interval of the next day
       nextStartTime = moment(currentStartTime).add(1, "day").startOf("day");
 
-      // Check if we already have cached data for this day
-      const nextDayKey = nextStartTime.format("YYYY-MM-DD");
-      if (cachedDays[nextDayKey]) {
-        console.log("📂 Using cached data for", nextDayKey);
-        // We can't directly set timeIntervals (it's computed via useMemo)
-        // Instead, set currentStartTime and let useMemo recompute with cached positions
+      console.log(
+        "🔄 Adjusted Next Start Time (Start of Next Day):",
+        nextStartTime.format("YYYY-MM-DD HH:mm")
+      );
+
+      // Check if we have cached data for the next day
+      const cachedDay = cachedDays[moment(nextStartTime).format("YYYY-MM-DD")];
+      if (cachedDay) {
+        console.log("✅ Restoring Cached Data for Next Day:", cachedDay);
         setCurrentStartTime(nextStartTime);
-        setScrollPositions(cachedDays[nextDayKey].scrollPositions);
         return;
       }
     }
 
-    // If no cache or not changing day, proceed normally
+    console.log(
+      "➡️ Updating Current Start Time to:",
+      nextStartTime.format("YYYY-MM-DD HH:mm")
+    );
     setCurrentStartTime(nextStartTime);
-    setScrollPositions({});
-    setActiveInterval(null);
-    setClickedDot(null);
   };
 
   const handlePreviousInterval = () => {
     console.log("⬅️ Previous button clicked!");
-    const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
+
     let prevStartTime = moment(currentStartTime).subtract(
-      intervalHours,
+      interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
       "hours"
     );
 
-    // Cache current day's data before moving
-    const currentDayKey = moment(currentStartTime).format("YYYY-MM-DD");
-    setCachedDays((prev) => ({
-      ...prev,
-      [currentDayKey]: {
-        timeIntervals: timeIntervals,
-        scrollPositions: { ...scrollPositions },
-      },
-    }));
+    console.log(
+      "⏳ Calculated Previous Start Time:",
+      prevStartTime.format("YYYY-MM-DD HH:mm")
+    );
 
-    // Check if we're moving to a previous day
     if (prevStartTime.isBefore(moment(currentStartTime).startOf("day"))) {
-      // Calculate end of previous day minus interval
+      console.log("🗓 Moving to the previous day...");
+
+      // Cache today's data before switching
+      console.log("📌 Caching today's timeline:", timeIntervals);
+      setCachedDays((prev) => ({
+        ...prev,
+        [moment(currentStartTime).format("YYYY-MM-DD")]: timeIntervals,
+      }));
+
+      // Move to the last interval of the previous day
       prevStartTime = moment(currentStartTime)
         .subtract(1, "day")
-        .startOf("day")
-        .add(24 - intervalHours, "hours");
+        .endOf("day")
+        .subtract(
+          interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
+          "hours"
+        );
 
-      // Check if we already have cached data for this day
-      const prevDayKey = prevStartTime.format("YYYY-MM-DD");
-      if (cachedDays[prevDayKey]) {
-        console.log("📂 Using cached data for", prevDayKey);
-        setCurrentStartTime(prevStartTime);
-        setScrollPositions(cachedDays[prevDayKey].scrollPositions);
+      console.log(
+        "🔄 Adjusted Previous Start Time (End of Previous Day):",
+        prevStartTime.format("YYYY-MM-DD HH:mm")
+      );
+
+      // Check if we have cached data for the previous day
+      const cachedDay = cachedDays[moment(prevStartTime).format("YYYY-MM-DD")];
+      if (cachedDay) {
+        console.log("✅ Restoring Cached Data for Previous Day:", cachedDay);
+        setCurrentStartTime(moment(prevStartTime).startOf("day"));
         return;
       }
     }
 
-    // If no cache or not changing day, proceed normally
+    console.log(
+      "⬅️ Updating Current Start Time to:",
+      prevStartTime.format("YYYY-MM-DD HH:mm")
+    );
     setCurrentStartTime(prevStartTime);
-    setScrollPositions({});
-    setActiveInterval(null);
-    setClickedDot(null);
   };
 
   /** Handles horizontal scrolling behavior */
@@ -511,22 +486,9 @@ const NotesTimeline = ({
           console.log(
             `📌 Creating TimelineItem for: ${moment(time).format("hh:mm A")}`
           );
-
-          const notesAtThisTime = filteredNotes.filter((note) => {
-            const noteHour = moment(note.date).startOf("hour");
-            const timelineHour = moment(time).startOf("hour");
-            const matches = noteHour.isSame(timelineHour, "hour");
-
-            if (matches) {
-              console.log(
-                `✅ Note ${note.id} matches timeline hour ${timelineHour.format(
-                  "HH:mm"
-                )}`
-              );
-            }
-
-            return matches;
-          });
+          const notesAtThisTime = filteredNotes.filter((note) =>
+            moment(note.time).isSame(moment(time), "hour")
+          );
 
           return (
             <TimelineItem
