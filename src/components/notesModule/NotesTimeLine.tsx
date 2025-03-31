@@ -61,10 +61,25 @@ const NotesTimeline = ({
 
     // Add regular intervals within the current window
     for (let i = 0; i < intervalHours; i++) {
-      const intervalTime = moment(currentStartTime)
+      let intervalTime = moment(currentStartTime)
         .add(i, "hours")
         .startOf("hour")
         .valueOf();
+
+      // If AM/PM filter is selected, modify intervalTime accordingly
+      if (selectedAMPM === "AM") {
+        // Ensure the time is within AM range (00:00 to 11:59)
+        if (moment(intervalTime).hour() >= 12) {
+          // Skip intervals in PM range
+          continue;
+        }
+      } else if (selectedAMPM === "PM") {
+        // If PM is selected, shift AM hours to PM (12:00 PM to 23:59 PM)
+        if (moment(intervalTime).hour() < 12) {
+          intervalTime = moment(intervalTime).add(12, "hours").valueOf();
+        }
+      }
+
       intervals.add(intervalTime);
     }
 
@@ -72,7 +87,7 @@ const NotesTimeline = ({
     const currentEndTime = moment(currentStartTime).add(intervalHours, "hours");
 
     notes.forEach((note) => {
-      const noteTime = moment(note.date);
+      let noteTime = moment(note.date);
 
       // Only add intervals for notes within the visible time range
       if (
@@ -80,6 +95,14 @@ const NotesTimeline = ({
         noteTime.isSameOrAfter(currentStartTime) &&
         noteTime.isBefore(currentEndTime)
       ) {
+        // Adjust noteTime based on AM/PM filter
+        if (selectedAMPM === "AM" && noteTime.hour() >= 12) {
+          // Skip notes in PM range if AM is selected
+          return;
+        } else if (selectedAMPM === "PM" && noteTime.hour() < 12) {
+          noteTime = noteTime.add(12, "hours"); // Shift to PM if PM is selected
+        }
+
         intervals.add(noteTime.startOf("hour").valueOf());
         console.log(
           `📌 Added interval for note at ${noteTime.format("HH:mm")}`
@@ -91,7 +114,7 @@ const NotesTimeline = ({
     return sortOrder === "asc"
       ? Array.from(intervals).sort((a, b) => a - b)
       : Array.from(intervals).sort((a, b) => b - a);
-  }, [notes, interval, currentStartTime, sortOrder]);
+  }, [notes, interval, currentStartTime, sortOrder, selectedAMPM]);
 
   const findAdjacentInterval = useCallback(
     (current: number, direction: "next" | "prev"): number | null => {
@@ -103,7 +126,7 @@ const NotesTimeline = ({
           : timeIntervals.slice(0, index).reverse();
       return (
         range.find((time) =>
-          notes.some((note) => moment(note.time).isSame(moment(time), "hour"))
+          notes.some((note) => moment(note.date).isSame(moment(time), "hour"))
         ) || null
       );
     },
@@ -157,10 +180,21 @@ const NotesTimeline = ({
 
     // Continue with AMPM filtering and sorting as before
     const notesFilteredByAMPM = notesFilteredByTime.filter((note) => {
+      // Make sure we're using the same date field consistently
+      const noteDateTime = moment(note.date); // Use note.date consistently
+
+      // Check if note's AM/PM matches the selected filter or if 24-hour mode is active
       const matchesAMPM = is24Hour
         ? true
-        : moment(note.date).format("A") === selectedAMPM;
-      console.log(`Note ID: ${note.id} AMPM Filter:`, matchesAMPM);
+        : noteDateTime.format("A") === selectedAMPM;
+
+      console.log(
+        `Note ID: ${note.id} AMPM Filter:`,
+        matchesAMPM,
+        `Note time: ${noteDateTime.format("hh:mm A")}`,
+        `Selected: ${selectedAMPM}`
+      );
+
       return matchesAMPM;
     });
 
@@ -306,7 +340,8 @@ const NotesTimeline = ({
       console.log(`🌀 Scrolling on interval: ${activeInterval}`);
 
       const notesAtThisTime = notes.filter((note) =>
-        moment(note.time).isSame(moment(activeInterval), "hour")
+        // Use note.date consistently instead of note.time
+        moment(note.date).isSame(moment(activeInterval), "hour")
       );
 
       if (notesAtThisTime.length === 0) return;
