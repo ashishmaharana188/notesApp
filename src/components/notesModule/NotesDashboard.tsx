@@ -7,22 +7,33 @@ import NotesTimelineFilter from "./NotesTimelineFilter";
 const NotesDashboardPage = () => {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
-
   const [interval, setInterval] = useState<"6h" | "12h" | "24h">("12h");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [selectedAMPM, setSelectedAMPM] = useState<"AM" | "PM">("AM");
+  const [selectedAMPM, setSelectedAMPM] = useState<"AM" | "PM" | null>("AM");
   const [is24Hour, setIs24Hour] = useState(false);
   const [filterButton, setFilterButton] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  // Custom hook to track scroll position
 
   useEffect(() => {
     const handleScroll = () => {
-      setVisible(window.scrollY === 0);
-      lastScrollY.current = window.scrollY;
+      const currentScrollY = window.scrollY;
+      setScrollPosition(currentScrollY); // Update scroll position
+      setVisible(currentScrollY === 0); // Update visibility based on scroll position
+      lastScrollY.current = currentScrollY; // Update last scroll position
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll); // Add event listener
+
+    return () => window.removeEventListener("scroll", handleScroll); // Cleanup on unmount
   }, []);
+
+  // Function to reset selectedAMPM to null
+
+  const resetSelectedAMPM = () => {
+    setSelectedAMPM(null);
+  };
 
   return (
     <div>
@@ -42,6 +53,8 @@ const NotesDashboardPage = () => {
           sortOrder={sortOrder}
           selectedAMPM={selectedAMPM}
           is24Hour={is24Hour}
+          resetSelectedAMPM={resetSelectedAMPM}
+          scrollPosition={scrollPosition}
         />
       </div>
 
@@ -69,7 +82,7 @@ const NotesDashboardPage = () => {
         <AddNoteButton />
       </div>
 
-      {/* 🎛️ Filter Panel (Appears above the buttons) */}
+      {/* Filter Panel (Appears above the buttons) */}
       {filterButton && (
         <div className="fixed bottom-40 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200">
           <NotesTimelineFilter

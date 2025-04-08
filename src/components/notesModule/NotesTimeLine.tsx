@@ -22,6 +22,8 @@ const NotesTimeline = ({
   sortOrder,
   selectedAMPM,
   is24Hour,
+  resetSelectedAMPM,
+  scrollPosition,
 }: NotesTimelineProps) => {
   const [clickedDot, setClickedDot] = useState<number | null>(null);
   const [scrollPositions, setScrollPositions] = useState<{
@@ -103,9 +105,6 @@ const NotesTimeline = ({
         }
 
         intervals.add(noteTime.startOf("hour").valueOf());
-        console.log(
-          `Added interval for note at ${noteTime.format("HH:mm")}`
-        );
       }
     });
 
@@ -138,24 +137,13 @@ const NotesTimeline = ({
 
   // Update the filteredNotes useMemo function
   const filteredNotes = useMemo(() => {
-    console.log("Original Notes:", notes);
-
     const notesFilteredByDate = notes.filter((note) => {
       // Use note.date for date comparison
       const noteDate = moment(note.date).startOf("day");
       const currentDate = moment(currentStartTime).startOf("day");
       const isSameDay = noteDate.isSame(currentDate, "day");
-      console.log(
-        `Note ID: ${note.id} Date Filter:`,
-        isSameDay,
-        noteDate.format("YYYY-MM-DD"),
-        "vs",
-        currentDate.format("YYYY-MM-DD")
-      );
       return isSameDay;
     });
-
-    console.log("Filtered by Date (Same Day):", notesFilteredByDate);
 
     const notesFilteredByTime = notesFilteredByDate.filter((note) => {
       // Make sure we have both date and time information for the note
@@ -178,28 +166,8 @@ const NotesTimeline = ({
     console.log("Filtered by Time Intervals:", notesFilteredByTime);
 
     // Continue with AMPM filtering and sorting as before
-    const notesFilteredByAMPM = notesFilteredByTime.filter((note) => {
-      // Make sure we're using the same date field consistently
-      const noteDateTime = moment(note.date); // Use note.date consistently
 
-      // Check if note's AM/PM matches the selected filter or if 24-hour mode is active
-      const matchesAMPM = is24Hour
-        ? true
-        : noteDateTime.format("A") === selectedAMPM;
-
-      console.log(
-        `Note ID: ${note.id} AMPM Filter:`,
-        matchesAMPM,
-        `Note time: ${noteDateTime.format("hh:mm A")}`,
-        `Selected: ${selectedAMPM}`
-      );
-
-      return matchesAMPM;
-    });
-
-    console.log("🌙 Filtered by AM/PM:", notesFilteredByAMPM);
-
-    const sortedNotes = notesFilteredByAMPM.sort((a, b) =>
+    const sortedNotes = notesFilteredByTime.sort((a, b) =>
       sortOrder === "asc"
         ? moment(a.date).valueOf() - moment(b.date).valueOf()
         : moment(b.date).valueOf() - moment(a.date).valueOf()
@@ -216,39 +184,17 @@ const NotesTimeline = ({
     timeIntervals,
   ]);
 
-  console.log("Final filtered and sorted notes:", filteredNotes);
-
   // Added `currentStartTime`
   // ADD DEBUGGING LOGS HERE
-  useEffect(() => {
-    console.log("🛠 All Redux Notes:", notes);
-    console.log(
-      "Current Timeline Date:",
-      moment(currentStartTime).format("YYYY-MM-DD")
-    );
-    console.log(
-      "Visible Time Intervals:",
-      timeIntervals.map((t) => moment(t).format("HH:mm"))
-    );
-    console.log(
-      "Filtered Notes:",
-      filteredNotes.map((n) => ({
-        id: n.id,
-        time: moment(n.time).format("YYYY-MM-DD HH:mm"),
-      }))
-    );
-    console.log("Checking note dates:");
-    notes.forEach((note) => {
-      console.log(
-        `Note ID: ${note.id}, Date: ${moment(note.date).format(
-          "YYYY-MM-DD"
-        )}, Expected: ${moment(currentStartTime).format("YYYY-MM-DD")}`
-      );
-    });
-  }, [filteredNotes, timeIntervals, currentStartTime]);
+
   // Then in the navigation handlers:
   const handleNextInterval = () => {
     console.log("Next button clicked!");
+
+    resetSelectedAMPM();
+
+    console.log("Current selectedAMPM after reset:", null);
+
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
     let nextStartTime = moment(currentStartTime).add(intervalHours, "hours");
 
@@ -287,6 +233,11 @@ const NotesTimeline = ({
 
   const handlePreviousInterval = () => {
     console.log("Previous button clicked!");
+
+    resetSelectedAMPM();
+
+    console.log("Current selectedAMPM after reset:", null);
+
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
     let prevStartTime = moment(currentStartTime).subtract(
       intervalHours,
@@ -436,13 +387,13 @@ const NotesTimeline = ({
           setActiveInterval(null);
           setClickedDot(null);
 
-          // ✅ Delay enabling vertical scrolling by 10ms
+          //  Delay enabling vertical scrolling by 10ms
           setTimeout(() => {
             console.log("Restoring default vertical scrolling");
             window.removeEventListener("wheel", preventDefaultScroll);
           }, 10);
 
-          // ✅ Reset scroll position if not preserved
+          // Reset scroll position if not preserved
           if (!preservedScrollPositions.has(time)) {
             console.log(`Resetting scroll position for ${time}`);
             setScrollPositions((prev) => ({
@@ -485,6 +436,9 @@ const NotesTimeline = ({
 
   /** Manage event listeners */
   useEffect(() => {
+    // Logging information
+
+    // Manage event listeners
     if (isHorizontalScrolling) {
       console.log("Blocking vertical scroll & enabling horizontal scroll");
       window.addEventListener("wheel", handleScroll, { passive: false });
@@ -492,7 +446,7 @@ const NotesTimeline = ({
         passive: false,
       });
     } else {
-      console.log(" Restoring normal scrolling");
+      console.log("Restoring normal scrolling");
       window.removeEventListener("wheel", handleScroll);
       window.removeEventListener("wheel", preventDefaultScroll);
     }
@@ -508,25 +462,32 @@ const NotesTimeline = ({
       }
     };
   }, [
+    filteredNotes,
+    timeIntervals,
+    currentStartTime,
     isHorizontalScrolling,
     handleScroll,
     preventDefaultScroll,
-    preservedScrollPositions,
+    notes,
   ]);
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4 p-3 bg-gray-200 rounded-lg shadow-md">
+      <div
+        className={`fixed justify-between items-center mb-4 p-3 bg-gray-200 rounded-lg shadow-md mx-4 transition-all duration-300`}
+        style={{ zIndex: 10 }} // Ensure it stays above other content
+      >
         <button
           onClick={handlePreviousInterval}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition"
+          className="w-25 cursor-pointer px-4 py-2 bg-gray-800 text-white text-lg rounded-md shadow-md hover:bg-gray-600 transition"
         >
           Previous
         </button>
 
-        <div className="text-lg font-semibold">
+        <div className="text-lg font-semibold mx-4">
           {moment(currentStartTime).format("dddd, MMMM D, YYYY")}
-          <br />{moment(currentStartTime).format("hh:mm A")} -
+          <br />
+          {moment(currentStartTime).format("hh:mm A")} -{" "}
           {moment(currentStartTime)
             .add(interval === "6h" ? 6 : interval === "12h" ? 12 : 24, "hours")
             .format("hh:mm A")}
@@ -534,7 +495,7 @@ const NotesTimeline = ({
 
         <button
           onClick={handleNextInterval}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition"
+          className=" w-25 cursor-pointer px-4 py-2  bg-gray-800 text-white text-lg rounded-md shadow-md hover:bg-gray-600 transition"
         >
           Next
         </button>
@@ -542,10 +503,6 @@ const NotesTimeline = ({
 
       <Timeline ref={timelineRef} position="right">
         {timeIntervals.map((time) => {
-          console.log(
-            `Creating TimelineItem for: ${moment(time).format("hh:mm A")}`
-          );
-
           const notesAtThisTime = filteredNotes.filter((note) => {
             const noteHour = moment(note.date).startOf("hour");
             const timelineHour = moment(time).startOf("hour");
@@ -585,9 +542,9 @@ const NotesTimeline = ({
                     className="min-h-[100px] cursor-pointer"
                     onClick={() => handleClick(time)}
                   />
-                  <div className="absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10">
+                  <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10 hover:bg-gray-600">
                     <button
-                      className="text-white text-sm px-3 py-1"
+                      className="cursor-pointer text-white text-sm px-3 py-1"
                       onClick={() => handleClick(time)}
                     >
                       {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}

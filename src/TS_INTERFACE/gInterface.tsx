@@ -52,7 +52,7 @@ export interface noteTimelineState {
 export interface NotesTimelineFilterProps {
   interval: "6h" | "12h" | "24h";
   setInterval: (value: "6h" | "12h" | "24h") => void;
-  selectedAMPM: "AM" | "PM";
+  selectedAMPM: "AM" | "PM" | null;
   setSelectedAMPM: (value: "AM" | "PM") => void;
   sortOrder: "asc" | "desc";
   setSortOrder: (value: "asc" | "desc") => void;
@@ -63,6 +63,8 @@ export interface NotesTimelineFilterProps {
 export interface NotesTimelineProps extends NoteListProps {
   interval: "6h" | "12h" | "24h";
   sortOrder: "asc" | "desc";
-  selectedAMPM: "AM" | "PM";
+  selectedAMPM: "AM" | "PM" | null;
   is24Hour: boolean;
+  resetSelectedAMPM: () => void;
+  scrollPosition: number;
 }
