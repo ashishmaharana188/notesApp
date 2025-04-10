@@ -491,8 +491,8 @@ const NotesTimeline = ({
   return (
     <div>
       <div
-        className={`flex justify-between items-center mb-4 p-3 bg-gray-200 rounded-lg shadow-md mx-4 transition-all duration-300 ${
-          scrollPosition > 100 ? "bottom-0" : ""
+        className={`flex fixed justify-between items-center mb-10 p-3 bg-gray-200 rounded-lg shadow-md mx-4 transition-all duration-300 ${
+          scrollPosition > 100 ? "fixed bottom-0" : ""
         }`}
         style={{ zIndex: 10 }} // Ensure it stays above other content
       >
@@ -543,7 +543,7 @@ const NotesTimeline = ({
                 <TimelineItem
                   key={time}
                   className={
-                    notesAtThisTime.length > 0 ? "mb-10 mt-10 -ml-25" : "-ml-50"
+                    notesAtThisTime.length > 0 ? "mb-10 mt-10 mb-10 -mr-15" : ""
                   }
                 >
                   <TimelineSeparator>
