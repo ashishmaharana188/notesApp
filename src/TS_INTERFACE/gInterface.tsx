@@ -61,6 +61,7 @@ export interface NotesTimelineFilterProps {
 }
 
 export interface NotesTimelineProps extends NoteListProps {
+  filterButton: boolean;
   interval: "6h" | "12h" | "24h";
   sortOrder: "asc" | "desc";
   selectedAMPM: "AM" | "PM" | null;

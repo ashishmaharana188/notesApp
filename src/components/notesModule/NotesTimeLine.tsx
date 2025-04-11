@@ -23,7 +23,7 @@ const NotesTimeline = ({
   selectedAMPM,
   is24Hour,
   resetSelectedAMPM,
-  scrollPosition,
+  filterButton,
 }: NotesTimelineProps) => {
   const [clickedDot, setClickedDot] = useState<number | null>(null);
   const [scrollPositions, setScrollPositions] = useState<{
@@ -490,36 +490,39 @@ const NotesTimeline = ({
 
   return (
     <div>
-      <div
-        className={`flex fixed justify-between items-center mb-10 p-3 bg-gray-200 rounded-lg shadow-md mx-4 transition-all duration-300 ${
-          scrollPosition > 100 ? "fixed bottom-0" : ""
-        }`}
-        style={{ zIndex: 10 }} // Ensure it stays above other content
-      >
-        <button
-          onClick={handlePreviousInterval}
-          className="w-25 cursor-pointer px-4 py-2 bg-gray-800 text-white text-lg rounded-md shadow-md hover:bg-gray-600 transition"
+      {filterButton && (
+        <div
+          className={`flex fixed bottom-90 right-0 justify-between items-center bg-black/80 p-3 bg-gray-200 rounded-lg shadow-lg mx-4 transition-all duration-300 z-50 backdrop-blur-sm bg-white/60 border-white/20 `}
         >
-          Previous
-        </button>
+          <button
+            onClick={handlePreviousInterval}
+            className="w-25 cursor-pointer px-4 py-2 bg-gray-800 text-white text-lg rounded-md shadow-lg hover:bg-gray-600 transition"
+          >
+            Previous
+          </button>
 
-        <div className="text-lg font-semibold mx-4">
-          {moment(currentStartTime).format("dddd, MMMM D, YYYY")}
-          <br />
-          {moment(currentStartTime).format("hh:mm A")} -{" "}
-          {moment(currentStartTime)
-            .add(interval === "6h" ? 6 : interval === "12h" ? 12 : 24, "hours")
-            .format("hh:mm A")}
+          <div className="text-lg font-semibold mx-4">
+            {moment(currentStartTime).format("MMMM D, YYYY")}
+            <br />
+            {moment(currentStartTime).format("hh:mm A")} -{" "}
+            {moment(currentStartTime)
+              .add(
+                interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
+                "hours"
+              )
+              .format("hh:mm A")}
+          </div>
+
+          <button
+            onClick={handleNextInterval}
+            className="w-25 cursor-pointer px-4 py-2 bg-gray-800 text-white text-lg rounded-md shadow-lg hover:bg-gray-600 transition"
+          >
+            Next
+          </button>
         </div>
+      )}
 
-        <button
-          onClick={handleNextInterval}
-          className=" w-25 cursor-pointer px-4 py-2  bg-gray-800 text-white text-lg rounded-md shadow-md hover:bg-gray-600 transition"
-        >
-          Next
-        </button>
-      </div>
-      <div>
+      <div className="mt-10">
         {visibleIntervals.length > 0 ? (
           <Timeline ref={timelineRef} position="right">
             {visibleIntervals.map((time) => {
@@ -543,7 +546,9 @@ const NotesTimeline = ({
                 <TimelineItem
                   key={time}
                   className={
-                    notesAtThisTime.length > 0 ? "mb-10 mt-10 mb-10 -mr-15" : ""
+                    notesAtThisTime.length > 0
+                      ? "mb-10 mt-10 mb-10 -mr-15"
+                      : "mt-15"
                   }
                 >
                   <TimelineSeparator>
@@ -581,7 +586,7 @@ const NotesTimeline = ({
 
                   {notesAtThisTime.length > 0 && (
                     <div
-                      className={`absolute left-100 -top-5 flex gap-4 transition-transform ${
+                      className={`absolute left-80 -top-5 flex gap-4 transition-transform ${
                         isElastic
                           ? "duration-200 ease-out"
                           : "duration-500 ease-out"

@@ -49,6 +49,7 @@ const NotesDashboardPage = () => {
       {/* 📌 Notes Timeline (Centered in Middle) */}
       <div className="w-full mt-20 h-full flex flex-col items-start ">
         <NotesTimeline
+          filterButton={filterButton}
           interval={interval}
           sortOrder={sortOrder}
           selectedAMPM={selectedAMPM}
