@@ -68,4 +68,9 @@ export interface NotesTimelineProps extends NoteListProps {
   is24Hour: boolean;
   resetSelectedAMPM: () => void;
   scrollPosition: number;
+  onFilteredNotesChange?: (hasNotes: boolean) => void;
+}
+
+export interface NotesTimelineRef {
+  getFilteredNotesLength: () => number;
 }

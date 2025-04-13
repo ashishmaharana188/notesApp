@@ -4,6 +4,8 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  forwardRef,
+  useImperativeHandle,
 } from "react";
 import { connect } from "react-redux";
 import Timeline from "@mui/lab/Timeline";
@@ -16,15 +18,17 @@ import NoteCard from "./NotesCard";
 import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
 
-const NotesTimeline = ({
-  notes,
-  interval,
-  sortOrder,
-  selectedAMPM,
-  is24Hour,
-  resetSelectedAMPM,
-  filterButton,
-}: NotesTimelineProps) => {
+const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
+  const {
+    notes,
+    interval,
+    sortOrder,
+    selectedAMPM,
+    is24Hour,
+    resetSelectedAMPM,
+    filterButton,
+    onFilteredNotesChange,
+  } = props;
   const [clickedDot, setClickedDot] = useState<number | null>(null);
   const [scrollPositions, setScrollPositions] = useState<{
     [key: number]: number;
@@ -40,7 +44,6 @@ const NotesTimeline = ({
   const timelineRef = useRef<HTMLUListElement | null>(null);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isHorizontalScrolling, setIsHorizontalScrolling] = useState(false);
-  const [visibleIntervals, setVisibleIntervals] = useState<number[]>([]);
   // Filtered notes (applies only if filters are set)
   // Add currentStartTime
 
@@ -183,7 +186,15 @@ const NotesTimeline = ({
     currentStartTime,
     timeIntervals,
   ]);
+  useImperativeHandle(ref, () => ({
+    getFilteredNotesLength: () => filteredNotes.length,
+  }));
 
+  useEffect(() => {
+    if (onFilteredNotesChange) {
+      onFilteredNotesChange(filteredNotes.length > 0);
+    }
+  }, [filteredNotes, onFilteredNotesChange]);
   // Added `currentStartTime`
   // ADD DEBUGGING LOGS HERE
 
@@ -192,7 +203,6 @@ const NotesTimeline = ({
     console.log("Next button clicked!");
 
     resetSelectedAMPM();
-
     console.log("Current selectedAMPM after reset:", null);
 
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
@@ -291,7 +301,7 @@ const NotesTimeline = ({
 
       const notesAtThisTime = notes.filter((note) =>
         // Use note.date consistently instead of note.time
-        moment(note.date).isSame(moment(activeInterval), "hour")
+        moment(note.time).isSame(moment(activeInterval), "hour")
       );
 
       if (notesAtThisTime.length === 0) return;
@@ -436,22 +446,7 @@ const NotesTimeline = ({
 
   /** Manage event listeners */
   useEffect(() => {
-    // Function to update visible intervals based on viewport size
-
-    const updateVisibleIntervals = () => {
-      const viewportWidth = window.innerWidth;
-      const intervalWidth = 100; // Example width of each interval in pixels
-
-      const numberOfVisibleIntervals = Math.floor(
-        viewportWidth / intervalWidth
-      );
-      // Update visible intervals based on the calculated number
-      setVisibleIntervals(timeIntervals.slice(0, numberOfVisibleIntervals));
-    };
-    // Initial call to set visible intervals
-    updateVisibleIntervals();
-    // Logging information
-
+    props.onFilteredNotesChange?.(filteredNotes.length > 0);
     // Manage event listeners
     if (isHorizontalScrolling) {
       console.log("Blocking vertical scroll & enabling horizontal scroll");
@@ -465,13 +460,10 @@ const NotesTimeline = ({
       window.removeEventListener("wheel", preventDefaultScroll);
     }
 
-    window.addEventListener("resize", updateVisibleIntervals);
-
     return () => {
       console.log("Cleaning up event listeners");
       window.removeEventListener("wheel", handleScroll);
       window.removeEventListener("wheel", preventDefaultScroll);
-      window.removeEventListener("resize", updateVisibleIntervals);
 
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
@@ -486,6 +478,7 @@ const NotesTimeline = ({
     handleScroll,
     preventDefaultScroll,
     notes,
+    filteredNotes,
   ]);
 
   return (
@@ -522,102 +515,96 @@ const NotesTimeline = ({
         </div>
       )}
 
-      <div className="mt-10">
-        {visibleIntervals.length > 0 ? (
-          <Timeline ref={timelineRef} position="right">
-            {visibleIntervals.map((time) => {
-              const notesAtThisTime = filteredNotes.filter((note) => {
-                const noteHour = moment(note.time).startOf("hour");
-                const timelineHour = moment(time).startOf("hour");
-                const matches = noteHour.isSame(timelineHour, "hour");
+      <div className="mb-10">
+        <Timeline ref={timelineRef} position="right">
+          {timeIntervals.map((time) => {
+            const notesAtThisTime = filteredNotes.filter((note) => {
+              const noteHour = moment(note.time).startOf("hour");
+              const timelineHour = moment(time).startOf("hour");
+              const matches = noteHour.isSame(timelineHour, "hour");
 
-                if (matches) {
-                  console.log(
-                    `Note ${
-                      note.id
-                    } matches timeline hour ${timelineHour.format("HH:mm")}`
-                  );
+              if (matches) {
+                console.log(
+                  `Note ${note.id} matches timeline hour ${timelineHour.format(
+                    "HH:mm"
+                  )}`
+                );
+              }
+
+              return matches;
+            });
+
+            return (
+              <TimelineItem
+                key={time}
+                className={
+                  notesAtThisTime.length > 0
+                    ? "mb-10 mt-10 mb-10 -mr-15"
+                    : "mt-15"
                 }
-
-                return matches;
-              });
-
-              return (
-                <TimelineItem
-                  key={time}
-                  className={
-                    notesAtThisTime.length > 0
-                      ? "mb-10 mt-10 mb-10 -mr-15"
-                      : "mt-15"
-                  }
-                >
-                  <TimelineSeparator>
-                    <div className="relative flex flex-col items-center">
-                      <TimelineDot
-                        className={`cursor-pointer ${
-                          clickedDot === time ? "animate-bounce" : ""
-                        } ${
-                          preservedIntervals.has(time)
-                            ? "bg-gray-800 shadow-lg"
-                            : ""
-                        }`}
-                        onClick={() => handleClick(time)}
-                      />
-                      <TimelineConnector
-                        className="min-h-[100px] cursor-pointer"
-                        onClick={() => handleClick(time)}
-                      />
-                      <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10 hover:bg-gray-600">
-                        <button
-                          className="cursor-pointer text-white text-sm px-3 py-1"
-                          onClick={() => handleClick(time)}
-                        >
-                          {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                        </button>
-                      </div>
-                    </div>
-                  </TimelineSeparator>
-
-                  <TimelineContent>
-                    <h4 className="mt-1 text-lg font-semibold">
-                      {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                    </h4>
-                  </TimelineContent>
-
-                  {notesAtThisTime.length > 0 && (
-                    <div
-                      className={`absolute left-80 -top-5 flex gap-4 transition-transform ${
-                        isElastic
-                          ? "duration-200 ease-out"
-                          : "duration-500 ease-out"
+              >
+                <TimelineSeparator>
+                  <div className="relative flex flex-col items-center">
+                    <TimelineDot
+                      className={`cursor-pointer ${
+                        clickedDot === time ? "animate-bounce" : ""
+                      } ${
+                        preservedIntervals.has(time)
+                          ? "bg-gray-800 shadow-lg"
+                          : ""
                       }`}
-                      style={{
-                        transform: `translateX(${
-                          scrollPositions[time] || 0
-                        }px)`,
-                      }}
-                    >
-                      {notesAtThisTime.map((note) => (
-                        <NoteCard key={note.id} note={note} />
-                      ))}
+                      onClick={() => handleClick(time)}
+                    />
+                    <TimelineConnector
+                      className="min-h-[100px] cursor-pointer"
+                      onClick={() => handleClick(time)}
+                    />
+                    <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10 hover:bg-gray-600">
+                      <button
+                        className="cursor-pointer text-white text-sm px-3 py-1"
+                        onClick={() => handleClick(time)}
+                      >
+                        {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
+                      </button>
                     </div>
-                  )}
-                </TimelineItem>
-              );
-            })}
-          </Timeline>
-        ) : (
-          <div className="text-center text-gray-500">
-            No intervals available
-          </div> // Optional message when no intervals are visible
-        )}
+                  </div>
+                </TimelineSeparator>
+
+                <TimelineContent>
+                  <h4 className="mt-1 text-lg font-semibold">
+                    {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
+                  </h4>
+                </TimelineContent>
+
+                {notesAtThisTime.length > 0 && (
+                  <div
+                    className={`absolute left-70 -top-5 flex gap-4 transition-transform ${
+                      isElastic
+                        ? "duration-200 ease-out"
+                        : "duration-500 ease-out"
+                    }`}
+                    style={{
+                      transform: `translateX(${scrollPositions[time] || 0}px)`,
+                    }}
+                  >
+                    {notesAtThisTime.map((note) => (
+                      <NoteCard key={note.id} note={note} />
+                    ))}
+                  </div>
+                )}
+              </TimelineItem>
+            );
+          })}
+        </Timeline>
       </div>
     </div>
   );
-};
+});
 
 const mapStateToProps = (state: any) => ({
   notes: state.notes,
 });
 
-export default connect(mapStateToProps)(React.memo(NotesTimeline));
+export default connect(mapStateToProps, null, null, { forwardRef: true })(
+  React.memo(NotesTimeline)
+);

@@ -3,9 +3,11 @@ import AddNoteButton from "./AddNoteButton";
 import "../../styles/components/notesModule/NoteDashboard.css";
 import NotesTimeline from "./NotesTimeLine";
 import NotesTimelineFilter from "./NotesTimelineFilter";
+import { NotesTimelineRef } from "../../TS_INTERFACE/gInterface";
 
 const NotesDashboardPage = () => {
-  const [visible, setVisible] = useState(true);
+  const timelineRef = useRef<NotesTimelineRef>(null);
+  const [visible, setVisible] = useState<boolean | undefined>(true);
   const lastScrollY = useRef(0);
   const [interval, setInterval] = useState<"6h" | "12h" | "24h">("12h");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -15,15 +17,26 @@ const NotesDashboardPage = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
 
   // Custom hook to track scroll position
+  const handleFilteredNotesChange = (hasNotes: boolean) => {
+    setVisible(window.scrollY === 0 && !hasNotes);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      setScrollPosition(currentScrollY); // Update scroll position
-      setVisible(currentScrollY === 0); // Update visibility based on scroll position
-      lastScrollY.current = currentScrollY; // Update last scroll position
-    };
+      setScrollPosition(currentScrollY);
+      const isScrollingUp =
+        currentScrollY < lastScrollY.current
+          ? lastScrollY.current
+          : currentScrollY;
 
+      const hasNotes = timelineRef.current?.getFilteredNotesLength
+        ? timelineRef.current.getFilteredNotesLength() > 0
+        : false;
+      setVisible(!isScrollingUp && !hasNotes);
+
+      lastScrollY.current = currentScrollY;
+    };
     window.addEventListener("scroll", handleScroll); // Add event listener
 
     return () => window.removeEventListener("scroll", handleScroll); // Cleanup on unmount
@@ -39,16 +52,17 @@ const NotesDashboardPage = () => {
     <div>
       {/* 📌 Dashboard Title */}
       <p
-        className={`fixed top-1 left-1/2 transform -translate-x-1/2 text-4xl font-bold transition-transform duration-300 ${
-          visible ? "translate-y-0" : "-translate-y-full"
+        className={`fixed top-1 left-1/13 transform -translate-x-1/2 text-4xl font-bold transition-transform duration-150 ${
+          visible ? "translate-y-10" : "-translate-y-full"
         }`}
       >
-        Dashboard!
+        Note Dashboard!
       </p>
 
       {/* 📌 Notes Timeline (Centered in Middle) */}
-      <div className="w-full mt-20 h-full flex flex-col items-start ">
+      <div className="w-full mt-10 h-full flex flex-col items-start ">
         <NotesTimeline
+          ref={timelineRef}
           filterButton={filterButton}
           interval={interval}
           sortOrder={sortOrder}
@@ -56,24 +70,27 @@ const NotesDashboardPage = () => {
           is24Hour={is24Hour}
           resetSelectedAMPM={resetSelectedAMPM}
           scrollPosition={scrollPosition}
+          onFilteredNotesChange={handleFilteredNotesChange}
         />
       </div>
 
       {/* 📌 Floating Buttons (Bottom Right) */}
-      <div className="fixed bottom-2 right-1 flex items-center space-x-4">
+      <div className="fixed bottom-5 right-1 flex items-center space-x-4">
         {/* 🔘 Filter Toggle Switch */}
         <label className="flex items-center cursor-pointer">
-          <span className="mr-2 text-lg font-bold text-gray-700">Filters</span>
+          <span className="mr-2 text-xl font-bold text-black-700">Filters</span>
           <input
             type="checkbox"
             checked={filterButton}
             onChange={() => setFilterButton(!filterButton)}
             className="hidden"
           />
-          <div className="relative w-16 h-8 bg-gray-300 rounded-full transition">
+          <div className={"relative w-16 h-8 rounded-full transition"}>
             <div
-              className={`absolute top-1 bottom-1 left-1 w-5 h-6 bg-white rounded-full transition-transform ${
-                filterButton ? "translate-x-9 bg-green-500" : "translate-x-0"
+              className={`absolute top-1 bottom-1 left-1 w-5 h-6 bg-black rounded-full transition-transform ${
+                filterButton
+                  ? "translate-x-9 bg-black-800"
+                  : "translate-x-0 bg-black-800"
               }`}
             ></div>
           </div>
