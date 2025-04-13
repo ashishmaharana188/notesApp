@@ -6,6 +6,7 @@
 }
 html {
   font-size: var(--base-rem);
-  background-color: whitesmoke; /* Now 1rem = 10px */
+  background-color: whitesmoke;
 }
+
 /* MUI DatePicker Height Override */
