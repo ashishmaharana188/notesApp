@@ -25,8 +25,9 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     sortOrder,
     selectedAMPM,
     is24Hour,
-    resetSelectedAMPM,
+    setSelectedAMPM,
     filterButton,
+
     onFilteredNotesChange,
   } = props;
   const [clickedDot, setClickedDot] = useState<number | null>(null);
@@ -44,6 +45,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const timelineRef = useRef<HTMLUListElement | null>(null);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isHorizontalScrolling, setIsHorizontalScrolling] = useState(false);
+
   // Filtered notes (applies only if filters are set)
   // Add currentStartTime
 
@@ -202,9 +204,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const handleNextInterval = () => {
     console.log("Next button clicked!");
 
-    resetSelectedAMPM();
-    console.log("Current selectedAMPM after reset:", null);
-
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
     let nextStartTime = moment(currentStartTime).add(intervalHours, "hours");
 
@@ -230,6 +229,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         // Instead, set currentStartTime and let useMemo recompute with cached positions
         setCurrentStartTime(nextStartTime);
         setScrollPositions(cachedDays[nextDayKey].scrollPositions);
+        setSelectedAMPM(moment(nextStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
         return;
       }
     }
@@ -239,12 +239,11 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     setScrollPositions({});
     setActiveInterval(null);
     setClickedDot(null);
+    setSelectedAMPM(moment(nextStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
   };
 
   const handlePreviousInterval = () => {
     console.log("Previous button clicked!");
-
-    resetSelectedAMPM();
 
     console.log("Current selectedAMPM after reset:", null);
 
@@ -278,6 +277,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         console.log("Using cached data for", prevDayKey);
         setCurrentStartTime(prevStartTime);
         setScrollPositions(cachedDays[prevDayKey].scrollPositions);
+        setSelectedAMPM(moment(prevStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
         return;
       }
     }
@@ -287,7 +287,23 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     setScrollPositions({});
     setActiveInterval(null);
     setClickedDot(null);
+    setSelectedAMPM(moment(prevStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
   };
+
+  /**am pm useEffect */
+  useEffect(() => {
+    if (!filterButton || !props.userChangedAMPM?.current) return;
+
+    const startOfDay = moment(currentStartTime).startOf("day");
+
+    if (selectedAMPM === "AM") {
+      setCurrentStartTime(startOfDay); // Same day, 00:00
+    } else if (selectedAMPM === "PM") {
+      setCurrentStartTime(startOfDay.clone().add(12, "hours")); // Same day, 12:00
+    }
+
+    props.userChangedAMPM.current = false; // ✅ Reset the flag
+  }, [selectedAMPM]);
 
   /** Handles horizontal scrolling behavior */
   const handleScroll = useCallback(
@@ -494,7 +510,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             Previous
           </button>
 
-          <div className="text-lg font-semibold mx-4">
+          <div className="text-lg font-semibold mx-4 min-w-[150px] text-center">
             {moment(currentStartTime).format("MMMM D, YYYY")}
             <br />
             {moment(currentStartTime).format("hh:mm A")} -{" "}

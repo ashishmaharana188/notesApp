@@ -1,7 +1,7 @@
 import { notesFilterReducerIntf } from "../TS_INTERFACE/gInterface";
 
 const notesFiltersReducerDefaultState = {
-  tag: "",
+  tags: "",
   sortBy: "",
   sortOrder: "",
   startDate: null,

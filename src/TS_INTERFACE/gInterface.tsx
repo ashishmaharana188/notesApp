@@ -66,9 +66,10 @@ export interface NotesTimelineProps extends NoteListProps {
   sortOrder: "asc" | "desc";
   selectedAMPM: "AM" | "PM" | null;
   is24Hour: boolean;
-  resetSelectedAMPM: () => void;
+  setSelectedAMPM: (value: "AM" | "PM") => void;
   scrollPosition: number;
   onFilteredNotesChange?: (hasNotes: boolean) => void;
+  userChangedAMPM: React.MutableRefObject<boolean>;
 }
 
 export interface NotesTimelineRef {

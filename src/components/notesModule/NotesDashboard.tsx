@@ -15,6 +15,7 @@ const NotesDashboardPage = () => {
   const [is24Hour, setIs24Hour] = useState(false);
   const [filterButton, setFilterButton] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const userChangedAMPM = useRef(false);
 
   // Custom hook to track scroll position
   const handleFilteredNotesChange = (hasNotes: boolean) => {
@@ -44,10 +45,6 @@ const NotesDashboardPage = () => {
 
   // Function to reset selectedAMPM to null
 
-  const resetSelectedAMPM = () => {
-    setSelectedAMPM(null);
-  };
-
   return (
     <div>
       {/* 📌 Dashboard Title */}
@@ -65,12 +62,13 @@ const NotesDashboardPage = () => {
           ref={timelineRef}
           filterButton={filterButton}
           interval={interval}
+          setSelectedAMPM={setSelectedAMPM}
           sortOrder={sortOrder}
           selectedAMPM={selectedAMPM}
           is24Hour={is24Hour}
-          resetSelectedAMPM={resetSelectedAMPM}
           scrollPosition={scrollPosition}
           onFilteredNotesChange={handleFilteredNotesChange}
+          userChangedAMPM={userChangedAMPM}
         />
       </div>
 
@@ -102,12 +100,15 @@ const NotesDashboardPage = () => {
 
       {/* Filter Panel (Appears above the buttons) */}
       {filterButton && (
-        <div className="fixed bottom-40 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200">
+        <div className="fixed bottom-40 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200 text-center w-190">
           <NotesTimelineFilter
             interval={interval}
             setInterval={setInterval}
             selectedAMPM={selectedAMPM}
-            setSelectedAMPM={setSelectedAMPM}
+            setSelectedAMPM={(val) => {
+              userChangedAMPM.current = true; // ✅ inform NotesTimeline
+              setSelectedAMPM(val); // original state update
+            }}
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
             is24Hour={is24Hour}

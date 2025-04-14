@@ -16,7 +16,7 @@ const NotesTimelineFilter: React.FC<NotesTimelineFilterProps> = ({
     <div className="flex justify-between items-center p-4 bg-white shadow-md rounded-lg ">
       {/* Interval Filter */}
       <div className="mr-5">
-        <FormControl size="small">
+        <FormControl size="small" sx={{ minWidth: 100 }}>
           <Select
             value={interval}
             MenuProps={{
@@ -35,7 +35,7 @@ const NotesTimelineFilter: React.FC<NotesTimelineFilterProps> = ({
 
       {/* AM/PM Filter */}
       <div className="mr-5">
-        <FormControl size="small">
+        <FormControl size="small" sx={{ minWidth: 70 }}>
           <Select
             value={selectedAMPM}
             MenuProps={{
@@ -45,14 +45,13 @@ const NotesTimelineFilter: React.FC<NotesTimelineFilterProps> = ({
           >
             <MenuItem value="AM">AM</MenuItem>
             <MenuItem value="PM">PM</MenuItem>
-            <MenuItem value="null">None</MenuItem>
           </Select>
         </FormControl>
       </div>
 
       {/* Sort Order */}
       <div className="mr-5">
-        <FormControl size="small">
+        <FormControl size="small" sx={{ minWidth: 100 }}>
           <Select
             value={sortOrder}
             MenuProps={{
