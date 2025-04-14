@@ -56,7 +56,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const [cachedDays, setCachedDays] = useState<Record<string, CachedDayData>>(
     {}
   );
-  const activeIntervalRef = useRef<number | null>(null);
 
   const timeIntervals = useMemo(() => {
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
@@ -304,37 +303,47 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   /** Handles horizontal scrolling behavior */
   const handleScroll = useCallback(
     (event: WheelEvent) => {
-      const interval = activeIntervalRef.current;
-      if (!interval) return;
+      if (!activeInterval) return;
 
       event.preventDefault();
       event.stopPropagation();
 
+      console.log(`Scrolling on interval: ${activeInterval}`);
+
       const notesAtThisTime = notes.filter((note) =>
         // Use note.date consistently instead of note.time
-        moment(note.time).isSame(moment(interval), "hour")
+        moment(note.time).isSame(moment(activeInterval), "hour")
       );
 
       if (notesAtThisTime.length === 0) return;
 
       const maxOffset = -((notesAtThisTime.length - 1) * 180);
-      const newOffset = (scrollPositions[interval] || 0) + event.deltaY * -0.5;
+      const newOffset =
+        (scrollPositions[activeInterval] || 0) + event.deltaY * -0.5;
       const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
+
+      console.log(
+        `📍 Updated scroll position for ${activeInterval}: ${updatedOffset}`
+      );
 
       setScrollPositions((prev) => ({
         ...prev,
-        [interval]: updatedOffset,
+        [activeInterval]: updatedOffset,
       }));
 
       if (updatedOffset <= maxOffset - 10) {
-        setPreservedIntervals(new Set([...preservedIntervals, interval]));
+        console.log(`Fully scrolled on interval: ${activeInterval}`);
+
+        setPreservedIntervals(new Set([...preservedIntervals, activeInterval]));
         setIsElastic(true);
 
         setTimeout(() => {
           setIsElastic(false);
-          const nextInterval = findAdjacentInterval(interval, "next");
+          const nextInterval = findAdjacentInterval(activeInterval, "next");
 
           if (nextInterval) {
+            console.log(`Moving to next interval: ${nextInterval}`);
+
             setActiveInterval(nextInterval);
             setClickedDot(nextInterval);
           }
@@ -372,25 +381,23 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
 
   const handleClick = useCallback(
     (time: number) => {
-      window.addEventListener("wheel", preventDefaultScroll, {
-        passive: false,
-      });
+      console.log(`Click detected on time: ${time}`);
 
       // Check if a double-click is happening
       if (clickTimeoutRef.current) {
+        console.log(`Double-click detected on time: ${time}`);
+
         clearTimeout(clickTimeoutRef.current);
         clickTimeoutRef.current = null;
 
-        window.removeEventListener("wheel", preventDefaultScroll);
+        // ✅ Double-click only works on an active interval OR preserved scroll position
+        if (activeInterval === time || preservedScrollPositions.has(time)) {
+          console.log(`Toggling preserved scroll position for ${time}`);
 
-        // Double-click only works on an active interval OR preserved scroll position
-        if (
-          activeIntervalRef.current === time ||
-          preservedScrollPositions.has(time)
-        ) {
           setPreservedScrollPositions((prev) => {
             const newSet = new Set(prev);
             if (newSet.has(time)) {
+              console.log(`Removing preserved scroll for ${time}`);
               setScrollPositions((prevPositions) => {
                 const updatedPositions = { ...prevPositions };
                 delete updatedPositions[time];
@@ -398,6 +405,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               });
               newSet.delete(time);
             } else {
+              console.log(`Adding preserved scroll for ${time}`);
               newSet.add(time);
             }
             return newSet;
@@ -409,15 +417,11 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
 
       console.log(`Waiting 300ms for possible double-click`);
 
-      window.addEventListener("wheel", preventDefaultScroll, {
-        passive: false,
-      });
-
       clickTimeoutRef.current = setTimeout(() => {
         console.log(`Single-click confirmed on time: ${time}`);
 
         // Single-click activates an interval if none is active
-        if (activeIntervalRef.current === time) {
+        if (activeInterval === time) {
           console.log("Deactivating interval & restoring normal scrolling");
 
           setIsHorizontalScrolling(false);
@@ -438,19 +442,21 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               [time]: 0, // Reset to first card
             }));
           }
-          activeIntervalRef.current = null;
+
           return;
         }
 
         // Delay disabling vertical scroll & enabling horizontal by 10ms
-
+        console.log("Blocking vertical scroll & enabling horizontal scroll");
+        window.addEventListener("wheel", preventDefaultScroll, {
+          passive: false,
+        });
         window.addEventListener("wheel", handleScroll, { passive: false });
 
         // ✅ Now update state AFTER listeners are set
         setIsHorizontalScrolling(true);
         setClickedDot(time);
         setActiveInterval(time);
-        activeIntervalRef.current = time;
 
         // Nudge scroll after browser settles
         setTimeout(() => {
@@ -464,7 +470,12 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         clickTimeoutRef.current = null; // Clear timeout after single-click action
       }, 300); // Fast double-click detection
     },
-    [preventDefaultScroll, preservedScrollPositions, handleScroll]
+    [
+      activeInterval,
+      preventDefaultScroll,
+      preservedScrollPositions,
+      handleScroll,
+    ]
   );
 
   /** Manage event listeners */
