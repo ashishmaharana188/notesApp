@@ -17,6 +17,7 @@ import TimelineDot from "@mui/lab/TimelineDot";
 import NoteCard from "./NotesCard";
 import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
+import { AnimatePresence } from "framer-motion";
 
 const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const {
@@ -45,22 +46,17 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const timelineRef = useRef<HTMLUListElement | null>(null);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isHorizontalScrolling, setIsHorizontalScrolling] = useState(false);
-
-  // Filtered notes (applies only if filters are set)
-  // Add currentStartTime
-
   const [currentStartTime, setCurrentStartTime] = useState(
     moment().startOf("day")
-  ); // Stores the active interval start time
+  );
   type CachedDayData = {
     timeIntervals: number[];
     scrollPositions: Record<number, number>;
   };
-
-  // Update the state definition
   const [cachedDays, setCachedDays] = useState<Record<string, CachedDayData>>(
     {}
   );
+  const activeIntervalRef = useRef<number | null>(null);
 
   const timeIntervals = useMemo(() => {
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
@@ -308,47 +304,37 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   /** Handles horizontal scrolling behavior */
   const handleScroll = useCallback(
     (event: WheelEvent) => {
-      if (!activeInterval) return;
+      const interval = activeIntervalRef.current;
+      if (!interval) return;
 
       event.preventDefault();
       event.stopPropagation();
 
-      console.log(`Scrolling on interval: ${activeInterval}`);
-
       const notesAtThisTime = notes.filter((note) =>
         // Use note.date consistently instead of note.time
-        moment(note.time).isSame(moment(activeInterval), "hour")
+        moment(note.time).isSame(moment(interval), "hour")
       );
 
       if (notesAtThisTime.length === 0) return;
 
       const maxOffset = -((notesAtThisTime.length - 1) * 180);
-      const newOffset =
-        (scrollPositions[activeInterval] || 0) + (event.deltaY > 0 ? -50 : 50);
+      const newOffset = (scrollPositions[interval] || 0) + event.deltaY * -0.5;
       const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
-
-      console.log(
-        `📍 Updated scroll position for ${activeInterval}: ${updatedOffset}`
-      );
 
       setScrollPositions((prev) => ({
         ...prev,
-        [activeInterval]: updatedOffset,
+        [interval]: updatedOffset,
       }));
 
       if (updatedOffset <= maxOffset - 10) {
-        console.log(`Fully scrolled on interval: ${activeInterval}`);
-
-        setPreservedIntervals(new Set([...preservedIntervals, activeInterval]));
+        setPreservedIntervals(new Set([...preservedIntervals, interval]));
         setIsElastic(true);
 
         setTimeout(() => {
           setIsElastic(false);
-          const nextInterval = findAdjacentInterval(activeInterval, "next");
+          const nextInterval = findAdjacentInterval(interval, "next");
 
           if (nextInterval) {
-            console.log(`Moving to next interval: ${nextInterval}`);
-
             setActiveInterval(nextInterval);
             setClickedDot(nextInterval);
           }
@@ -364,25 +350,47 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     ]
   );
 
+  const handleVerticalScroll = useCallback(
+    (event: any) => {
+      // Skip if we're in an active interval
+      if (activeInterval) return;
+
+      // Only apply to vertical scrolling
+      if (event.deltaX !== 0 || Math.abs(event.deltaY) < 5) return;
+
+      // Prevent the default scroll
+      event.preventDefault();
+
+      // Apply gentler vertical scrolling
+      window.scrollBy({
+        top: event.deltaY > 0 ? 20 : -20, // Reduced intensity
+        behavior: "smooth",
+      });
+    },
+    [activeInterval]
+  ); // Add activeInterval to dependencies
+
   const handleClick = useCallback(
     (time: number) => {
-      console.log(`Click detected on time: ${time}`);
+      window.addEventListener("wheel", preventDefaultScroll, {
+        passive: false,
+      });
 
       // Check if a double-click is happening
       if (clickTimeoutRef.current) {
-        console.log(`Double-click detected on time: ${time}`);
-
         clearTimeout(clickTimeoutRef.current);
         clickTimeoutRef.current = null;
 
-        // ✅ Double-click only works on an active interval OR preserved scroll position
-        if (activeInterval === time || preservedScrollPositions.has(time)) {
-          console.log(`Toggling preserved scroll position for ${time}`);
+        window.removeEventListener("wheel", preventDefaultScroll);
 
+        // Double-click only works on an active interval OR preserved scroll position
+        if (
+          activeIntervalRef.current === time ||
+          preservedScrollPositions.has(time)
+        ) {
           setPreservedScrollPositions((prev) => {
             const newSet = new Set(prev);
             if (newSet.has(time)) {
-              console.log(`Removing preserved scroll for ${time}`);
               setScrollPositions((prevPositions) => {
                 const updatedPositions = { ...prevPositions };
                 delete updatedPositions[time];
@@ -390,7 +398,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               });
               newSet.delete(time);
             } else {
-              console.log(`Adding preserved scroll for ${time}`);
               newSet.add(time);
             }
             return newSet;
@@ -402,11 +409,15 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
 
       console.log(`Waiting 300ms for possible double-click`);
 
+      window.addEventListener("wheel", preventDefaultScroll, {
+        passive: false,
+      });
+
       clickTimeoutRef.current = setTimeout(() => {
         console.log(`Single-click confirmed on time: ${time}`);
 
         // Single-click activates an interval if none is active
-        if (activeInterval === time) {
+        if (activeIntervalRef.current === time) {
           console.log("Deactivating interval & restoring normal scrolling");
 
           setIsHorizontalScrolling(false);
@@ -417,7 +428,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
           setTimeout(() => {
             console.log("Restoring default vertical scrolling");
             window.removeEventListener("wheel", preventDefaultScroll);
-          }, 10);
+          }, 2);
 
           // Reset scroll position if not preserved
           if (!preservedScrollPositions.has(time)) {
@@ -427,23 +438,24 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               [time]: 0, // Reset to first card
             }));
           }
-
+          activeIntervalRef.current = null;
           return;
         }
 
         // Delay disabling vertical scroll & enabling horizontal by 10ms
+
+        window.addEventListener("wheel", handleScroll, { passive: false });
+
+        // ✅ Now update state AFTER listeners are set
+        setIsHorizontalScrolling(true);
+        setClickedDot(time);
+        setActiveInterval(time);
+        activeIntervalRef.current = time;
+
+        // Nudge scroll after browser settles
         setTimeout(() => {
-          console.log("Instantly blocking vertical scrolling");
-          window.addEventListener("wheel", preventDefaultScroll, {
-            passive: false,
-          });
-
-          console.log("Instantly enabling horizontal scrolling");
-          window.addEventListener("wheel", handleScroll, { passive: false });
-
-          // **Trigger horizontal scroll immediately**
           handleScroll({ deltaY: 1, preventDefault: () => {} } as WheelEvent);
-        }, 10);
+        }, 0);
 
         setIsHorizontalScrolling(true);
         setClickedDot(time);
@@ -452,17 +464,13 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         clickTimeoutRef.current = null; // Clear timeout after single-click action
       }, 300); // Fast double-click detection
     },
-    [
-      activeInterval,
-      preventDefaultScroll,
-      preservedScrollPositions,
-      handleScroll,
-    ]
+    [preventDefaultScroll, preservedScrollPositions, handleScroll]
   );
 
   /** Manage event listeners */
   useEffect(() => {
     props.onFilteredNotesChange?.(filteredNotes.length > 0);
+
     // Manage event listeners
     if (isHorizontalScrolling) {
       console.log("Blocking vertical scroll & enabling horizontal scroll");
@@ -476,10 +484,13 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
       window.removeEventListener("wheel", preventDefaultScroll);
     }
 
+    window.addEventListener("wheel", handleVerticalScroll, { passive: false });
+
     return () => {
       console.log("Cleaning up event listeners");
       window.removeEventListener("wheel", handleScroll);
       window.removeEventListener("wheel", preventDefaultScroll);
+      window.removeEventListener("wheel", handleVerticalScroll);
 
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
@@ -492,13 +503,15 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     currentStartTime,
     isHorizontalScrolling,
     handleScroll,
+    handleVerticalScroll,
     preventDefaultScroll,
     notes,
     filteredNotes,
+    activeInterval,
   ]);
 
   return (
-    <div>
+    <div className="mt-15">
       {filterButton && (
         <div
           className={`flex fixed bottom-90 right-0 justify-between items-center bg-black/80 p-3 bg-gray-200 rounded-lg shadow-lg mx-4 transition-all duration-300 z-50 backdrop-blur-sm bg-white/60 border-white/20 `}
@@ -531,7 +544,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         </div>
       )}
 
-      <div className="mb-10">
+      <div>
         <Timeline ref={timelineRef} position="right">
           {timeIntervals.map((time) => {
             const notesAtThisTime = filteredNotes.filter((note) => {
@@ -554,9 +567,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               <TimelineItem
                 key={time}
                 className={
-                  notesAtThisTime.length > 0
-                    ? "mb-10 mt-10 mb-10 -mr-15"
-                    : "mt-15"
+                  notesAtThisTime.length > 0 ? "mb-10 -mr-15" : "mt-15"
                 }
               >
                 <TimelineSeparator>
@@ -603,9 +614,11 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                       transform: `translateX(${scrollPositions[time] || 0}px)`,
                     }}
                   >
-                    {notesAtThisTime.map((note) => (
-                      <NoteCard key={note.id} note={note} />
-                    ))}
+                    <AnimatePresence mode="popLayout">
+                      {notesAtThisTime.map((note) => (
+                        <NoteCard key={note.id} note={note} />
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
               </TimelineItem>

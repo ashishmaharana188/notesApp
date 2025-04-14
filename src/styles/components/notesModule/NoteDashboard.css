@@ -19,3 +19,27 @@
   color: rgb(0, 0, 0);
   box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.25);
 }
+/* Add to NoteDashboard.css */
+.timeline-scroll-container {
+  scroll-behavior: smooth;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  padding-bottom: 10px; /* Prevents bottom cut-off */
+}
+
+/* Optional: Hide scrollbar but keep functionality */
+.timeline-scroll-container::-webkit-scrollbar {
+  height: 4px; /* Thin scrollbar */
+}
+
+.timeline-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+/* For Firefox */
+.timeline-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}

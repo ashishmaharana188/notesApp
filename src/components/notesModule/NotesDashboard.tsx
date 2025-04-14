@@ -4,6 +4,7 @@ import "../../styles/components/notesModule/NoteDashboard.css";
 import NotesTimeline from "./NotesTimeLine";
 import NotesTimelineFilter from "./NotesTimelineFilter";
 import { NotesTimelineRef } from "../../TS_INTERFACE/gInterface";
+import { motion, AnimatePresence } from "framer-motion";
 
 const NotesDashboardPage = () => {
   const timelineRef = useRef<NotesTimelineRef>(null);
@@ -48,16 +49,23 @@ const NotesDashboardPage = () => {
   return (
     <div>
       {/* 📌 Dashboard Title */}
-      <p
-        className={`fixed top-1 left-1/13 transform -translate-x-1/2 text-4xl font-bold transition-transform duration-150 ${
-          visible ? "translate-y-10" : "-translate-y-full"
-        }`}
-      >
-        Note Dashboard!
-      </p>
+      <AnimatePresence>
+        {visible && (
+          <motion.p
+            key="note-dashboard"
+            initial={{ y: 0, opacity: 1 }}
+            animate={{ y: 40, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }} // 👈 moves up and fades out
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="fixed top-1 left-1/13 transform -translate-x-1/2 text-4xl font-bold transition-transform duration-150"
+          >
+            Note Dashboard!
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* 📌 Notes Timeline (Centered in Middle) */}
-      <div className="w-full mt-10 h-full flex flex-col items-start ">
+      <div className="w-full mt-10 h-full flex flex-col items-start timeline-scroll-container">
         <NotesTimeline
           ref={timelineRef}
           filterButton={filterButton}

@@ -3,24 +3,30 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Link } from "react-router-dom";
 import { NotesFormProp } from "../../TS_INTERFACE/gInterface";
 import { removeNote } from "../../actions/AddNote";
-import { useNavigate } from "react-router-dom";
+
 import { useDispatch } from "react-redux";
+import { motion } from "framer-motion";
 
 const NoteCard = ({ note }: NotesFormProp) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const handleDelete = () => {
     if (note?.id) {
       dispatch(removeNote(note.id));
-      navigate("/notes");
     } else {
       console.log("Entry not available to delete");
     }
   };
 
   return (
-    <div className="w-120 mb-2 ml-3 bg-white rounded-lg shadow-md p-5 border border-gray-200">
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8, y: 20 }}
+      transition={{ duration: 0.3 }}
+      className="w-120 mb-2 ml-3 bg-white rounded-lg shadow-md p-5 border border-gray-200"
+    >
       <h2 className="text-xl font-bold text-black">
         {note?.title || "Untitled Note"}
       </h2>
@@ -59,7 +65,7 @@ const NoteCard = ({ note }: NotesFormProp) => {
           <DeleteIcon className="text-red-600" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
