@@ -56,7 +56,7 @@ const NotesDashboardPage = () => {
             initial={{ y: 0, opacity: 1 }}
             animate={{ y: 40, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }} // 👈 moves up and fades out
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            transition={{ duration: 0.11, ease: "easeInOut" }}
             className="fixed top-1 left-1/13 transform -translate-x-1/2 text-4xl font-bold transition-transform duration-150"
           >
             Note Dashboard!

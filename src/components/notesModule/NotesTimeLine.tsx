@@ -17,7 +17,7 @@ import TimelineDot from "@mui/lab/TimelineDot";
 import NoteCard from "./NotesCard";
 import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const {
@@ -555,7 +555,18 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         </div>
       )}
 
-      <div>
+      <motion.div
+        initial={{ y: 0 }}
+        animate={{
+          y: filteredNotes.length > 0 ? -80 : 15, // -80px for -mt-20, 15px for mt-[15px]
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 100,
+          damping: 15,
+          mass: 1,
+        }}
+      >
         <Timeline ref={timelineRef} position="right">
           {timeIntervals.map((time) => {
             const notesAtThisTime = filteredNotes.filter((note) => {
@@ -578,7 +589,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               <TimelineItem
                 key={time}
                 className={
-                  notesAtThisTime.length > 0 ? "mb-10 -mr-15" : "mt-15"
+                  notesAtThisTime.length > 0 ? "mb-10 -mr-15 mt-15" : "mt-15"
                 }
               >
                 <TimelineSeparator>
@@ -636,7 +647,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             );
           })}
         </Timeline>
-      </div>
+      </motion.div>
     </div>
   );
 });
