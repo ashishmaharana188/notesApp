@@ -1,2 +1,14 @@
 fix simultaneous scrolling while interval is active or turned off
 implement animation when deleting a card
+    <motion.div
+      initial={{ y: 0 }}
+      animate={{
+        y: filteredNotes.length > 0 ? -80 : 15, // -80px for -mt-20, 15px for mt-[15px]
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+        mass: 1,
+      }}
+    >

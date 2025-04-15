@@ -558,7 +558,8 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
       <motion.div
         initial={{ y: 0 }}
         animate={{
-          y: filteredNotes.length > 0 ? -80 : 15, // -80px for -mt-20, 15px for mt-[15px]
+          y: filteredNotes.length > 0 ? -65 : 0,
+          x: filteredNotes.length > 0 ? -10 : 0,
         }}
         transition={{
           type: "spring",
@@ -586,64 +587,70 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             });
 
             return (
-              <TimelineItem
+              <motion.div
                 key={time}
                 className={
-                  notesAtThisTime.length > 0 ? "mb-10 -mr-15 mt-15" : "mt-15"
+                  notesAtThisTime.length > 0 ? "mb-10 mt-15" : "mt-15 mb-10"
                 }
+                animate={{ marginRight: notesAtThisTime.length > 0 ? -60 : 0 }} // Animate marginRight
+                transition={{ duration: 0.35 }}
               >
-                <TimelineSeparator>
-                  <div className="relative flex flex-col items-center">
-                    <TimelineDot
-                      className={`cursor-pointer ${
-                        clickedDot === time ? "animate-bounce" : ""
-                      } ${
-                        preservedIntervals.has(time)
-                          ? "bg-gray-800 shadow-lg"
-                          : ""
-                      }`}
-                      onClick={() => handleClick(time)}
-                    />
-                    <TimelineConnector
-                      className="min-h-[100px] cursor-pointer"
-                      onClick={() => handleClick(time)}
-                    />
-                    <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10 hover:bg-gray-600">
-                      <button
-                        className="cursor-pointer text-white text-sm px-3 py-1"
+                <TimelineItem>
+                  <TimelineSeparator>
+                    <div className="relative flex flex-col items-center">
+                      <TimelineDot
+                        className={`cursor-pointer ${
+                          clickedDot === time ? "animate-bounce" : ""
+                        } ${
+                          preservedIntervals.has(time)
+                            ? "bg-gray-800 shadow-lg"
+                            : ""
+                        }`}
                         onClick={() => handleClick(time)}
-                      >
-                        {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                      </button>
+                      />
+                      <TimelineConnector
+                        className="min-h-[100px] cursor-pointer"
+                        onClick={() => handleClick(time)}
+                      />
+                      <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10 hover:bg-gray-600">
+                        <button
+                          className="cursor-pointer text-white text-sm px-3 py-1"
+                          onClick={() => handleClick(time)}
+                        >
+                          {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </TimelineSeparator>
+                  </TimelineSeparator>
 
-                <TimelineContent>
-                  <h4 className="mt-1 text-lg font-semibold">
-                    {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                  </h4>
-                </TimelineContent>
+                  <TimelineContent>
+                    <h4 className="mt-1 text-lg font-semibold">
+                      {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
+                    </h4>
+                  </TimelineContent>
 
-                {notesAtThisTime.length > 0 && (
-                  <div
-                    className={`absolute left-70 -top-5 flex gap-4 transition-transform ${
-                      isElastic
-                        ? "duration-200 ease-out"
-                        : "duration-500 ease-out"
-                    }`}
-                    style={{
-                      transform: `translateX(${scrollPositions[time] || 0}px)`,
-                    }}
-                  >
-                    <AnimatePresence mode="popLayout">
-                      {notesAtThisTime.map((note) => (
-                        <NoteCard key={note.id} note={note} />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </TimelineItem>
+                  {notesAtThisTime.length > 0 && (
+                    <div
+                      className={`absolute left-70 -top-5 flex gap-4 transition-transform ${
+                        isElastic
+                          ? "duration-200 ease-out"
+                          : "duration-500 ease-out"
+                      }`}
+                      style={{
+                        transform: `translateX(${
+                          scrollPositions[time] || 0
+                        }px)`,
+                      }}
+                    >
+                      <AnimatePresence mode="popLayout">
+                        {notesAtThisTime.map((note) => (
+                          <NoteCard key={note.id} note={note} />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </TimelineItem>
+              </motion.div>
             );
           })}
         </Timeline>
