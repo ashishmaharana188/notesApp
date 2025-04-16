@@ -630,24 +630,45 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                   </TimelineContent>
 
                   {notesAtThisTime.length > 0 && (
-                    <div
-                      className={`absolute left-70 -top-5 flex gap-4 transition-transform ${
-                        isElastic
-                          ? "duration-200 ease-out"
-                          : "duration-500 ease-out"
-                      }`}
-                      style={{
-                        transform: `translateX(${
-                          scrollPositions[time] || 0
-                        }px)`,
-                      }}
+                    <motion.div
+                      className="absolute left-70 -top-5"
+                      initial={false}
                     >
-                      <AnimatePresence mode="popLayout">
-                        {notesAtThisTime.map((note) => (
-                          <NoteCard key={note.id} note={note} />
-                        ))}
-                      </AnimatePresence>
-                    </div>
+                      <motion.div
+                        className="flex gap-4"
+                        drag="x"
+                        dragConstraints={{
+                          left: -((notesAtThisTime.length - 1) * 180),
+                          right: 0,
+                        }}
+                        style={{
+                          cursor: "grab",
+                        }}
+                        whileTap={{ cursor: "grabbing" }}
+                        dragElastic={0.2}
+                        dragTransition={{
+                          bounceStiffness: 300,
+                          bounceDamping: 20,
+                        }}
+                      >
+                        <AnimatePresence mode="popLayout">
+                          {notesAtThisTime.map((note) => (
+                            <motion.div
+                              key={note.id}
+                              className="touch-none select-none"
+                              whileHover={{ scale: 1.02 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 17,
+                              }}
+                            >
+                              <NoteCard key={note.id} note={note} />
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </motion.div>
+                    </motion.div>
                   )}
                 </TimelineItem>
               </motion.div>
