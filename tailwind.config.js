@@ -1,13 +1,17 @@
-/** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // Includes all JSX/TSX files in src
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-    "./src/styles/**/*.{css}", // Ensure components are covered// Ensures Tailwind scans all component files
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: "#525B44",
+        secondary: "#6B705C",
+        accent: "#A27B5C",
+        background: "#DCD7C9",
+      },
+      fontSize: {
+        base: "62.5%",
+      },
+    },
   },
   plugins: [],
 };

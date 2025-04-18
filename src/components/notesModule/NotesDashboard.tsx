@@ -47,7 +47,7 @@ const NotesDashboardPage = () => {
   // Function to reset selectedAMPM to null
 
   return (
-    <div>
+    <div className="bg-grey">
       {/* 📌 Dashboard Title */}
       <AnimatePresence>
         {visible && (
@@ -57,7 +57,7 @@ const NotesDashboardPage = () => {
             animate={{ y: 36, opacity: 1 }}
             exit={{ y: -36, opacity: 1 }}
             transition={{ type: "spring", duration: 1 }}
-            className="fixed top-1 left-1/13 transform -translate-x-1/2 text-4xl font-bold"
+            className="fixed top-1 left-1/2 transform -translate-x-1/2 z-50 text-4xl font-bold text-[#525b28] whitespace-nowrap"
           >
             Note Dashboard!
           </motion.p>
@@ -93,10 +93,10 @@ const NotesDashboardPage = () => {
           />
           <div className={"relative w-16 h-8 rounded-full transition"}>
             <div
-              className={`absolute top-1 bottom-1 left-1 w-5 h-6 bg-black rounded-full transition-transform ${
+              className={`absolute top-1 bottom-1 left-1 w-5 h-6 bg-[#525b28] rounded-full transition-transform ${
                 filterButton
-                  ? "translate-x-9 bg-black-800"
-                  : "translate-x-0 bg-black-800"
+                  ? "translate-x-9 bg-[#525b28]"
+                  : "translate-x-0 bg-[#525b28]"
               }`}
             ></div>
           </div>

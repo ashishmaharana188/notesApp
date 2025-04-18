@@ -597,13 +597,13 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               >
                 <TimelineItem>
                   <TimelineSeparator>
-                    <div className="relative flex flex-col items-center">
+                    <div className="relative flex flex-col items-center ">
                       <TimelineDot
-                        className={`cursor-pointer ${
+                        className={`cursor-pointer !bg-[#525B44] hover:!bg-[#6B705C] transition-colors duration-200  ${
                           clickedDot === time ? "animate-bounce" : ""
                         } ${
                           preservedIntervals.has(time)
-                            ? "bg-gray-800 shadow-lg"
+                            ? "!bg-[#A27B5C] shadow-lg ring-2 ring-[#525B44]/30"
                             : ""
                         }`}
                         onClick={() => handleClick(time)}
@@ -612,9 +612,9 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                         className="min-h-[100px] cursor-pointer"
                         onClick={() => handleClick(time)}
                       />
-                      <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10 hover:bg-gray-600">
+                      <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 p-2 rounded-lg shadow-lg z-30 bg-[#443621]/80 hover:bg-[#443621]/80">
                         <button
-                          className="cursor-pointer text-white text-sm px-3 py-1"
+                          className="cursor-pointer text-[white] hover:text-[white]/80 text-sm px-3 py-1 transition-colors duration-200 "
                           onClick={() => handleClick(time)}
                         >
                           {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
@@ -624,7 +624,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                   </TimelineSeparator>
 
                   <TimelineContent>
-                    <h4 className="mt-1 text-lg font-semibold">
+                    <h4 className="mt-1 text-lg font-semibold text-[#343131]">
                       {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
                     </h4>
                   </TimelineContent>

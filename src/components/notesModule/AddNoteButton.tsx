@@ -21,7 +21,7 @@ class AddNoteButton extends Component<{}, AddNoteButtonState> {
     return (
       <div>
         <button
-          className="fixed bottom-6 right-4 h-13 w-50 ml-500 border-none outline-none bg-gray-800 text-white text-sm px-3 py-2 cursor-pointer rounded-md mt-12 mb-12"
+          className="fixed bottom-6 right-4 h-13 w-50 ml-500 border-none outline-none bg-[#525b28] text-white text-sm px-3 py-2 cursor-pointer rounded-md mt-12 mb-12"
           onClick={this.handleOpen}
         >
           Add Note
