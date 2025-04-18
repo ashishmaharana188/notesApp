@@ -7,11 +7,6 @@
   resolved "https://registry.npmjs.org/@adobe/css-tools/-/css-tools-4.4.2.tgz"
   integrity sha512-baYZExFpsdkBNuvGKTKWCwKH57HRZLVtycZS05WTQNVOiXVSeAki3nU35zlRbToeMW8aHlJfyS+1C4BOv27q0A==
 
-"@alloc/quick-lru@^5.2.0":
-  version "5.2.0"
-  resolved "https://registry.npmjs.org/@alloc/quick-lru/-/quick-lru-5.2.0.tgz"
-  integrity sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==
-
 "@ampproject/remapping@^2.2.0":
   version "2.3.0"
   resolved "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz"
@@ -1023,17 +1018,6 @@
     "@tailwindcss/oxide-wasm32-wasi" "4.1.4"
     "@tailwindcss/oxide-win32-arm64-msvc" "4.1.4"
     "@tailwindcss/oxide-win32-x64-msvc" "4.1.4"
-
-"@tailwindcss/postcss@^4.1.4":
-  version "4.1.4"
-  resolved "https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.4.tgz"
-  integrity sha512-bjV6sqycCEa+AQSt2Kr7wpGF1bOZJ5wsqnLEkqSbM/JEHxx/yhMH8wHmdkPyApF9xhHeMSwnnkDUUMMM/hYnXw==
-  dependencies:
-    "@alloc/quick-lru" "^5.2.0"
-    "@tailwindcss/node" "4.1.4"
-    "@tailwindcss/oxide" "4.1.4"
-    postcss "^8.4.41"
-    tailwindcss "4.1.4"
 
 "@tailwindcss/vite@^4.1.4":
   version "4.1.4"
@@ -3524,7 +3508,7 @@ postcss-value-parser@^4.2.0:
   resolved "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz"
   integrity sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==
 
-postcss@^8.1.0, postcss@^8.4.41, postcss@^8.4.48, postcss@^8.5.3:
+postcss@^8.1.0, postcss@^8.4.48, postcss@^8.5.3:
   version "8.5.3"
   resolved "https://registry.npmjs.org/postcss/-/postcss-8.5.3.tgz"
   integrity sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A==
