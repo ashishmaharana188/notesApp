@@ -96,7 +96,7 @@ export default class NotesForm extends React.Component<
     }
     return (
       <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 bg-white border border-gray-300 rounded-md shadow-md p-4">
-        <div className="bg-gray-800 text-white p-2 text-lg rounded-t-md text-center">
+        <div className="bg-[#525b28] text-white p-2 text-lg rounded-t-md text-center">
           <input
             type="text"
             placeholder="Title"
@@ -186,13 +186,13 @@ export default class NotesForm extends React.Component<
         </div>
         <div className="flex justify-center gap-4 border-t pt-2">
           <button
-            className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black hover:text-white hover:shadow-md"
+            className="bg-[#525b28] text-white px-4 py-2 rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
             onClick={this.handleCancel}
           >
             Cancel
           </button>
           <button
-            className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black hover:text-white hover:shadow-md"
+            className="bg-[#525b28] text-white px-4 py-2 rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
             onClick={this.onSubmit}
           >
             {this.state.id ? "Save Changes" : "Add Note"}

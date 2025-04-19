@@ -1,17 +1,3 @@
-@import "tailwindcss";
-
-:root {
-  --base-rem: 62.5%; /* Sets 1rem = 10px */
-  --primary-color: white;
-  --dashboard-text: #525b44;
-}
-html {
-  font-size: var(--base-rem);
-  background-color: #dcd7c9;
-}
-
-/* MUI DatePicker Height Override */
-
 :global(.MuiPickersToolbar-root) {
   background-color: #525b28 !important;
 }
