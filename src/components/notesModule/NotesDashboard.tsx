@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import AddNoteButton from "./AddNoteButton";
-import "../../styles/components/notesModule/NoteDashboard.css";
 import NotesTimeline from "./NotesTimeLine";
 import NotesTimelineFilter from "./NotesTimelineFilter";
 import { NotesTimelineRef } from "../../TS_INTERFACE/gInterface";

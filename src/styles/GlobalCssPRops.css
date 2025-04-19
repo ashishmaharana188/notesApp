@@ -11,26 +11,3 @@ html {
 }
 
 /* MUI DatePicker Height Override */
-
-:global(.MuiPickersToolbar-root) {
-  background-color: #525b28 !important;
-}
-
-:global(.Mui-selected) {
-  background-color: #525b28 !important;
-  color: white !important;
-}
-
-:global(.Mui-selected:hover) {
-  background-color: #6a7235 !important;
-}
-
-:global(.MuiClockPointer-root),
-:global(.MuiClock-pin),
-:global(.MuiClockPointer-thumb) {
-  background-color: #525b28 !important;
-}
-
-:global(.MuiSvgIcon-root) {
-  color: #525b28 !important;
-}
