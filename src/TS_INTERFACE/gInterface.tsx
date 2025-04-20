@@ -75,3 +75,4 @@ export interface NotesTimelineProps extends NoteListProps {
 export interface NotesTimelineRef {
   getFilteredNotesLength: () => number;
 }
+export type Note = notesReducerIntf;
