@@ -64,7 +64,7 @@ const NotesDashboardPage = () => {
       </AnimatePresence>
 
       {/* 📌 Notes Timeline (Centered in Middle) */}
-      <div className="w-full mt-10 h-full flex flex-col items-start timeline-scroll-container">
+      <div className="w-full h-full flex flex-col items-start timeline-scroll-container">
         <NotesTimeline
           ref={timelineRef}
           filterButton={filterButton}

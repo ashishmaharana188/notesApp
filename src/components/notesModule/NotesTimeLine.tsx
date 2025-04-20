@@ -36,7 +36,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const [preservedIntervals, setPreservedIntervals] = useState<Set<number>>(
     new Set()
   );
-  const [isElastic, setIsElastic] = useState(false);
   const timelineRef = useRef<HTMLUListElement | null>(null);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isHorizontalScrolling, setIsHorizontalScrolling] = useState(false);
@@ -130,53 +129,39 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   }, []);
 
   // Update the filteredNotes useMemo function
+
   const filteredNotes = useMemo(() => {
-    const notesFilteredByDate = notes.filter((note) => {
-      // Use note.date for date comparison
-      const noteDate = moment(note.date).startOf("day");
-      const currentDate = moment(currentStartTime).startOf("day");
-      const isSameDay = noteDate.isSame(currentDate, "day");
-      return isSameDay;
+    const matchedNotes = notes.filter((note) => {
+      const noteDate = moment(note.date).format("YYYY-MM-DD");
+      const noteTime = moment(note.time).startOf("hour").format("HH:mm");
+
+      const match = timeIntervals.find((interval) => {
+        const intervalMoment = moment(interval); // already in ms
+        const intervalDate = intervalMoment.format("YYYY-MM-DD");
+        const intervalTime = intervalMoment.format("HH:mm");
+
+        const isSameDate = intervalDate === noteDate;
+        const isSameTime = intervalTime === noteTime;
+
+        if (isSameDate && isSameTime) {
+          return true;
+        }
+
+        return false;
+      });
+
+      return Boolean(match);
     });
 
-    const notesFilteredByTime = notesFilteredByDate.filter((note) => {
-      // Make sure we have both date and time information for the note
-      const noteHour = moment(note.time).startOf("hour");
-
-      // Check if this hour falls within our visible time intervals
-      const isInTimeIntervals = timeIntervals.some((interval) =>
-        moment(interval).isSame(noteHour, "hour")
-      );
-
-      console.log(
-        `Note ID: ${note.id} Time Filter:`,
-        isInTimeIntervals,
-        `Note hour: ${noteHour.format("HH:mm")}`
-      );
-
-      return isInTimeIntervals;
-    });
-
-    console.log("Filtered by Time Intervals:", notesFilteredByTime);
-
-    // Continue with AMPM filtering and sorting as before
-
-    const sortedNotes = notesFilteredByTime.sort((a, b) =>
+    const sortedNotes = matchedNotes.sort((a, b) =>
       sortOrder === "asc"
-        ? moment(a.date).valueOf() - moment(b.date).valueOf()
-        : moment(b.date).valueOf() - moment(a.date).valueOf()
+        ? moment.unix(a.date).valueOf() - moment.unix(b.date).valueOf()
+        : moment.unix(b.date).valueOf() - moment.unix(a.date).valueOf()
     );
 
-    console.log("Sorted Notes:", sortedNotes);
     return sortedNotes;
-  }, [
-    notes,
-    sortOrder,
-    selectedAMPM,
-    is24Hour,
-    currentStartTime,
-    timeIntervals,
-  ]);
+  }, [notes, timeIntervals, sortOrder]);
+
   useImperativeHandle(ref, () => ({
     getFilteredNotesLength: () => filteredNotes.length,
   }));
@@ -329,10 +314,8 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         console.log(`Fully scrolled on interval: ${activeInterval}`);
 
         setPreservedIntervals(new Set([...preservedIntervals, activeInterval]));
-        setIsElastic(true);
 
         setTimeout(() => {
-          setIsElastic(false);
           const nextInterval = findAdjacentInterval(activeInterval, "next");
 
           if (nextInterval) {
@@ -548,15 +531,25 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
           </button>
         </div>
       )}
-      <div className="">
+      <div className="mt-15">
         <Timeline ref={timelineRef} position="left" className="ml-15">
           {timeIntervals.map((time) => {
             const notesAtThisTime = useMemo(() => {
-              return filteredNotes.filter((note) =>
-                moment(note.time)
+              return filteredNotes.filter((note) => {
+                // Assume note.date and note.time are both in SECONDS (Unix format)
+                const noteDate = moment(note.date).format("YYYY-MM-DD");
+                const noteTime = moment(note.time)
                   .startOf("hour")
-                  .isSame(moment(time).startOf("hour"))
-              );
+                  .format("HH:mm");
+
+                const intervalDate = moment(time).format("YYYY-MM-DD");
+                const intervalTime = moment(time).format("HH:mm");
+
+                const isMatch =
+                  noteDate === intervalDate && noteTime === intervalTime;
+
+                return isMatch;
+              });
             }, [filteredNotes, time]);
 
             return (
