@@ -1,3 +1,4 @@
+import React from "react";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Link } from "react-router-dom";
@@ -7,7 +8,7 @@ import { removeNote } from "../../actions/AddNote";
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 
-const NoteCard = ({ note }: NotesFormProp) => {
+const NoteCard = React.memo(({ note }: NotesFormProp) => {
   const dispatch = useDispatch();
 
   const handleDelete = () => {
@@ -60,13 +61,13 @@ const NoteCard = ({ note }: NotesFormProp) => {
 
         <button
           onClick={handleDelete}
-          className="p-2 bg-red-100 rounded-lg hover:bg-red-200 transition"
+          className="p-2 bg-white rounded-lg hover:bg-[#525b28]/30 transition"
         >
           <DeleteIcon className="text-red-600" />
         </button>
       </div>
     </motion.div>
   );
-};
+});
 
 export default NoteCard;

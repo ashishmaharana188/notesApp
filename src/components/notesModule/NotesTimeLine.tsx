@@ -9,15 +9,9 @@ import React, {
 } from "react";
 import { connect } from "react-redux";
 import Timeline from "@mui/lab/Timeline";
-import TimelineItem from "@mui/lab/TimelineItem";
-import TimelineSeparator from "@mui/lab/TimelineSeparator";
-import TimelineConnector from "@mui/lab/TimelineConnector";
-import TimelineContent from "@mui/lab/TimelineContent";
-import TimelineDot from "@mui/lab/TimelineDot";
-import NoteCard from "./NotesCard";
 import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
-import { motion, AnimatePresence } from "framer-motion";
+import TimelineRow from "./TimelineRow";
 
 const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const {
@@ -529,7 +523,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         >
           <button
             onClick={handlePreviousInterval}
-            className="w-25 cursor-pointer px-4 py-2 bg-gray-800 text-white text-lg rounded-md shadow-lg hover:bg-gray-600 transition"
+            className="w-25 cursor-pointer px-4 py-2 bg-[#525b28] text-white text-lg rounded-md shadow-lg hover:bg-[#625b28]/80 transition"
           >
             Previous
           </button>
@@ -548,134 +542,37 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
 
           <button
             onClick={handleNextInterval}
-            className="w-25 cursor-pointer px-4 py-2 bg-gray-800 text-white text-lg rounded-md shadow-lg hover:bg-gray-600 transition"
+            className="w-25 cursor-pointer px-4 py-2 bg-[#525b28] text-white text-lg rounded-md shadow-lg hover:bg-[#625b28]/80 transition"
           >
             Next
           </button>
         </div>
       )}
-
-      <motion.div
-        initial={{ y: 0 }}
-        animate={{
-          y: filteredNotes.length > 0 ? -65 : 0,
-          x: filteredNotes.length > 0 ? -10 : 0,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 100,
-          damping: 15,
-          mass: 1,
-        }}
-      >
-        <Timeline ref={timelineRef} position="right">
+      <div className="">
+        <Timeline ref={timelineRef} position="left" className="ml-15">
           {timeIntervals.map((time) => {
-            const notesAtThisTime = filteredNotes.filter((note) => {
-              const noteHour = moment(note.time).startOf("hour");
-              const timelineHour = moment(time).startOf("hour");
-              const matches = noteHour.isSame(timelineHour, "hour");
-
-              if (matches) {
-                console.log(
-                  `Note ${note.id} matches timeline hour ${timelineHour.format(
-                    "HH:mm"
-                  )}`
-                );
-              }
-
-              return matches;
-            });
+            const notesAtThisTime = useMemo(() => {
+              return filteredNotes.filter((note) =>
+                moment(note.time)
+                  .startOf("hour")
+                  .isSame(moment(time).startOf("hour"))
+              );
+            }, [filteredNotes, time]);
 
             return (
-              <motion.div
+              <TimelineRow
                 key={time}
-                className={
-                  notesAtThisTime.length > 0 ? "mb-10 mt-15" : "mt-15 mb-10"
-                }
-                animate={{ marginRight: notesAtThisTime.length > 0 ? -60 : 0 }} // Animate marginRight
-                transition={{ duration: 0.35 }}
-              >
-                <TimelineItem>
-                  <TimelineSeparator>
-                    <div className="relative flex flex-col items-center ">
-                      <TimelineDot
-                        className={`cursor-pointer !bg-[#525B44] hover:!bg-[#6B705C] transition-colors duration-200  ${
-                          clickedDot === time ? "animate-bounce" : ""
-                        } ${
-                          preservedIntervals.has(time)
-                            ? "!bg-[#A27B5C] shadow-lg ring-2 ring-[#525B44]/30"
-                            : ""
-                        }`}
-                        onClick={() => handleClick(time)}
-                      />
-                      <TimelineConnector
-                        className="min-h-[100px] cursor-pointer"
-                        onClick={() => handleClick(time)}
-                      />
-                      <div className="cursor-pointer absolute left-[-14px] top-1/2 transform -translate-y-1/2 p-2 rounded-lg shadow-lg z-30 bg-[#443621]/80 hover:bg-[#443621]/80">
-                        <button
-                          className="cursor-pointer text-[white] hover:text-[white]/80 text-sm px-3 py-1 transition-colors duration-200 "
-                          onClick={() => handleClick(time)}
-                        >
-                          {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                        </button>
-                      </div>
-                    </div>
-                  </TimelineSeparator>
-
-                  <TimelineContent>
-                    <h4 className="mt-1 text-lg font-semibold text-[#343131]">
-                      {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                    </h4>
-                  </TimelineContent>
-
-                  {notesAtThisTime.length > 0 && (
-                    <motion.div
-                      className="absolute left-70 -top-5"
-                      initial={false}
-                    >
-                      <motion.div
-                        className="flex gap-4"
-                        drag="x"
-                        dragConstraints={{
-                          left: -((notesAtThisTime.length - 1) * 180),
-                          right: 0,
-                        }}
-                        style={{
-                          cursor: "grab",
-                        }}
-                        whileTap={{ cursor: "grabbing" }}
-                        dragElastic={0.2}
-                        dragTransition={{
-                          bounceStiffness: 300,
-                          bounceDamping: 20,
-                        }}
-                      >
-                        <AnimatePresence mode="popLayout">
-                          {notesAtThisTime.map((note) => (
-                            <motion.div
-                              key={note.id}
-                              className="touch-none select-none"
-                              whileHover={{ scale: 1.02 }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 17,
-                              }}
-                            >
-                              <NoteCard key={note.id} note={note} />
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </TimelineItem>
-              </motion.div>
+                time={time}
+                notesAtThisTime={notesAtThisTime}
+                is24Hour={is24Hour}
+                clickedDot={clickedDot}
+                preservedIntervals={preservedIntervals}
+                handleClick={handleClick}
+              />
             );
           })}
         </Timeline>
-      </motion.div>
+      </div>
     </div>
   );
 });
