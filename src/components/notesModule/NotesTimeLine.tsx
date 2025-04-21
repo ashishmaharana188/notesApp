@@ -553,15 +553,17 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             }, [filteredNotes, time]);
 
             return (
-              <TimelineRow
-                key={time}
-                time={time}
-                notesAtThisTime={notesAtThisTime}
-                is24Hour={is24Hour}
-                clickedDot={clickedDot}
-                preservedIntervals={preservedIntervals}
-                handleClick={handleClick}
-              />
+              <div className="flex items-center">
+                <TimelineRow
+                  key={time}
+                  time={time}
+                  notesAtThisTime={notesAtThisTime}
+                  is24Hour={is24Hour}
+                  clickedDot={clickedDot}
+                  preservedIntervals={preservedIntervals}
+                  handleClick={handleClick}
+                />
+              </div>
             );
           })}
         </Timeline>

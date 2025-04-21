@@ -30,7 +30,7 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
     <motion.div
       className={
         shouldAnimate
-          ? "transform transition-all duration-350 mb-45 -mr-10"
+          ? "transform transition-all duration-350 mb-45 ml-10"
           : "transform transition-all duration-350 mb-40 mt-0"
       }
       initial={false}
@@ -66,9 +66,9 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
             </div>
           </div>
         </TimelineSeparator>
-
+        W
         {shouldAnimate && (
-          <motion.div className="absolute left-50 -top-10" initial={false}>
+          <motion.div className="absolute left-30 -top-10" initial={false}>
             <motion.div
               className="flex gap-4"
               drag="x"
