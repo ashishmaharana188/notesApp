@@ -31,7 +31,7 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
       className={
         shouldAnimate
           ? "transform transition-all duration-350 mb-45 ml-10"
-          : "transform transition-all duration-350 mb-40 mt-0"
+          : "transform transition-all duration-350 mb-20 mt-0"
       }
       initial={false}
       animate={{

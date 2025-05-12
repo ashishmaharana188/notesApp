@@ -7,7 +7,7 @@
 }
 html {
   font-size: var(--base-rem);
-  background-color: #dcd7c9;
+  background-color: black;
 }
 
 /* MUI DatePicker Height Override */
