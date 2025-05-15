@@ -1,29 +1,20 @@
-import { Component } from "react";
+import { useDispatch } from "react-redux";
 import NotesForm from "./NotesForm";
-import { Dispatch } from "redux";
-import { connect } from "react-redux";
 import { addNote } from "../../actions/AddNote";
 import { NotesFormProp } from "../../TS_INTERFACE/gInterface";
 
-class AddNoteForm extends Component<NotesFormProp & { dispatch?: Dispatch }> {
-  handleSubmit = (note: any) => {
-    if (this.props.onSubmit) {
-      this.props.onSubmit(note);
-    }
+const AddNoteForm = ({ onClose }: NotesFormProp) => {
+  const dispatch = useDispatch();
+
+  const handleSubmit = (note: any) => {
+    dispatch(addNote(note));
   };
 
-  render() {
-    return (
-      <div>
-        <NotesForm onSubmit={this.handleSubmit} onClose={this.props.onClose} />
-      </div>
-    );
-  }
-}
-
-const mapDispatchToProps = (dispatch: Dispatch) => {
-  return {
-    onSubmit: (note: any) => dispatch(addNote(note)),
-  };
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-lg">
+      <NotesForm onSubmit={handleSubmit} onClose={onClose} />
+    </div>
+  );
 };
-export default connect(undefined, mapDispatchToProps)(AddNoteForm);
+
+export default AddNoteForm;

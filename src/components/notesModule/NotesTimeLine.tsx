@@ -22,8 +22,8 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     is24Hour,
     setSelectedAMPM,
     filterButton,
-
     onFilteredNotesChange,
+    isNoteFormVisible,
   } = props;
   const [clickedDot, setClickedDot] = useState<number | null>(null);
   const [scrollPositions, setScrollPositions] = useState<{
@@ -42,6 +42,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const [currentStartTime, setCurrentStartTime] = useState(
     moment().startOf("day")
   );
+
   type CachedDayData = {
     timeIntervals: number[];
     scrollPositions: Record<number, number>;
@@ -500,7 +501,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
 
   return (
     <div className="mt-15">
-      {filterButton && (
+      {filterButton && !isNoteFormVisible && (
         <div
           className={`flex fixed bottom-90 right-0 justify-between items-center bg-black/80 p-3 bg-gray-200 rounded-lg shadow-lg mx-4 transition-all duration-300 z-50 backdrop-blur-sm bg-white/60 border-white/20 `}
         >

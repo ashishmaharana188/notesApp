@@ -69,7 +69,9 @@ export interface NotesTimelineProps extends NoteListProps {
   setSelectedAMPM: (value: "AM" | "PM") => void;
   scrollPosition: number;
   onFilteredNotesChange?: (hasNotes: boolean) => void;
+  onFormVisibilityChange?: (isVisible: boolean) => void;
   userChangedAMPM: React.MutableRefObject<boolean>;
+  isNoteFormVisible: boolean;
 }
 
 export interface NotesTimelineRef {

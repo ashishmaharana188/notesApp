@@ -15,6 +15,7 @@ const NotesDashboardPage = () => {
   const [is24Hour, setIs24Hour] = useState(false);
   const [filterButton, setFilterButton] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [isNoteFormVisible, setIsNoteFormVisible] = useState(false);
   const userChangedAMPM = useRef(false);
 
   // Custom hook to track scroll position
@@ -76,6 +77,7 @@ const NotesDashboardPage = () => {
           scrollPosition={scrollPosition}
           onFilteredNotesChange={handleFilteredNotesChange}
           userChangedAMPM={userChangedAMPM}
+          isNoteFormVisible={isNoteFormVisible}
         />
       </div>
 
@@ -83,12 +85,13 @@ const NotesDashboardPage = () => {
       <div className="fixed bottom-5 right-1 flex items-center space-x-4">
         {/* 🔘 Filter Toggle Switch */}
         <label className="flex items-center cursor-pointer">
-          <span className="mr-2 text-xl font-bold text-black-700">Filters</span>
+          <span className="mr-2 text-xl font-bold text-white">Filters</span>
           <input
             type="checkbox"
             checked={filterButton}
             onChange={() => setFilterButton(!filterButton)}
             className="hidden"
+            disabled={isNoteFormVisible}
           />
           <div className={"relative w-16 h-8 rounded-full transition"}>
             <div
@@ -102,18 +105,18 @@ const NotesDashboardPage = () => {
         </label>
 
         {/* ➕ Add Note Button */}
-        <AddNoteButton />
+        <AddNoteButton onFormVisibilityChange={setIsNoteFormVisible} />
       </div>
 
       {/* Filter Panel (Appears above the buttons) */}
-      {filterButton && (
+      {filterButton && !isNoteFormVisible && (
         <div className="fixed bottom-40 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200 text-center w-190">
           <NotesTimelineFilter
             interval={interval}
             setInterval={setInterval}
             selectedAMPM={selectedAMPM}
             setSelectedAMPM={(val) => {
-              userChangedAMPM.current = true; // ✅ inform NotesTimeline
+              userChangedAMPM.current = true; // inform NotesTimeline
               setSelectedAMPM(val); // original state update
             }}
             sortOrder={sortOrder}
