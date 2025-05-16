@@ -532,8 +532,8 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
           </button>
         </div>
       )}
-      <div className="mt-15">
-        <Timeline ref={timelineRef} position="left" className="ml-15">
+      <div className="mt-40 flex justify-center">
+        <Timeline ref={timelineRef} className="-mr-100 w-full max-w-2xl">
           {timeIntervals.map((time) => {
             const notesAtThisTime = useMemo(() => {
               return filteredNotes.filter((note) => {
