@@ -11,26 +11,30 @@ type TimelineRowProps = {
   time: number;
   notesAtThisTime: Note[];
   is24Hour: boolean;
-  clickedDot: number | null;
-  preservedIntervals: Set<number>;
-  handleClick: (time: number) => void;
+  index: number;
 };
 
 const TimelineRow: React.FC<TimelineRowProps> = ({
   time,
   notesAtThisTime,
   is24Hour,
-  clickedDot,
-  preservedIntervals,
-  handleClick,
+  index,
 }) => {
   const shouldAnimate = notesAtThisTime.length > 0;
+  const isLeftSide = index % 2 === 0;
+  console.log(
+    `TimelineRow - Time: ${moment(time).format(
+      "hh:mm A"
+    )}, Index: ${index}, isLeftSide: ${isLeftSide}`
+  );
 
   return (
     <motion.div
       className={
         shouldAnimate
-          ? "transform transition-all duration-350 mb-45 ml-10"
+          ? `transform transition-all duration-350 mb-45 ${
+              isLeftSide ? "" : "ml-10"
+            }`
           : "transform transition-all duration-350 mb-20 mt-0"
       }
       initial={false}
@@ -43,38 +47,38 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
       <TimelineItem>
         <TimelineSeparator>
           <div className="absolute flex flex-row items-center justify-start">
-            <div className="translate-x-20">
-              <TimelineDot
-                className={`cursor-pointer !ml-0 !bg-[#525b28] hover:!bg-[#6B705C] z-30 transition-colors duration-200 ${
-                  clickedDot === time ? "animate-bounce" : ""
-                } ${
-                  preservedIntervals.has(time)
-                    ? "!bg-[#525b28] shadow-lg ring-2 ring-[#525b28]"
-                    : ""
-                }`}
-                onClick={() => handleClick(time)}
-              />
-            </div>
-
-            <div className="cursor-pointer left-1/2 -translate-x-1/2 p-2 rounded-lg shadow-lg bg-[#525b28] hover:bg-[#525b28]/80">
-              <button
-                className="cursor-pointer text-[white] hover:text-[white]/80 text-sm px-3 py-1 transition-colors duration-200 "
-                onClick={() => handleClick(time)}
+            {shouldAnimate && (
+              <div
+                className={
+                  isLeftSide ? "translate-x-[-40px]" : "translate-x-20"
+                }
               >
+                <TimelineDot
+                  className={`cursor-pointer !ml-0 !bg-[#525b28]  z-30 transition-colors duration-200  `}
+                />
+              </div>
+            )}
+            <div className="cursor-pointer left-1/2 -translate-x-1/2 p-2 rounded-lg shadow-lg bg-[#525b28] ">
+              <button className="cursor-pointer text-[white] hover:text-[white]/80 text-sm px-3 py-1 transition-colors duration-200 ">
                 {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
               </button>
             </div>
           </div>
         </TimelineSeparator>
-        W
+
         {shouldAnimate && (
-          <motion.div className="absolute left-30 -top-10" initial={false}>
+          <motion.div
+            className={`absolute top-0 ${
+              isLeftSide ? "left-[-360px]" : "left-30"
+            }`}
+            initial={false}
+          >
             <motion.div
               className="flex gap-4"
               drag="x"
               dragConstraints={{
-                left: -((notesAtThisTime.length - 1) * 180),
-                right: 0,
+                left: isLeftSide ? 0 : -((notesAtThisTime.length - 1) * 180),
+                right: isLeftSide ? (notesAtThisTime.length - 1) * 180 : 0,
               }}
               style={{ cursor: "grab" }}
               whileTap={{ cursor: "grabbing" }}
