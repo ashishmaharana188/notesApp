@@ -1,6 +1,5 @@
 import { Component } from "react";
 import { connect } from "react-redux";
-import "../../styles/components/notesModule/NoteCard.css";
 import NoteCard from "./NotesCard";
 import { NoteListProps } from "../../TS_INTERFACE/gInterface";
 
