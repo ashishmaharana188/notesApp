@@ -4,7 +4,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Link } from "react-router-dom";
 import { NotesFormProp } from "../../TS_INTERFACE/gInterface";
 import { removeNote } from "../../actions/AddNote";
-
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 

@@ -9,9 +9,9 @@ import { Note } from "../../TS_INTERFACE/gInterface"; // adjust path if needed
 
 type TimelineRowProps = {
   time: number;
+  index: number;
   notesAtThisTime: Note[];
   is24Hour: boolean;
-  index: number;
 };
 
 const TimelineRow: React.FC<TimelineRowProps> = ({
@@ -21,7 +21,7 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
   index,
 }) => {
   const shouldAnimate = notesAtThisTime.length > 0;
-  const isLeftSide = index % 2 === 0;
+  const isLeftSide = index % 2 === 0; // Even index -> left, odd index -> right
   console.log(
     `TimelineRow - Time: ${moment(time).format(
       "hh:mm A"
@@ -33,7 +33,7 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
       className={
         shouldAnimate
           ? `transform transition-all duration-350 mb-45 ${
-              isLeftSide ? "" : "ml-10"
+              isLeftSide ? "ml-[-10px]" : "ml-10"
             }`
           : "transform transition-all duration-350 mb-20 mt-0"
       }
@@ -54,23 +54,24 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
                 }
               >
                 <TimelineDot
-                  className={`cursor-pointer !ml-0 !bg-[#525b28]  z-30 transition-colors duration-200  `}
+                  className={`cursor-pointer !ml-0 !bg-[#525b28] z-30 transition-colors duration-200 `}
                 />
               </div>
             )}
+
             <div className="cursor-pointer left-1/2 -translate-x-1/2 p-2 rounded-lg shadow-lg bg-[#525b28] ">
-              <button className="cursor-pointer text-[white] hover:text-[white]/80 text-sm px-3 py-1 transition-colors duration-200 ">
+              <button className="cursor-pointer text-[white] text-sm px-3 py-1 transition-colors duration-200 ">
                 {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
               </button>
             </div>
           </div>
         </TimelineSeparator>
-
+        W
         {shouldAnimate && (
           <motion.div
             className={`absolute top-0 ${
               isLeftSide ? "left-[-360px]" : "left-30"
-            }`}
+            }`} // Adjust positioning based on side
             initial={false}
           >
             <motion.div

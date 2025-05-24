@@ -26,6 +26,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   } = props;
 
   const timelineRef = useRef<HTMLUListElement | null>(null);
+
   const [currentStartTime, setCurrentStartTime] = useState(
     moment().startOf("day")
   );
@@ -130,8 +131,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
       onFilteredNotesChange(filteredNotes.length > 0);
     }
   }, [filteredNotes, onFilteredNotesChange]);
-  // Added `currentStartTime`
-  // ADD DEBUGGING LOGS HERE
 
   // Then in the navigation handlers:
   const handleNextInterval = () => {
@@ -140,15 +139,16 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
     let nextStartTime = moment(currentStartTime).add(intervalHours, "hours");
 
+    // Cache current day's data before moving
+
     // Check if we're moving to a new day
     if (nextStartTime.isAfter(moment(currentStartTime).endOf("day"))) {
       nextStartTime = moment(currentStartTime).add(1, "day").startOf("day");
-
-      // Check if we already have cached data for this day
     }
 
     // If no cache or not changing day, proceed normally
     setCurrentStartTime(nextStartTime);
+
     setSelectedAMPM(moment(nextStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
   };
 
@@ -170,12 +170,11 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         .subtract(1, "day")
         .startOf("day")
         .add(24 - intervalHours, "hours");
-
-      // Check if we already have cached data for this day
     }
 
     // If no cache or not changing day, proceed normally
     setCurrentStartTime(prevStartTime);
+
     setSelectedAMPM(moment(prevStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
   };
 
@@ -195,6 +194,8 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   }, [selectedAMPM]);
 
   /** Handles horizontal scrolling behavior */
+
+  /** Manage event listeners */
 
   return (
     <div className="mt-15">
@@ -234,7 +235,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
           {timeIntervals.map((time, index) => {
             const notesAtThisTime = useMemo(() => {
               return filteredNotes.filter((note) => {
-                // Assume note.date and note.time are both in SECONDS (Unix format)
                 const noteDate = moment(note.date).format("YYYY-MM-DD");
                 const noteTime = moment(note.time)
                   .startOf("hour")
@@ -254,10 +254,10 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
               <div className="flex items-center">
                 <TimelineRow
                   key={time}
+                  index={index}
                   time={time}
                   notesAtThisTime={notesAtThisTime}
                   is24Hour={is24Hour}
-                  index={index}
                 />
               </div>
             );
