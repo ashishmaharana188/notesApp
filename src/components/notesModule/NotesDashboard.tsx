@@ -44,7 +44,7 @@ const NotesDashboardPage = () => {
   }, []);
 
   return (
-    <div className="bg-grey">
+    <div className="w-full h-full bg-grey">
       <AnimatePresence>
         {visible && (
           <motion.p

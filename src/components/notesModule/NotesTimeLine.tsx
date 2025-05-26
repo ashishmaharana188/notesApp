@@ -1,268 +1,99 @@
 import React, {
-  useState,
-  useEffect,
-  useRef,
   useMemo,
   forwardRef,
   useImperativeHandle,
+  useEffect,
 } from "react";
 import { connect } from "react-redux";
-import Timeline from "@mui/lab/Timeline";
-import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 import moment from "moment";
-import TimelineRow from "./TimelineRow";
+import NoteCard from "./NotesCard";
+import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 
 const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
-  const {
-    notes,
-    interval,
-    sortOrder,
-    selectedAMPM,
-    is24Hour,
-    setSelectedAMPM,
-    filterButton,
-    onFilteredNotesChange,
-    isNoteFormVisible,
-  } = props;
+  const { notes, sortOrder, is24Hour, onFilteredNotesChange } = props;
 
-  const timelineRef = useRef<HTMLUListElement | null>(null);
-
-  const [currentStartTime, setCurrentStartTime] = useState(
-    moment().startOf("day")
-  );
-
-  const timeIntervals = useMemo(() => {
-    const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
-    const intervals = new Set<number>();
-
-    // Add regular intervals within the current window
-    for (let i = 0; i < intervalHours; i++) {
-      let intervalTime = moment(currentStartTime)
-        .add(i, "hours")
-        .startOf("hour")
-        .valueOf();
-
-      // If AM/PM filter is selected, modify intervalTime accordingly
-      if (selectedAMPM === "AM") {
-        // Ensure the time is within AM range (00:00 to 11:59)
-        if (moment(intervalTime).hour() >= 12) {
-          // Skip intervals in PM range
-        }
-      } else if (selectedAMPM === "PM") {
-        // If PM is selected, shift AM hours to PM (12:00 PM to 23:59 PM)
-        if (moment(intervalTime).hour() < 12) {
-          intervalTime = moment(intervalTime).add(12, "hours").valueOf();
-        }
-      }
-
-      intervals.add(intervalTime);
-    }
-
-    // Find notes within the current day AND time range
-    const currentEndTime = moment(currentStartTime).add(intervalHours, "hours");
+  // Build a structured map: { date: { hour: [notes] } }
+  const noteMap = useMemo(() => {
+    const map: Record<string, Record<string, any[]>> = {};
 
     notes.forEach((note) => {
-      let noteTime = moment(note.date);
+      const dateKey = moment(note.date).format("YYYY-MM-DD");
+      const timeKey = moment(note.time).startOf("hour").format("HH:mm");
 
-      // Only add intervals for notes within the visible time range
-      if (
-        noteTime.isSame(moment(currentStartTime), "day") &&
-        noteTime.isSameOrAfter(currentStartTime) &&
-        noteTime.isBefore(currentEndTime)
-      ) {
-        // Adjust noteTime based on AM/PM filter
-        if (selectedAMPM === "AM" && noteTime.hour() >= 12) {
-          // Skip notes in PM range if AM is selected
-          return;
-        } else if (selectedAMPM === "PM" && noteTime.hour() < 12) {
-          noteTime = noteTime.add(12, "hours"); // Shift to PM if PM is selected
-        }
+      if (!map[dateKey]) map[dateKey] = {};
+      if (!map[dateKey][timeKey]) map[dateKey][timeKey] = [];
 
-        intervals.add(noteTime.startOf("hour").valueOf());
-      }
+      map[dateKey][timeKey].push(note);
     });
 
-    // Sort intervals based on user preference
-    return sortOrder === "asc"
-      ? Array.from(intervals).sort((a, b) => a - b)
-      : Array.from(intervals).sort((a, b) => b - a);
-  }, [notes, interval, currentStartTime, sortOrder, selectedAMPM]);
+    return map;
+  }, [notes]);
 
-  // Update the filteredNotes useMemo function
-
-  const filteredNotes = useMemo(() => {
-    const matchedNotes = notes.filter((note) => {
-      const noteDate = moment(note.date).format("YYYY-MM-DD");
-      const noteTime = moment(note.time).startOf("hour").format("HH:mm");
-
-      const match = timeIntervals.find((interval) => {
-        const intervalMoment = moment(interval); // already in ms
-        const intervalDate = intervalMoment.format("YYYY-MM-DD");
-        const intervalTime = intervalMoment.format("HH:mm");
-
-        const isSameDate = intervalDate === noteDate;
-        const isSameTime = intervalTime === noteTime;
-
-        if (isSameDate && isSameTime) {
-          return true;
-        }
-
-        return false;
-      });
-
-      return Boolean(match);
-    });
-
-    const sortedNotes = matchedNotes.sort((a, b) =>
+  const allDates = useMemo(() => {
+    return Object.keys(noteMap).sort((a, b) =>
       sortOrder === "asc"
-        ? moment.unix(a.date).valueOf() - moment.unix(b.date).valueOf()
-        : moment.unix(b.date).valueOf() - moment.unix(a.date).valueOf()
+        ? moment(a).valueOf() - moment(b).valueOf()
+        : moment(b).valueOf() - moment(a).valueOf()
     );
+  }, [noteMap, sortOrder]);
 
-    return sortedNotes;
-  }, [notes, timeIntervals, sortOrder]);
+  const allTimes = useMemo(() => {
+    const times = new Set<string>();
+    Object.values(noteMap).forEach((hourMap) => {
+      Object.keys(hourMap).forEach((time) => times.add(time));
+    });
 
+    return Array.from(times).sort((a, b) =>
+      moment(a, "HH:mm").diff(moment(b, "HH:mm"))
+    );
+  }, [noteMap]);
+
+  // Expose filtered note count
   useImperativeHandle(ref, () => ({
-    getFilteredNotesLength: () => filteredNotes.length,
+    getFilteredNotesLength: () => notes.length,
   }));
 
   useEffect(() => {
-    if (onFilteredNotesChange) {
-      onFilteredNotesChange(filteredNotes.length > 0);
-    }
-  }, [filteredNotes, onFilteredNotesChange]);
-
-  // Then in the navigation handlers:
-  const handleNextInterval = () => {
-    console.log("Next button clicked!");
-
-    const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
-    let nextStartTime = moment(currentStartTime).add(intervalHours, "hours");
-
-    // Cache current day's data before moving
-
-    // Check if we're moving to a new day
-    if (nextStartTime.isAfter(moment(currentStartTime).endOf("day"))) {
-      nextStartTime = moment(currentStartTime).add(1, "day").startOf("day");
-    }
-
-    // If no cache or not changing day, proceed normally
-    setCurrentStartTime(nextStartTime);
-
-    setSelectedAMPM(moment(nextStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
-  };
-
-  const handlePreviousInterval = () => {
-    console.log("Previous button clicked!");
-
-    console.log("Current selectedAMPM after reset:", null);
-
-    const intervalHours = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
-    let prevStartTime = moment(currentStartTime).subtract(
-      intervalHours,
-      "hours"
-    );
-
-    // Check if we're moving to a previous day
-    if (prevStartTime.isBefore(moment(currentStartTime).startOf("day"))) {
-      // Calculate end of previous day minus interval
-      prevStartTime = moment(currentStartTime)
-        .subtract(1, "day")
-        .startOf("day")
-        .add(24 - intervalHours, "hours");
-    }
-
-    // If no cache or not changing day, proceed normally
-    setCurrentStartTime(prevStartTime);
-
-    setSelectedAMPM(moment(prevStartTime).hour() < 12 ? "AM" : "PM"); // Restore AM/PM
-  };
-
-  /**am pm useEffect */
-  useEffect(() => {
-    if (!filterButton || !props.userChangedAMPM?.current) return;
-
-    const startOfDay = moment(currentStartTime).startOf("day");
-
-    if (selectedAMPM === "AM") {
-      setCurrentStartTime(startOfDay); // Same day, 00:00
-    } else if (selectedAMPM === "PM") {
-      setCurrentStartTime(startOfDay.clone().add(12, "hours")); // Same day, 12:00
-    }
-
-    props.userChangedAMPM.current = false; // ✅ Reset the flag
-  }, [selectedAMPM]);
-
-  /** Handles horizontal scrolling behavior */
-
-  /** Manage event listeners */
+    onFilteredNotesChange?.(notes.length > 0);
+  }, [notes.length, onFilteredNotesChange]);
 
   return (
-    <div className="mt-15">
-      {filterButton && !isNoteFormVisible && (
-        <div
-          className={`flex fixed bottom-90 right-0 justify-between items-center bg-black/80 p-3 bg-gray-200 rounded-lg shadow-lg mx-4 transition-all duration-300 z-50 backdrop-blur-sm bg-white/60 border-white/20 `}
-        >
-          <button
-            onClick={handlePreviousInterval}
-            className="w-25 cursor-pointer px-4 py-2 bg-[#525b28] text-white text-lg rounded-md shadow-lg hover:bg-[#625b28]/80 transition"
-          >
-            Previous
-          </button>
-
-          <div className="text-lg font-semibold mx-4 min-w-[150px] text-center">
-            {moment(currentStartTime).format("MMMM D, YYYY")}
-            <br />
-            {moment(currentStartTime).format("hh:mm A")} -{" "}
-            {moment(currentStartTime)
-              .add(
-                interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
-                "hours"
-              )
-              .format("hh:mm A")}
-          </div>
-
-          <button
-            onClick={handleNextInterval}
-            className="w-25 cursor-pointer px-4 py-2 bg-[#525b28] text-white text-lg rounded-md shadow-lg hover:bg-[#625b28]/80 transition"
-          >
-            Next
-          </button>
+    <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
+      <div
+        className="grid gap-4"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `160px repeat(${allTimes.length}, minmax(200px, 1fr))`,
+        }}
+      >
+        {/* Top Header Row */}
+        <div className="font-bold text-lg sticky left-0 z-10 bg-white">
+          Date / Time
         </div>
-      )}
-      <div className="mt-40 flex justify-center">
-        <Timeline ref={timelineRef} className="-mr-150 w-full max-w-2xl">
-          {timeIntervals.map((time, index) => {
-            const notesAtThisTime = useMemo(() => {
-              return filteredNotes.filter((note) => {
-                const noteDate = moment(note.date).format("YYYY-MM-DD");
-                const noteTime = moment(note.time)
-                  .startOf("hour")
-                  .format("HH:mm");
+        {allTimes.map((time) => (
+          <div key={time} className="text-center font-bold text-md">
+            {moment(time, "HH:mm").format(is24Hour ? "HH:mm" : "hh:mm A")}
+          </div>
+        ))}
 
-                const intervalDate = moment(time).format("YYYY-MM-DD");
-                const intervalTime = moment(time).format("HH:mm");
-
-                const isMatch =
-                  noteDate === intervalDate && noteTime === intervalTime;
-
-                return isMatch;
-              });
-            }, [filteredNotes, time]);
-
-            return (
-              <div className="flex items-center">
-                <TimelineRow
-                  key={time}
-                  index={index}
-                  time={time}
-                  notesAtThisTime={notesAtThisTime}
-                  is24Hour={is24Hour}
-                />
-              </div>
-            );
-          })}
-        </Timeline>
+        {/* Rows by date */}
+        {allDates.map((date) => (
+          <React.Fragment key={date}>
+            <div className="font-semibold sticky left-0 z-10 bg-white whitespace-nowrap">
+              {moment(date).format("MMM DD, YYYY")}
+            </div>
+            {allTimes.map((time) => {
+              const cellNotes = noteMap[date]?.[time] || [];
+              return (
+                <div key={`${date}-${time}`} className="flex flex-col gap-2">
+                  {cellNotes.map((note) => (
+                    <NoteCard key={note.id} note={note} />
+                  ))}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );
