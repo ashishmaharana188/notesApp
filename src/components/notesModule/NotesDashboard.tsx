@@ -18,7 +18,6 @@ const NotesDashboardPage = () => {
   const [isNoteFormVisible, setIsNoteFormVisible] = useState(false);
   const userChangedAMPM = useRef(false);
 
-  // Custom hook to track scroll position
   const handleFilteredNotesChange = (hasNotes: boolean) => {
     setVisible(window.scrollY === 0 && !hasNotes);
   };
@@ -39,16 +38,13 @@ const NotesDashboardPage = () => {
 
       lastScrollY.current = currentScrollY;
     };
-    window.addEventListener("scroll", handleScroll); // Add event listener
+    window.addEventListener("scroll", handleScroll);
 
-    return () => window.removeEventListener("scroll", handleScroll); // Cleanup on unmount
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Function to reset selectedAMPM to null
-
   return (
-    <div className="bg-grey">
-      {/* 📌 Dashboard Title */}
+    <div className="w-full h-full bg-grey">
       <AnimatePresence>
         {visible && (
           <motion.p
@@ -56,15 +52,19 @@ const NotesDashboardPage = () => {
             initial={{ y: 0, opacity: 0 }}
             animate={{ y: 36, opacity: 1 }}
             exit={{ y: -36, opacity: 1 }}
+<<<<<<< HEAD
             transition={{ type: "spring", duration: 1 }}
             className="top-1 -ml-150 transform z-50 text-4xl font-bold text-[#525b28] whitespace-nowrap"
+=======
+            transition={{ type: "spring", duration: 0.2 }}
+            className="fixed top-1 left-1/2 transform -translate-x-1/2 z-50 text-4xl font-bold text-[#525b28] whitespace-nowrap"
+>>>>>>> 278961d95c30f1f1b76fffc28f3395983f5fb75d
           >
             Note Dashboard!
           </motion.p>
         )}
       </AnimatePresence>
 
-      {/* 📌 Notes Timeline (Centered in Middle) */}
       <div className="w-full h-full items-start timeline-scroll-container">
         <NotesTimeline
           ref={timelineRef}
@@ -81,9 +81,7 @@ const NotesDashboardPage = () => {
         />
       </div>
 
-      {/* 📌 Floating Buttons (Bottom Right) */}
       <div className="fixed bottom-5 right-1 flex items-center space-x-4">
-        {/* 🔘 Filter Toggle Switch */}
         <label className="flex items-center cursor-pointer">
           <span className="mr-2 text-xl font-bold text-white">Filters</span>
           <input
@@ -104,11 +102,9 @@ const NotesDashboardPage = () => {
           </div>
         </label>
 
-        {/* ➕ Add Note Button */}
         <AddNoteButton onFormVisibilityChange={setIsNoteFormVisible} />
       </div>
 
-      {/* Filter Panel (Appears above the buttons) */}
       {filterButton && !isNoteFormVisible && (
         <div className="fixed bottom-40 right-6 bg-white p-6 shadow-lg rounded-lg border border-gray-200 text-center w-190">
           <NotesTimelineFilter
@@ -116,8 +112,8 @@ const NotesDashboardPage = () => {
             setInterval={setInterval}
             selectedAMPM={selectedAMPM}
             setSelectedAMPM={(val) => {
-              userChangedAMPM.current = true; // inform NotesTimeline
-              setSelectedAMPM(val); // original state update
+              userChangedAMPM.current = true;
+              setSelectedAMPM(val);
             }}
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
