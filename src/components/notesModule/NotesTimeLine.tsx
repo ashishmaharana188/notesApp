@@ -8,6 +8,7 @@ import React, {
 import { connect } from "react-redux";
 import moment from "moment";
 import NoteCard from "./NotesCard";
+import { motion } from "framer-motion";
 import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
 
 const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
@@ -28,8 +29,13 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     const map: Record<string, Record<string, any[]>> = {};
 
     notes.forEach((note) => {
+      const noteTime = moment(note.time);
       const dateKey = moment(note.date).format("YYYY-MM-DD");
-      const timeKey = moment(note.time).startOf("hour").format("HH:mm");
+      // Assign note to the previous hour's slot if it's within the next hour
+      const timeKey =
+        noteTime.minutes() >= 0 && noteTime.minutes() <= 59
+          ? noteTime.startOf("hour").format("HH:mm")
+          : noteTime.subtract(1, "hour").startOf("hour").format("HH:mm");
 
       if (!map[dateKey]) map[dateKey] = {};
       if (!map[dateKey][timeKey]) map[dateKey][timeKey] = [];
@@ -68,12 +74,10 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     onFilteredNotesChange?.(notes.length > 0);
   }, [notes.length, onFilteredNotesChange]);
 
-  // Handle click on time slot
   const handleSlotClick = (date: any, time: any) => {
     setSelectedSlot({ date, time });
   };
 
-  // Expanded view for selected slot
   if (selectedSlot) {
     const { date, time } = selectedSlot;
     const cellNotes = noteMap[date]?.[time] || [];
@@ -107,10 +111,9 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         className="grid gap-4"
         style={{
           display: "grid",
-          gridTemplateColumns: `180px repeat(${sortedTimes.length}, 25vw)`, // Consistent width
+          gridTemplateColumns: `180px repeat(${sortedTimes.length}, 25vw)`,
         }}
       >
-        {/* Top Header Row */}
         {!isNoteFormVisible && (
           <div className="font-bold text-2xl bg-transparent text-[#525b28] sticky w-58 mt-20 z-10">
             Date / Time
@@ -127,20 +130,20 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
           </div>
         ))}
 
-        {/* Data Grid Rows */}
         {!isNoteFormVisible &&
           sortedDates.map((date) => (
             <React.Fragment key={date}>
-              {/* Date column */}
               <div className="text-4xl font-bold text-gray-500 sticky left-0 mt-20 z-10 bg-transparent whitespace-nowrap">
                 {moment(date).format("MMM DD, YYYY")}
               </div>
 
-              {/* Time columns per date */}
               {sortedTimes.map((time) => {
                 const cellNotes = noteMap[date]?.[time] || [];
-                const displayNotes = cellNotes.slice(0, 4);
-                const hasNotes = cellNotes.length > 0;
+                const hasNotes = cellNotes.length > 1;
+
+                const sortedCellNotes = [...cellNotes].sort((a, b) =>
+                  moment(a.time).diff(moment(b.time))
+                );
 
                 return (
                   <div
@@ -151,19 +154,28 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                     }}
                     onClick={() => handleSlotClick(date, time)}
                   >
-                    {displayNotes.map((note, index) => (
-                      <div
+                    {sortedCellNotes.slice(0, 4).map((note, index) => (
+                      <motion.div
                         key={note.id}
-                        className="absolute"
+                        initial={{ opacity: 0, y: 10 }}
+                        whileHover={{ scale: 1.05 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 20,
+                          delay: index * 0.05,
+                        }}
                         style={{
+                          position: "absolute",
                           left: hasNotes
-                            ? `${index * 10 - 40}px`
-                            : `${index * 10}px`, // Shift cards left by 40px if notes exist
+                            ? `${index * 10 - 20}px`
+                            : `${index * 5}px`,
                           zIndex: index,
                         }}
                       >
                         <NoteCard note={note} />
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 );
