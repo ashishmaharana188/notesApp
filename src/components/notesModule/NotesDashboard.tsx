@@ -52,13 +52,8 @@ const NotesDashboardPage = () => {
             initial={{ y: 0, opacity: 0 }}
             animate={{ y: 36, opacity: 1 }}
             exit={{ y: -36, opacity: 1 }}
-<<<<<<< HEAD
             transition={{ type: "spring", duration: 1 }}
-            className="top-1 -ml-150 transform z-50 text-4xl font-bold text-[#525b28] whitespace-nowrap"
-=======
-            transition={{ type: "spring", duration: 0.2 }}
             className="fixed top-1 left-1/2 transform -translate-x-1/2 z-50 text-4xl font-bold text-[#525b28] whitespace-nowrap"
->>>>>>> 278961d95c30f1f1b76fffc28f3395983f5fb75d
           >
             Note Dashboard!
           </motion.p>

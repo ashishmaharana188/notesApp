@@ -33,11 +33,7 @@ function AppRouter() {
             index
             element={
               <div className="p-4 flex flex-col items-center">
-<<<<<<< HEAD
-                <p className="text-4xl font-bold break-words text-center">
-=======
                 <p className="text-4xl text-gray-500 font-bold break-words text-center">
->>>>>>> 278961d95c30f1f1b76fffc28f3395983f5fb75d
                   Welcome to EMP_TOOLS
                 </p>
                 <p className="text-9xl text-gray-500 break-words text-center mt-2">
