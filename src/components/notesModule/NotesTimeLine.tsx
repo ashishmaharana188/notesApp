@@ -103,78 +103,81 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
       </div>
     );
   }
+  if (!isNoteFormVisible) {
+    return (
+      <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-row flex-1 gap-2"></div>
+          {sortedDates.map((date) => (
+            <div key={date} className="flex flex-row items-start">
+              <div className="text-2xl font-bold text-white mt-20 w-48 sticky left-0 z-10  whitespace-nowrap">
+                {moment(date).format("MMM DD, YYYY")}
+              </div>
+              <motion.div
+                className="flex flex-row flex-1 gap-2"
+                drag="x"
+                dragConstraints={{ left: -1000, right: 0 }}
+                dragElastic={0.2}
+                dragMomentum={true}
+              >
+                {sortedTimes.map((time) => {
+                  const cellNotes = noteMap[date]?.[time] || [];
+                  const hasNotes = cellNotes.length > 1;
 
-  return (
-    <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
-      <div className="flex flex-col gap-4">
-        {!isNoteFormVisible && (
-          <div className="flex flex-row items-start"></div>
-        )}
+                  const sortedCellNotes = [...cellNotes].sort((a, b) =>
+                    moment(a.time).diff(moment(b.time))
+                  );
 
-        <div className="flex flex-row flex-1 gap-2"></div>
-        {sortedDates.map((date) => (
-          <div key={date} className="flex flex-row items-start">
-            <div className="text-2xl font-bold text-white mt-20 w-48 sticky left-0 z-10  whitespace-nowrap">
-              {moment(date).format("MMM DD, YYYY")}
-            </div>
-            <div className="flex flex-row flex-1 gap-2">
-              {sortedTimes.map((time) => {
-                const cellNotes = noteMap[date]?.[time] || [];
-                const hasNotes = cellNotes.length > 1;
-
-                const sortedCellNotes = [...cellNotes].sort((a, b) =>
-                  moment(a.time).diff(moment(b.time))
-                );
-
-                return (
-                  <div
-                    key={`${date}-${time}`}
-                    className="flex flex-col ml-10 mr-30 relative cursor-pointer mt-20 w-[20vw] min-w-[150px]"
-                    style={{ minHeight: "150px" }}
-                    onClick={() => handleSlotClick(date, time)}
-                  >
+                  return (
                     <div
-                      key={time}
-                      className="text-center text-gray-500 font-bold text-2xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
-                      onClick={() => handleSlotClick(sortedDates[0], time)}
+                      key={`${date}-${time}`}
+                      className="flex flex-col ml-10 mr-30 relative cursor-pointer mt-20 w-[20vw] min-w-[150px]"
+                      style={{ minHeight: "150px" }}
+                      onClick={() => handleSlotClick(date, time)}
                     >
-                      {moment(time, "HH:mm").format(
-                        is24Hour ? "HH:mm" : "hh:mm A"
-                      )}
-                    </div>
-
-                    {sortedCellNotes.slice(0, 4).map((note, index) => (
-                      <motion.div
-                        key={note.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        whileHover={{ scale: 1.05 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 20,
-                          delay: index * 0.05,
-                        }}
-                        style={{
-                          position: "absolute",
-                          left: hasNotes
-                            ? `${index * 10 - 20}px`
-                            : `${index * 5}px`,
-                          zIndex: index,
-                        }}
+                      <div
+                        key={time}
+                        className="text-center text-gray-500 font-bold text-2xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
+                        onClick={() => handleSlotClick(sortedDates[0], time)}
                       >
-                        <NoteCard note={note} />
-                      </motion.div>
-                    ))}
-                  </div>
-                );
-              })}
+                        {moment(time, "HH:mm").format(
+                          is24Hour ? "HH:mm" : "hh:mm A"
+                        )}
+                      </div>
+
+                      {sortedCellNotes.slice(0, 4).map((note, index) => (
+                        <motion.div
+                          key={note.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileHover={{ scale: 1.05 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 20,
+                            delay: index * 0.05,
+                          }}
+                          style={{
+                            position: "absolute",
+                            left: hasNotes
+                              ? `${index * 10 - 20}px`
+                              : `${index * 5}px`,
+                            zIndex: index,
+                          }}
+                        >
+                          <NoteCard note={note} />
+                        </motion.div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </motion.div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 });
 
 const mapStateToProps = (state: any) => ({
