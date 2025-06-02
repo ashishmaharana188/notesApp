@@ -126,7 +126,7 @@ const MainDashboardPage = () => {
         {/* Toggle Sidebar Button */}
         <button
           onClick={toggleSidebar}
-          className=" text-white fixed top-4 left-4 z-50 rounded-md hover:bg-[#625b28]/80 transition-colors"
+          className=" text-white fixed top-4 left-4 z-50 rounded-md bg-white transition-colors"
         >
           <MenuIcon />
         </button>

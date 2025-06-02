@@ -31,7 +31,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     notes.forEach((note) => {
       const noteTime = moment(note.time);
       const dateKey = moment(note.date).format("YYYY-MM-DD");
-      // Assign note to the previous hour's slot if it's within the next hour
       const timeKey =
         noteTime.minutes() >= 0 && noteTime.minutes() <= 59
           ? noteTime.startOf("hour").format("HH:mm")
@@ -96,7 +95,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             Back
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="flex flex-wrap gap-4">
           {cellNotes.map((note) => (
             <NoteCard key={note.id} note={note} />
           ))}
@@ -107,36 +106,18 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
 
   return (
     <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
-      <div
-        className="grid gap-4"
-        style={{
-          display: "grid",
-          gridTemplateColumns: `180px repeat(${sortedTimes.length}, 25vw)`,
-        }}
-      >
+      <div className="flex flex-col gap-4">
         {!isNoteFormVisible && (
-          <div className="font-bold text-2xl bg-transparent text-[#525b28] sticky w-58 mt-20 z-10">
-            Date / Time
-          </div>
+          <div className="flex flex-row items-start"></div>
         )}
 
-        {sortedTimes.map((time) => (
-          <div
-            key={time}
-            className="text-center text-gray-500 mt-15 font-bold text-4xl cursor-pointer"
-            onClick={() => handleSlotClick(sortedDates[0], time)}
-          >
-            {moment(time, "HH:mm").format(is24Hour ? "HH:mm" : "hh:mm A")}
-          </div>
-        ))}
-
-        {!isNoteFormVisible &&
-          sortedDates.map((date) => (
-            <React.Fragment key={date}>
-              <div className="text-4xl font-bold text-gray-500 sticky left-0 mt-20 z-10 bg-transparent whitespace-nowrap">
-                {moment(date).format("MMM DD, YYYY")}
-              </div>
-
+        <div className="flex flex-row flex-1 gap-2"></div>
+        {sortedDates.map((date) => (
+          <div key={date} className="flex flex-row items-start">
+            <div className="text-2xl font-bold text-white mt-20 w-48 sticky left-0 z-10  whitespace-nowrap">
+              {moment(date).format("MMM DD, YYYY")}
+            </div>
+            <div className="flex flex-row flex-1 gap-2">
               {sortedTimes.map((time) => {
                 const cellNotes = noteMap[date]?.[time] || [];
                 const hasNotes = cellNotes.length > 1;
@@ -148,12 +129,20 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                 return (
                   <div
                     key={`${date}-${time}`}
-                    className="flex flex-row gap-2 relative cursor-pointer"
-                    style={{
-                      minHeight: "150px",
-                    }}
+                    className="flex flex-col ml-10 mr-30 relative cursor-pointer mt-20 w-[20vw] min-w-[150px]"
+                    style={{ minHeight: "150px" }}
                     onClick={() => handleSlotClick(date, time)}
                   >
+                    <div
+                      key={time}
+                      className="text-center text-gray-500 font-bold text-2xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
+                      onClick={() => handleSlotClick(sortedDates[0], time)}
+                    >
+                      {moment(time, "HH:mm").format(
+                        is24Hour ? "HH:mm" : "hh:mm A"
+                      )}
+                    </div>
+
                     {sortedCellNotes.slice(0, 4).map((note, index) => (
                       <motion.div
                         key={note.id}
@@ -180,8 +169,9 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                   </div>
                 );
               })}
-            </React.Fragment>
-          ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
