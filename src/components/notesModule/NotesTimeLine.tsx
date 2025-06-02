@@ -84,18 +84,18 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     return (
       <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-500">
+          <h2 className="text-2xl font-bold text-white mt-25 ml-15 mb-10">
             {moment(date).format("MMM DD, YYYY")}{" "}
             {moment(time, "HH:mm").format(is24Hour ? "HH:mm" : "hh:mm A")}
           </h2>
           <button
             onClick={() => setSelectedSlot(null)}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-black text-3xl w-20 mb-20 rounded-md bg-white"
           >
             Back
           </button>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div className="ml-10 flex flex-wrap gap-4">
           {cellNotes.map((note) => (
             <NoteCard key={note.id} note={note} />
           ))}
