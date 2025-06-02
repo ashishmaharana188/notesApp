@@ -110,8 +110,12 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
           <div className="flex flex-row flex-1 gap-2"></div>
           {sortedDates.map((date) => (
             <div key={date} className="flex flex-row items-start">
-              <div className="text-2xl font-bold text-white mt-20 w-48 sticky left-0 z-10  whitespace-nowrap">
-                {moment(date).format("MMM DD, YYYY")}
+              <div
+                className={`text-2xl font-bold text-white w-48 sticky z-10 `}
+              >
+                <div className="transform -rotate-90 mt-60 ml-10">
+                  {moment(date).format("DD MMM, YYYY")}
+                </div>
               </div>
               <motion.div
                 className="flex flex-row flex-1 gap-2"
@@ -131,7 +135,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                   return (
                     <div
                       key={`${date}-${time}`}
-                      className="flex flex-col ml-10 mr-30 relative cursor-pointer mt-20 w-[20vw] min-w-[150px]"
+                      className="flex flex-col relative cursor-pointer mt-30 w-[20vw] min-w-[150px]"
                       style={{ minHeight: "150px" }}
                       onClick={() => handleSlotClick(date, time)}
                     >
