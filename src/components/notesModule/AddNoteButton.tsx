@@ -23,9 +23,31 @@ const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
       const clickedElement = event.target as Node;
       const isOutside = !formRef.current.contains(clickedElement);
 
-      if (isOutside) {
+      const isMuiPicker = (element: Node | null): boolean => {
+        let current = element;
+        while (current) {
+          if (current instanceof HTMLElement) {
+            // MUI pickers often use classes like 'MuiPicker', 'MuiCalendarPicker', or 'MuiClockPicker'
+            // Also checking for role attributes commonly used by MUI pickers
+            if (
+              current.className?.includes("MuiPicker") ||
+              current.className?.includes("MuiCalendarPicker") ||
+              current.className?.includes("MuiClockPicker") ||
+              current.getAttribute("role") === "dialog" ||
+              current.getAttribute("role") === "menu"
+            ) {
+              return true;
+            }
+          }
+          current = current.parentNode;
+        }
+        return false;
+      };
+
+      if (isOutside && !isMuiPicker(clickedElement)) {
         setIsFormVisible(false);
       }
+      // *** End of Highlighted Change ***
     };
 
     document.addEventListener("mousedown", handleClickOutside);
