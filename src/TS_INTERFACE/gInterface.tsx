@@ -60,6 +60,12 @@ export interface NotesTimelineFilterProps {
   setIs24Hour: (value: boolean) => void;
 }
 
+// For timeline expanded view
+export interface SlotContext {
+  date: string;
+  time: string;
+}
+
 export interface NotesTimelineProps extends NoteListProps {
   filterButton: boolean;
   interval: "6h" | "12h" | "24h";
@@ -72,9 +78,18 @@ export interface NotesTimelineProps extends NoteListProps {
   onFormVisibilityChange?: (isVisible: boolean) => void;
   userChangedAMPM: React.MutableRefObject<boolean>;
   isNoteFormVisible: boolean;
+  initialSelectedSlot: SlotContext | null;
 }
 
 export interface NotesTimelineRef {
   getFilteredNotesLength: () => number;
 }
+
 export type Note = notesReducerIntf;
+
+// *** Highlighted Change: Added NavigationState interface ***
+export interface NavigationState {
+  fromSlot?: SlotContext;
+  selectedSlot?: SlotContext;
+}
+// *** End of Highlighted Change ***

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import AddNoteButton from "./AddNoteButton";
 import NotesTimeline from "./NotesTimeLine";
 import NotesTimelineFilter from "./NotesTimelineFilter";
@@ -6,6 +7,8 @@ import { NotesTimelineRef } from "../../TS_INTERFACE/gInterface";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NotesDashboardPage = () => {
+  const location = useLocation();
+  const selectedSlot = location.state?.selectedSlot;
   const timelineRef = useRef<NotesTimelineRef>(null);
   const [visible, setVisible] = useState<boolean | undefined>(true);
   const lastScrollY = useRef(0);
@@ -73,6 +76,7 @@ const NotesDashboardPage = () => {
           onFilteredNotesChange={handleFilteredNotesChange}
           userChangedAMPM={userChangedAMPM}
           isNoteFormVisible={isNoteFormVisible}
+          initialSelectedSlot={selectedSlot}
         />
       </div>
 

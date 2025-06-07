@@ -5,11 +5,12 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { connect } from "react-redux";
 import moment from "moment";
 import NoteCard from "./NotesCard";
 import { motion } from "framer-motion";
-import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
+import { NotesTimelineProps, SlotContext } from "../../TS_INTERFACE/gInterface";
 
 const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   const {
@@ -18,12 +19,13 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     is24Hour,
     onFilteredNotesChange,
     isNoteFormVisible,
+    initialSelectedSlot,
   } = props;
 
-  const [selectedSlot, setSelectedSlot] = useState<{
-    date: string;
-    time: string;
-  } | null>(null);
+  const navigate = useNavigate(); // Added for navigation
+  const [selectedSlot, setSelectedSlot] = useState<SlotContext | null>(
+    initialSelectedSlot || null
+  );
 
   const noteMap = useMemo(() => {
     const map: Record<string, Record<string, any[]>> = {};
@@ -99,7 +101,15 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
         </div>
         <div className="ml-10 flex flex-wrap gap-4">
           {cellNotes.map((note) => (
-            <NoteCard key={note.id} note={note} />
+            <NoteCard
+              key={note.id}
+              note={note}
+              onEdit={() =>
+                navigate(`/edit/${note.id}`, {
+                  state: { fromSlot: { date, time } },
+                })
+              }
+            />
           ))}
         </div>
       </div>
@@ -147,9 +157,14 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                         key={`${date}-${time}`}
                         className="flex flex-col ml-10 mr-30 relative cursor-pointer mt-30 w-[20vw] min-w-[150px]"
                         style={{ minHeight: "150px" }}
-                        onClick={() =>
-                          !isDragging && handleSlotClick(date, time)
-                        }
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          // Check if the click target is a button or inside a button
+                          const isButtonClick = target.closest("button");
+                          if (!isDragging && !isButtonClick) {
+                            handleSlotClick(date, time);
+                          }
+                        }}
                       >
                         <div
                           key={time}
@@ -166,7 +181,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                             initial={{ opacity: 0, y: 10 }}
                             whileHover={{ scale: 1.05 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className={`${hasNotes ? "" : "-ml-12"}`}
+                            className={`${hasNotes ? "" : "-ml-8"}`}
                             transition={{
                               type: "spring",
                               stiffness: 300,

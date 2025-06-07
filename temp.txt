@@ -1,561 +1,132 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
-import { connect } from "react-redux";
-import Timeline from "@mui/lab/Timeline";
-import TimelineItem from "@mui/lab/TimelineItem";
-import TimelineSeparator from "@mui/lab/TimelineSeparator";
-import TimelineConnector from "@mui/lab/TimelineConnector";
-import TimelineContent from "@mui/lab/TimelineContent";
-import TimelineDot from "@mui/lab/TimelineDot";
-import NoteCard from "./NotesCard";
-import { NotesTimelineProps } from "../../TS_INTERFACE/gInterface";
-import moment from "moment";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useState, useRef } from "react";
+import NotesForm from "./NotesForm";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { notesReducerIntf, NavigationState } from "../../TS_INTERFACE/gInterface";
+import { editNote, removeNote } from "../../actions/AddNote";
 
-const NotesTimeline = ({
-  notes,
-  interval,
-  sortOrder,
-  selectedAMPM,
-  is24Hour,
-}: NotesTimelineProps) => {
-  const [clickedDot, setClickedDot] = useState<number | null>(null);
-  const [scrollPositions, setScrollPositions] = useState<{
-    [key: number]: number;
-  }>({});
-  const [preservedScrollPositions, setPreservedScrollPositions] = useState<
-    Set<number>
-  >(new Set());
-  const [activeInterval, setActiveInterval] = useState<number | null>(null);
-  const [preservedIntervals, setPreservedIntervals] = useState<Set<number>>(
-    new Set()
-  );
-  const [isElastic, setIsElastic] = useState(false);
-  const timelineRef = useRef<HTMLUListElement | null>(null);
-  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isHorizontalScrolling, setIsHorizontalScrolling] = useState(false);
+const EditNotePage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation() as { state: NavigationState | null };
+  const { id } = useParams<{ id: string }>();
+  const formRef = useRef<HTMLDivElement>(null);
+  const [isFormVisible, setIsFormVisible] = useState(true);
 
-  // Filtered notes (applies only if filters are set)
-  // ✅ Add currentStartTime
-
-  const [currentStartTime, setCurrentStartTime] = useState(
-    moment().startOf("day")
-  ); // Stores the active interval start time
-  const [cachedDays, setCachedDays] = useState<Record<string, number[]>>({}); // Cache to store full-day notes
-
-  const timeIntervals = useMemo(() => {
-    let intervals = new Set<number>();
-    let intervalSize = interval === "6h" ? 6 : interval === "12h" ? 12 : 24;
-
-    for (let i = 0; i < intervalSize; i++) {
-      intervals.add(
-        moment(currentStartTime).add(i, "hours").startOf("hour").valueOf()
-      );
-    }
-
-    // ✅ Include any notes within the selected day if they are in the current time range
-    notes.forEach((note) => {
-      if (moment(note.time).isSame(moment(currentStartTime), "day")) {
-        intervals.add(moment(note.time).startOf("hour").valueOf());
-      }
-    });
-
-    return sortOrder === "asc"
-      ? Array.from(intervals).sort((a, b) => a - b)
-      : Array.from(intervals).sort((a, b) => b - a);
-  }, [notes, interval, currentStartTime, sortOrder]);
-
-  const findAdjacentInterval = useCallback(
-    (current: number, direction: "next" | "prev"): number | null => {
-      const index = timeIntervals.indexOf(current);
-      if (index === -1) return null;
-      const range =
-        direction === "next"
-          ? timeIntervals.slice(index + 1)
-          : timeIntervals.slice(0, index).reverse();
-      return (
-        range.find((time) =>
-          notes.some((note) => moment(note.time).isSame(moment(time), "hour"))
-        ) || null
-      );
-    },
-    [notes, timeIntervals]
+  const note = useSelector((state: any) =>
+    state.notes.find((note: notesReducerIntf) => note.id === id)
   );
 
-  const preventDefaultScroll = useCallback((event: WheelEvent) => {
-    event.preventDefault();
-  }, []);
-
-  const filteredNotes = useMemo(() => {
-    console.log("📝 Original Notes:", notes); // Log the original notes to see the entire data
-
-    const notesFilteredByDate = notes.filter((note) => {
-      const noteDate = moment(note.date).startOf("day");
-      const isSameDay = noteDate.isSame(moment(currentStartTime), "day");
-      console.log(`Note ID: ${note.id} Date Filter:`, isSameDay); // Log whether the note matches the same day
-      return isSameDay;
-    });
-
-    console.log("📅 Filtered by Date (Same Day):", notesFilteredByDate);
-
-    const notesFilteredByTime = notesFilteredByDate.filter((note) => {
-      const noteTime = moment(note.date).startOf("hour").valueOf(); // Ensure correct field
-      const isInTimeIntervals = timeIntervals.includes(noteTime);
-      console.log(`Note ID: ${note.id} Time Filter:`, isInTimeIntervals); // Log whether the note time matches the interval
-      return isInTimeIntervals;
-    });
-
-    console.log("⏳ Filtered by Time Intervals:", notesFilteredByTime);
-
-    const notesFilteredByAMPM = notesFilteredByTime.filter((note) => {
-      const matchesAMPM = is24Hour
-        ? true
-        : moment(note.date).format("A") === selectedAMPM;
-      console.log(`Note ID: ${note.id} AMPM Filter:`, matchesAMPM); // Log whether the note matches the AM/PM condition
-      return matchesAMPM;
-    });
-
-    console.log("🌙 Filtered by AM/PM:", notesFilteredByAMPM);
-
-    const sortedNotes = notesFilteredByAMPM.sort((a, b) =>
-      sortOrder === "asc"
-        ? moment(a.date).valueOf() - moment(b.date).valueOf()
-        : moment(b.date).valueOf() - moment(a.date).valueOf()
-    );
-
-    console.log("🔀 Sorted Notes:", sortedNotes); // Log the sorted notes
-
-    return sortedNotes;
-  }, [
-    notes,
-    sortOrder,
-    selectedAMPM,
-    is24Hour,
-    currentStartTime,
-    timeIntervals,
-  ]);
-
-  console.log("🚀 Final filtered and sorted notes:", filteredNotes);
-
-  // ✅ Added `currentStartTime`
-  // 🔹 ADD DEBUGGING LOGS HERE
   useEffect(() => {
-    console.log("🛠 All Redux Notes:", notes);
-    console.log(
-      "📅 Current Timeline Date:",
-      moment(currentStartTime).format("YYYY-MM-DD")
-    );
-    console.log(
-      "⏳ Visible Time Intervals:",
-      timeIntervals.map((t) => moment(t).format("HH:mm"))
-    );
-    console.log(
-      "📝 Filtered Notes:",
-      filteredNotes.map((n) => ({
-        id: n.id,
-        time: moment(n.time).format("YYYY-MM-DD HH:mm"),
-      }))
-    );
-    console.log("Checking note dates:");
-    notes.forEach((note) => {
-      console.log(
-        `📝 Note ID: ${note.id}, Date: ${moment(note.date).format(
-          "YYYY-MM-DD"
-        )}, Expected: ${moment(currentStartTime).format("YYYY-MM-DD")}`
-      );
-    });
-  }, [filteredNotes, timeIntervals, currentStartTime]);
+    console.log(`🔄 [${new Date().toISOString()}] EditNotePage Mounted or Re-rendered, id: ${id}`);
+  }, [id]);
 
-  const handleNextInterval = () => {
-    console.log("➡️ Next button clicked!");
+  useEffect(() => {
+    console.log(`📌 [${new Date().toISOString()}] isFormVisible changed: ${isFormVisible}`);
 
-    let nextStartTime = moment(currentStartTime).add(
-      interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
-      "hours"
-    );
-
-    console.log(
-      "⏳ Calculated Next Start Time:",
-      nextStartTime.format("YYYY-MM-DD HH:mm")
-    );
-
-    if (nextStartTime.isAfter(moment(currentStartTime).endOf("day"))) {
-      console.log("🗓 Moving to the next day...");
-
-      // Cache today's data before switching
-      console.log("📌 Caching today's timeline:", timeIntervals);
-      setCachedDays((prev) => ({
-        ...prev,
-        [moment(currentStartTime).format("YYYY-MM-DD")]: timeIntervals,
-      }));
-
-      // Move to the first interval of the next day
-      nextStartTime = moment(currentStartTime).add(1, "day").startOf("day");
-
-      console.log(
-        "🔄 Adjusted Next Start Time (Start of Next Day):",
-        nextStartTime.format("YYYY-MM-DD HH:mm")
-      );
-
-      // Check if we have cached data for the next day
-      const cachedDay = cachedDays[moment(nextStartTime).format("YYYY-MM-DD")];
-      if (cachedDay) {
-        console.log("✅ Restoring Cached Data for Next Day:", cachedDay);
-        setCurrentStartTime(nextStartTime);
-        return;
+    if (!isFormVisible) {
+      const fromSlot = location.state?.fromSlot;
+      if (fromSlot) {
+        console.log(`➡️ [${new Date().toISOString()}] Form closed, returning to slot view:`, fromSlot);
+        navigate("/notes/timeline", { state: { selectedSlot: fromSlot } });
+      } else {
+        console.log(`➡️ [${new Date().toISOString()}] Form closed, navigating to /notes/timeline`);
+        navigate("/notes/timeline");
       }
+      return;
     }
 
-    console.log(
-      "➡️ Updating Current Start Time to:",
-      nextStartTime.format("YYYY-MM-DD HH:mm")
-    );
-    setCurrentStartTime(nextStartTime);
-  };
-
-  const handlePreviousInterval = () => {
-    console.log("⬅️ Previous button clicked!");
-
-    let prevStartTime = moment(currentStartTime).subtract(
-      interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
-      "hours"
-    );
-
-    console.log(
-      "⏳ Calculated Previous Start Time:",
-      prevStartTime.format("YYYY-MM-DD HH:mm")
-    );
-
-    if (prevStartTime.isBefore(moment(currentStartTime).startOf("day"))) {
-      console.log("🗓 Moving to the previous day...");
-
-      // Cache today's data before switching
-      console.log("📌 Caching today's timeline:", timeIntervals);
-      setCachedDays((prev) => ({
-        ...prev,
-        [moment(currentStartTime).format("YYYY-MM-DD")]: timeIntervals,
-      }));
-
-      // Move to the last interval of the previous day
-      prevStartTime = moment(currentStartTime)
-        .subtract(1, "day")
-        .endOf("day")
-        .subtract(
-          interval === "6h" ? 6 : interval === "12h" ? 12 : 24,
-          "hours"
-        );
-
-      console.log(
-        "🔄 Adjusted Previous Start Time (End of Previous Day):",
-        prevStartTime.format("YYYY-MM-DD HH:mm")
-      );
-
-      // Check if we have cached data for the previous day
-      const cachedDay = cachedDays[moment(prevStartTime).format("YYYY-MM-DD")];
-      if (cachedDay) {
-        console.log("✅ Restoring Cached Data for Previous Day:", cachedDay);
-        setCurrentStartTime(moment(prevStartTime).startOf("day"));
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!formRef.current) {
+        console.log(`⚠️ [${new Date().toISOString()}] formRef is null`);
         return;
       }
-    }
 
-    console.log(
-      "⬅️ Updating Current Start Time to:",
-      prevStartTime.format("YYYY-MM-DD HH:mm")
-    );
-    setCurrentStartTime(prevStartTime);
-  };
+      const clickedElement = event.target as Node;
+      const isOutside = !formRef.current.contains(clickedElement);
 
-  /** Handles horizontal scrolling behavior */
-  const handleScroll = useCallback(
-    (event: WheelEvent) => {
-      if (!activeInterval) return;
+      console.log(`🖱️ [${new Date().toISOString()}] Click detected, isOutside: ${isOutside}, target:`, event.target);
 
-      event.preventDefault();
-      event.stopPropagation();
-
-      console.log(`🌀 Scrolling on interval: ${activeInterval}`);
-
-      const notesAtThisTime = notes.filter((note) =>
-        moment(note.time).isSame(moment(activeInterval), "hour")
-      );
-
-      if (notesAtThisTime.length === 0) return;
-
-      const maxOffset = -((notesAtThisTime.length - 1) * 180);
-      const newOffset =
-        (scrollPositions[activeInterval] || 0) + (event.deltaY > 0 ? -50 : 50);
-      const updatedOffset = Math.max(maxOffset - 20, Math.min(newOffset, 20));
-
-      console.log(
-        `📍 Updated scroll position for ${activeInterval}: ${updatedOffset}`
-      );
-
-      setScrollPositions((prev) => ({
-        ...prev,
-        [activeInterval]: updatedOffset,
-      }));
-
-      if (updatedOffset <= maxOffset - 10) {
-        console.log(`✅ Fully scrolled on interval: ${activeInterval}`);
-
-        setPreservedIntervals(new Set([...preservedIntervals, activeInterval]));
-        setIsElastic(true);
-
-        setTimeout(() => {
-          setIsElastic(false);
-          const nextInterval = findAdjacentInterval(activeInterval, "next");
-
-          if (nextInterval) {
-            console.log(`➡️ Moving to next interval: ${nextInterval}`);
-
-            setActiveInterval(nextInterval);
-            setClickedDot(nextInterval);
-          }
-        }, 200);
-      }
-    },
-    [
-      activeInterval,
-      notes,
-      scrollPositions,
-      findAdjacentInterval,
-      preservedIntervals,
-    ]
-  );
-
-  const handleClick = useCallback(
-    (time: number) => {
-      console.log(`🖱 Click detected on time: ${time}`);
-
-      // Check if a double-click is happening
-      if (clickTimeoutRef.current) {
-        console.log(`🟢 Double-click detected on time: ${time}`);
-
-        clearTimeout(clickTimeoutRef.current);
-        clickTimeoutRef.current = null;
-
-        // ✅ Double-click only works on an active interval OR preserved scroll position
-        if (activeInterval === time || preservedScrollPositions.has(time)) {
-          console.log(`🔄 Toggling preserved scroll position for ${time}`);
-
-          setPreservedScrollPositions((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(time)) {
-              console.log(`❌ Removing preserved scroll for ${time}`);
-              setScrollPositions((prevPositions) => {
-                const updatedPositions = { ...prevPositions };
-                delete updatedPositions[time];
-                return updatedPositions;
-              });
-              newSet.delete(time);
-            } else {
-              console.log(`📌 Adding preserved scroll for ${time}`);
-              newSet.add(time);
+      const isMuiPicker = (element: Node | null): boolean => {
+        let current = element;
+        while (current) {
+          if (current instanceof HTMLElement) {
+            if (
+              current.className?.includes("MuiPicker") ||
+              current.className?.includes("MuiCalendarPicker") ||
+              current.className?.includes("MuiClockPicker") ||
+              current.getAttribute("role") === "dialog" ||
+              current.getAttribute("role") === "menu"
+            ) {
+              console.log(`📅 [${new Date().toISOString()}] Click inside MUI Picker`);
+              return true;
             }
-            return newSet;
-          });
-        }
-
-        return; // ✅ Exit early for double-click
-      }
-
-      console.log(`⏳ Waiting 300ms for possible double-click`);
-
-      clickTimeoutRef.current = setTimeout(() => {
-        console.log(`✅ Single-click confirmed on time: ${time}`);
-
-        // Single-click activates an interval if none is active
-        if (activeInterval === time) {
-          console.log("🔄 Deactivating interval & restoring normal scrolling");
-
-          setIsHorizontalScrolling(false);
-          setActiveInterval(null);
-          setClickedDot(null);
-
-          // ✅ Delay enabling vertical scrolling by 10ms
-          setTimeout(() => {
-            console.log("🛑 Restoring default vertical scrolling");
-            window.removeEventListener("wheel", preventDefaultScroll);
-          }, 10);
-
-          // ✅ Reset scroll position if not preserved
-          if (!preservedScrollPositions.has(time)) {
-            console.log(`🔄 Resetting scroll position for ${time}`);
-            setScrollPositions((prev) => ({
-              ...prev,
-              [time]: 0, // Reset to first card
-            }));
           }
-
-          return;
+          current = current.parentNode;
         }
+        return false;
+      };
 
-        // ✅ Delay disabling vertical scroll & enabling horizontal by 10ms
-        setTimeout(() => {
-          console.log("🛑 Instantly blocking vertical scrolling");
-          window.addEventListener("wheel", preventDefaultScroll, {
-            passive: false,
-          });
-
-          console.log("➡️ Instantly enabling horizontal scrolling");
-          window.addEventListener("wheel", handleScroll, { passive: false });
-
-          // ✅ **Trigger horizontal scroll immediately**
-          handleScroll({ deltaY: 1, preventDefault: () => {} } as WheelEvent);
-        }, 10);
-
-        setIsHorizontalScrolling(true);
-        setClickedDot(time);
-        setActiveInterval(time);
-
-        clickTimeoutRef.current = null; // Clear timeout after single-click action
-      }, 300); // ✅ Fast double-click detection
-    },
-    [
-      activeInterval,
-      preventDefaultScroll,
-      preservedScrollPositions,
-      handleScroll,
-    ]
-  );
-
-  /** Manage event listeners */
-  useEffect(() => {
-    if (isHorizontalScrolling) {
-      console.log("🛑 Blocking vertical scroll & enabling horizontal scroll");
-      window.addEventListener("wheel", handleScroll, { passive: false });
-      window.addEventListener("wheel", preventDefaultScroll, {
-        passive: false,
-      });
-    } else {
-      console.log("✅ Restoring normal scrolling");
-      window.removeEventListener("wheel", handleScroll);
-      window.removeEventListener("wheel", preventDefaultScroll);
-    }
-
-    return () => {
-      console.log("♻ Cleaning up event listeners");
-      window.removeEventListener("wheel", handleScroll);
-      window.removeEventListener("wheel", preventDefaultScroll);
-
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
-        clickTimeoutRef.current = null;
+      if (isOutside && !isMuiPicker(clickedElement)) {
+        console.log(`🚪 [${new Date().toISOString()}] Click outside form and not in MUI Picker, closing form`);
+        setIsFormVisible(false);
       }
     };
-  }, [
-    isHorizontalScrolling,
-    handleScroll,
-    preventDefaultScroll,
-    preservedScrollPositions,
-  ]);
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      console.log(`🧹 [${new Date().toISOString()}] Cleaning up click-outside listener`);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isFormVisible, navigate, location.state]);
+
+  console.log(`🔍 [${new Date().toISOString()}] editId: ${id}`);
+  console.log(`📝 [${new Date().toISOString()}] note:`, note);
+
+  if (!isFormVisible) {
+    console.log(`❌ [${new Date().toISOString()}] Form not visible, rendering null`);
+    return null;
+  }
+
+  console.log(`✅ [${new Date().toISOString()}] Rendering EditNotePage with form visible`);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4 p-3 bg-gray-200 rounded-lg shadow-md">
+    <div className="fixed inset-0 flex items-center justify-center modal-overlay bg-black bg-opacity-50 z-50">
+      <div ref={formRef} className="bg-white rounded-lg shadow-lg z-51">
+        <NotesForm
+          note={note}
+          onSubmit={(note) => {
+            if (id) {
+              console.log(`💾 [${new Date().toISOString()}] Saving edited note, id: ${id}`);
+              dispatch(editNote(id, note));
+              setIsFormVisible(false);
+            } else {
+              console.log(`⚠️ [${new Date().toISOString()}] id is not present`);
+            }
+          }}
+          onClose={() => {
+            console.log(`🚫 [${new Date().toISOString()}] Cancel button clicked, closing form`);
+            setIsFormVisible(false);
+          }}
+        />
         <button
-          onClick={handlePreviousInterval}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition"
+          onClick={() => {
+            if (id) {
+              console.log(`🗑️ [${new Date().toISOString()}] Removing note, id: ${id}`);
+              dispatch(removeNote(id));
+              setIsFormVisible(false);
+            } else {
+              console.log(`⚠️ [${new Date().toISOString()}] Entry not available to delete`);
+            }
+          }}
+          className="mt-2 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
         >
-          ⬅ Previous
-        </button>
-
-        <div className="text-lg font-semibold">
-          📅 {moment(currentStartTime).format("dddd, MMMM D, YYYY")}
-          <br />⏳ {moment(currentStartTime).format("hh:mm A")} -
-          {moment(currentStartTime)
-            .add(interval === "6h" ? 6 : interval === "12h" ? 12 : 24, "hours")
-            .format("hh:mm A")}
-        </div>
-
-        <button
-          onClick={handleNextInterval}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition"
-        >
-          Next ➡
+          Remove
         </button>
       </div>
-
-      <Timeline ref={timelineRef} position="right">
-        {timeIntervals.map((time) => {
-          console.log(
-            `📌 Creating TimelineItem for: ${moment(time).format("hh:mm A")}`
-          );
-          const notesAtThisTime = filteredNotes.filter((note) =>
-            moment(note.time).isSame(moment(time), "hour")
-          );
-
-          return (
-            <TimelineItem
-              key={time}
-              className={
-                notesAtThisTime.length > 0 ? "mb-10 mt-10 -mr-10" : "-ml-10"
-              }
-            >
-              <TimelineSeparator>
-                <div className="relative flex flex-col items-center">
-                  <TimelineDot
-                    className={`cursor-pointer ${
-                      clickedDot === time ? "animate-bounce" : ""
-                    } ${
-                      preservedIntervals.has(time)
-                        ? "bg-gray-800 shadow-lg"
-                        : ""
-                    }`}
-                    onClick={() => handleClick(time)}
-                  />
-                  <TimelineConnector
-                    className="min-h-[100px] cursor-pointer"
-                    onClick={() => handleClick(time)}
-                  />
-                  <div className="absolute left-[-14px] top-1/2 transform -translate-y-1/2 bg-black p-2 rounded-lg shadow-lg z-10">
-                    <button
-                      className="text-white text-sm px-3 py-1"
-                      onClick={() => handleClick(time)}
-                    >
-                      {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                    </button>
-                  </div>
-                </div>
-              </TimelineSeparator>
-
-              <TimelineContent>
-                <h4 className="mt-1 text-lg font-semibold">
-                  {moment(time).format(is24Hour ? "HH:mm" : "hh:mm A")}
-                </h4>
-              </TimelineContent>
-
-              {notesAtThisTime.length > 0 && (
-                <div
-                  className={`absolute left-65 -top-5 flex gap-4 transition-transform ${
-                    isElastic
-                      ? "duration-200 ease-out"
-                      : "duration-500 ease-out"
-                  }`}
-                  style={{
-                    transform: `translateX(${scrollPositions[time] || 0}px)`,
-                  }}
-                >
-                  {notesAtThisTime.map((note) => (
-                    <NoteCard key={note.id} note={note} />
-                  ))}
-                </div>
-              )}
-            </TimelineItem>
-          );
-        })}
-      </Timeline>
     </div>
   );
 };
 
-const mapStateToProps = (state: any) => ({
-  notes: state.notes,
-});
-
-export default connect(mapStateToProps)(React.memo(NotesTimeline));
+export default EditNotePage;

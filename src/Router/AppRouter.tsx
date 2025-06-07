@@ -43,6 +43,7 @@ function AppRouter() {
             }
           />
           <Route path="notes">
+            <Route index element={<NotesDashboardPage />} />
             <Route path="timeline" element={<NotesDashboardPage />} />
             <Route path="list" element={<NotesList />} />
           </Route>

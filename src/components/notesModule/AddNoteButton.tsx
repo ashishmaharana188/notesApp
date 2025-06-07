@@ -1,5 +1,7 @@
 import AddNoteForm from "./AddNoteForm";
 import { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom"; // Added for navigation
+import { NavigationState } from "../../TS_INTERFACE/gInterface";
 
 interface AddNoteButtonProps {
   onFormVisibilityChange: (isVisible: boolean) => void;
@@ -8,17 +10,28 @@ interface AddNoteButtonProps {
 const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation() as { state: NavigationState | null };
 
   useEffect(() => {
     onFormVisibilityChange(isFormVisible);
   }, [isFormVisible, onFormVisibilityChange]);
 
   useEffect(() => {
-    if (!isFormVisible) return; // Only add listener when form is visible
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!formRef.current) {
-        return;
+    if (!isFormVisible) {
+      // *** Highlighted Change: Navigate based on fromSlot for Click Outside ***
+      const fromSlot = location.state?.fromSlot;
+      if (fromSlot) {
+        navigate("/notes/timeline", { state: { selectedSlot: fromSlot } });
+      } else {
+        navigate("/notes/timeline");
       }
+      // *** End of Highlighted Change ***
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!formRef.current) return;
 
       const clickedElement = event.target as Node;
       const isOutside = !formRef.current.contains(clickedElement);
@@ -27,8 +40,6 @@ const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
         let current = element;
         while (current) {
           if (current instanceof HTMLElement) {
-            // MUI pickers often use classes like 'MuiPicker', 'MuiCalendarPicker', or 'MuiClockPicker'
-            // Also checking for role attributes commonly used by MUI pickers
             if (
               current.className?.includes("MuiPicker") ||
               current.className?.includes("MuiCalendarPicker") ||
@@ -47,7 +58,6 @@ const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
       if (isOutside && !isMuiPicker(clickedElement)) {
         setIsFormVisible(false);
       }
-      // *** End of Highlighted Change ***
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -55,7 +65,7 @@ const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isFormVisible]);
+  }, [isFormVisible, navigate, location.state]);
 
   return (
     <>
