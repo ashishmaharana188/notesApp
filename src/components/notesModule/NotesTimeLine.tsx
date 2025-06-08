@@ -88,13 +88,13 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     return (
       <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-white mt-25 ml-15 mb-10">
+          <h2 className="text-2xl font-bold text-white mt-25 ml-18 mb-10">
             {moment(date).format("MMM DD, YYYY")}{" "}
             {moment(time, "HH:mm").format(is24Hour ? "HH:mm" : "hh:mm A")}
           </h2>
           <button
             onClick={() => setSelectedSlot(null)}
-            className="text-black text-3xl w-20 mb-20 mr-10 rounded-md bg-white"
+            className="text-black text-3xl w-20 mb-20 mr-3 rounded-md bg-white"
           >
             Back
           </button>
