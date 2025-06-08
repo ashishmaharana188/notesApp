@@ -19,14 +19,13 @@ const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
 
   useEffect(() => {
     if (!isFormVisible) {
-      // *** Highlighted Change: Navigate based on fromSlot for Click Outside ***
       const fromSlot = location.state?.fromSlot;
       if (fromSlot) {
         navigate("/notes/timeline", { state: { selectedSlot: fromSlot } });
       } else {
         navigate("/notes/timeline");
       }
-      // *** End of Highlighted Change ***
+
       return;
     }
 
