@@ -78,7 +78,7 @@ export interface NotesTimelineProps extends NoteListProps {
   onFormVisibilityChange?: (isVisible: boolean) => void;
   userChangedAMPM: React.MutableRefObject<boolean>;
   isNoteFormVisible: boolean;
-  initialSelectedSlot: SlotContext | null;
+  initialSelectedSlot: string | null;
 }
 
 export interface NotesTimelineRef {

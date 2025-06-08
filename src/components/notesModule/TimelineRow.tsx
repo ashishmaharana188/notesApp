@@ -66,7 +66,6 @@ const TimelineRow: React.FC<TimelineRowProps> = ({
             </div>
           </div>
         </TimelineSeparator>
-        W
         {shouldAnimate && (
           <motion.div
             className={`absolute top-0 ${

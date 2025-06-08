@@ -22,9 +22,14 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
     initialSelectedSlot,
   } = props;
 
-  const navigate = useNavigate(); // Added for navigation
+  const navigate = useNavigate();
   const [selectedSlot, setSelectedSlot] = useState<SlotContext | null>(
-    initialSelectedSlot || null
+    initialSelectedSlot
+      ? {
+          date: moment().format("YYYY-MM-DD"), // Default date
+          time: initialSelectedSlot, // initialSelectedSlot is a string
+        }
+      : null
   );
 
   const noteMap = useMemo(() => {
@@ -78,8 +83,23 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
   }, [notes.length, onFilteredNotesChange]);
 
   const handleSlotClick = (date: any, time: any) => {
-    setSelectedSlot({ date, time });
+    const cellNotes = noteMap[date]?.[time] || [];
+    if (cellNotes.length > 1) {
+      // Check notes in the specific slot
+      setSelectedSlot({ date, time });
+    }
   };
+
+  useEffect(() => {
+    if (selectedSlot) {
+      const { date, time } = selectedSlot;
+      const cellNotes = noteMap[date]?.[time] || [];
+      if (cellNotes.length < 2) {
+        setSelectedSlot(null);
+        navigate("/notes/timeline");
+      }
+    }
+  }, [selectedSlot, noteMap, navigate]);
 
   if (selectedSlot) {
     const { date, time } = selectedSlot;
@@ -115,6 +135,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
       </div>
     );
   }
+
   if (!isNoteFormVisible) {
     return (
       <div className="w-full h-[calc(100vh-120px)] overflow-auto px-4">
@@ -143,28 +164,27 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                 >
                   {sortedTimes.map((time) => {
                     const cellNotes = noteMap[date]?.[time] || [];
-                    if (cellNotes.length === 0)
-                      //
-                      return null;
-                    //
+                    if (cellNotes.length === 0) return null;
+
                     const hasNotes = cellNotes.length > 1;
                     const sortedCellNotes = [...cellNotes].sort((a, b) =>
                       moment(a.time).diff(moment(b.time))
                     );
 
                     return (
-                      <div
+                      <motion.div
                         key={`${date}-${time}`}
                         className="flex flex-col ml-10 mr-30 relative cursor-pointer mt-30 w-[20vw] min-w-[150px]"
                         style={{ minHeight: "150px" }}
                         onClick={(e) => {
                           const target = e.target as HTMLElement;
-                          // Check if the click target is a button or inside a button
                           const isButtonClick = target.closest("button");
                           if (!isDragging && !isButtonClick) {
                             handleSlotClick(date, time);
                           }
                         }}
+                        layout // Enable layout animation for each slot
+                        transition={{ duration: 0.4, ease: "easeOut" }}
                       >
                         <div
                           key={time}
@@ -190,7 +210,6 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                             }}
                             style={{
                               position: "absolute",
-                              // Cap the length at 4 for alignment calculation
                               left: `${
                                 (index -
                                   (Math.min(sortedCellNotes.length, 4) - 1)) *
@@ -203,7 +222,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                             <NoteCard note={note} />
                           </motion.div>
                         ))}
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </motion.div>
@@ -214,6 +233,8 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
       </div>
     );
   }
+
+  return null;
 });
 
 const mapStateToProps = (state: any) => ({
