@@ -52,9 +52,9 @@ const AddNoteForm = ({ onClose }: NotesFormProp) => {
 
     // Hide animation after 0.5s if no new dispatch
     hideTimeoutRef.current = setTimeout(() => {
-      setIsAnimating(false); // Trigger fade-out animation
+      setIsAnimating(false);
       hideTimeoutRef.current = null;
-    }, 1200); // 700ms (animation) + 500ms (0.5s idle)
+    }, 1200);
   };
 
   // Cleanup timeouts on unmount
@@ -73,7 +73,6 @@ const AddNoteForm = ({ onClose }: NotesFormProp) => {
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-lg relative">
-      {/* Notes Form */}
       <NotesForm
         onSubmit={handleSubmit}
         onClose={() => {
@@ -81,13 +80,12 @@ const AddNoteForm = ({ onClose }: NotesFormProp) => {
         }}
       />
 
-      {/* Loading Circle, Filled Circle, Tick Mark, and Success Animation */}
       <motion.div
         key={animationKey}
         className="animation-container absolute inset-0 flex flex-col items-center mt-62 ml-38 justify-center bg-white rounded-lg"
         initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0 }} // Fade in/out based on isAnimating
-        transition={{ duration: 0.1, ease: "easeOut" }} // Ease-out when hiding
+        animate={{ opacity: isAnimating ? 1 : 0 }}
+        transition={{ duration: 0.1, ease: "easeOut" }}
       >
         <div className="relative flex items-center justify-center">
           <motion.div
@@ -112,7 +110,6 @@ const AddNoteForm = ({ onClose }: NotesFormProp) => {
             transition={{ duration: 0.01, ease: "easeInOut" }}
           />
 
-          {/* Tick Mark Container for 0.25s */}
           <motion.div
             className="tick-container hidden absolute flex items-center justify-center z-10"
             style={{ width: "40px", height: "40px" }}

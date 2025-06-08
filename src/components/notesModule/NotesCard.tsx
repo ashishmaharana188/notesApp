@@ -33,26 +33,26 @@ const NoteCard = React.memo(
         animate={
           isDeleting
             ? {
-                scale: 0, // Scale down toward the right
-                opacity: 0, // Fade out
-                x: "100%", // Pull toward the right
-                z: -100, // Pull backward (sucked in effect)
-                borderTopRightRadius: "30%", // Round only the left top corner
+                scale: 0,
+                opacity: 0,
+                x: "100%",
+                z: -100,
+                borderTopRightRadius: "30%",
                 borderBottomRightRadius: "30%",
                 borderBottomLeftRadius: "10%",
-                borderTopLeftRadius: "10%", // Round only the left bottom corner
-                filter: "blur(2px)", // Add blur for smoother appearance
+                borderTopLeftRadius: "10%",
+                filter: "blur(2px)",
                 transition: {
-                  duration: 0.3, // Total duration
+                  duration: 0.3,
                   ease: "easeIn",
-                  scale: { duration: 0.1 }, // Collapse quickly
-                  x: { delay: 0.1, duration: 0.1 }, // Then pull right
-                  z: { delay: 0.1, duration: 0.1 }, // Pull back simultaneously
-                  borderTopLeftRadius: { duration: 0.1 }, // Smooth left top edge
+                  scale: { duration: 0.1 },
+                  x: { delay: 0.1, duration: 0.1 },
+                  z: { delay: 0.1, duration: 0.1 },
+                  borderTopLeftRadius: { duration: 0.1 },
                   borderBottomLeftRadius: { duration: 0.1 },
                   borderBottomRightRadius: { duration: 0.1 },
-                  borderTopRightRadius: { duration: 0.1 }, // Smooth left bottom edge
-                  filter: { duration: 0.1 }, // Apply blur during collapse
+                  borderTopRightRadius: { duration: 0.1 },
+                  filter: { duration: 0.1 },
                 },
               }
             : {
@@ -63,8 +63,8 @@ const NoteCard = React.memo(
         }
         exit={{ opacity: 0, scale: 0.8, y: 20 }}
         transition={{ duration: 0.3 }}
-        onAnimationComplete={handleAnimationComplete} // Trigger delete after animation
-        style={{ transformOrigin: "center right" }} // Collapse toward the right edge
+        onAnimationComplete={handleAnimationComplete}
+        style={{ transformOrigin: "center right" }}
         className="w-120 mb-2 ml-3 bg-white rounded-lg shadow-md p-5 border border-gray-200"
       >
         <h2 className="text-xl font-bold text-black">
@@ -108,7 +108,7 @@ const NoteCard = React.memo(
           <button
             onClick={handleDelete}
             className="p-2 bg-white rounded-lg hover:bg-[#525b28]/30 transition"
-            disabled={isDeleting} // Disable button during animation
+            disabled={isDeleting}
           >
             <DeleteIcon className="text-red-600" />
           </button>

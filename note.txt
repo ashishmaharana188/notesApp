@@ -3,3 +3,4 @@ implement animation when deleting a card - done
 fix active interval function
 add simialr effects to filters
 CHOOSE BETTER COLORS
+UNIVERSAL TEXT SEARCH filters(can be viewd in expanded mode for each result. works like search engine. top five are recent searches by defualt hwile seraching the words) and DATE FILTER
