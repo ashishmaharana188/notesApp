@@ -43,8 +43,13 @@ const AddNoteButton = ({ onFormVisibilityChange }: AddNoteButtonProps) => {
               current.className?.includes("MuiPicker") ||
               current.className?.includes("MuiCalendarPicker") ||
               current.className?.includes("MuiClockPicker") ||
+              current.className?.includes(
+                "MuiMultiSectionDigitalClockSection"
+              ) ||
+              current.className?.includes("MuiPickersPopper") ||
               current.getAttribute("role") === "dialog" ||
-              current.getAttribute("role") === "menu"
+              current.getAttribute("role") === "menu" ||
+              current.getAttribute("role") === "grid"
             ) {
               return true;
             }

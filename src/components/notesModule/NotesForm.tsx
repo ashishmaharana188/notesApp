@@ -56,9 +56,13 @@ export default class NotesForm extends React.Component<
     this.setState({ tags: e.target.value });
   };
   handleCancel = () => {
-    this.setState({ redirect: false });
+    this.setState({
+      redirect: false,
+      openDatePicker: false,
+      openTimePicker: false,
+    });
     if (this.props.onClose) {
-      this.props.onClose(); //connected to editPage and also AddNoteForm/Button
+      this.props.onClose();
     }
   };
 
@@ -70,14 +74,17 @@ export default class NotesForm extends React.Component<
   };
 
   toggleTimePicker = () => {
+    const currentTime = moment(); // Set to current time when opening
     this.setState({
       openTimePicker: !this.state.openTimePicker,
       openDatePicker: false,
+      time: currentTime,
     });
   };
 
   onSubmit = (e: any) => {
     e.preventDefault();
+    this.setState({ openDatePicker: false, openTimePicker: false });
     if (this.props.onSubmit) {
       this.props.onSubmit({
         id: this.state.id,
@@ -90,12 +97,19 @@ export default class NotesForm extends React.Component<
     }
   };
 
+  handleFormClick = () => {
+    this.setState({ openDatePicker: false, openTimePicker: false });
+  };
+
   render() {
     if (this.state.redirect) {
       return <Navigate to="/notes" />;
     }
     return (
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 bg-white border border-gray-300 rounded-md shadow-md p-4">
+      <div
+        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 bg-white border border-gray-300 rounded-md shadow-md p-4"
+        onClick={this.handleFormClick}
+      >
         <div className="bg-[#525b28] text-white p-2 text-lg rounded-t-md text-center">
           <input
             type="text"
@@ -122,7 +136,10 @@ export default class NotesForm extends React.Component<
             onChange={this.onTagsChange}
           />
         </div>
-        <div className="mb-2 flex items-center relative">
+        <div
+          className="mb-2 flex items-center relative"
+          onClick={(e) => e.stopPropagation()}
+        >
           {this.state.openDatePicker || this.state.openTimePicker ? (
             <div className="flex-1 border-gray-300 rounded-md">
               {this.state.openDatePicker && (
@@ -130,14 +147,34 @@ export default class NotesForm extends React.Component<
                   <DatePicker
                     value={this.state.date}
                     onChange={this.onDateChange}
+                    open={this.state.openDatePicker}
+                    onOpen={() => this.setState({ openDatePicker: true })}
+                    onClose={() => {}}
+                    onAccept={() => {}}
                     slotProps={{
                       textField: {
                         size: "small",
                         style: {},
+                        sx: {
+                          "& .Mui-focused": {
+                            "& .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#525b28", // Custom green border on focus
+                            },
+                          },
+                        },
                         InputProps: {
                           style: {
-                            paddingLeft: "32px", // Reset padding if needed
+                            paddingLeft: "50px",
                           },
+                          endAdornment: null,
+                        },
+                      },
+                      popper: {
+                        placement: "bottom",
+                        disablePortal: true,
+                        sx: {
+                          left: "35px !important",
+                          top: "50px !important",
                         },
                       },
                     }}
@@ -149,15 +186,73 @@ export default class NotesForm extends React.Component<
                   <TimePicker
                     value={this.state.time}
                     onChange={this.onTimeChange}
-                    className="custom-datepicker"
+                    open={this.state.openTimePicker}
+                    onOpen={() => this.setState({ openTimePicker: true })}
+                    onClose={() => {}}
+                    onAccept={() => {}}
                     slotProps={{
                       textField: {
                         size: "small",
-                        style: {},
+                        style: { width: "100%" },
+                        sx: {
+                          "& .Mui-focused": {
+                            "& .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#525b28", // Custom green border on focus
+                            },
+                          },
+                        },
                         InputProps: {
                           style: {
-                            paddingLeft: "40px", // Moves text inside to the right
+                            paddingLeft: "50px",
                           },
+                          endAdornment: null,
+                        },
+                      },
+                      layout: {
+                        sx: {
+                          alignContent: "center",
+                        },
+                      },
+
+                      popper: {
+                        sx: {
+                          "& .MuiPickersLayout-root": {
+                            "& .MuiPickersLayout-contentWrapper": {
+                              "& .MuiMultiSectionDigitalClockSection-root": {
+                                scrollbarWidth: "none",
+                                "-ms-overflow-style": "none",
+                                "&::-webkit-scrollbar": {
+                                  display: "none",
+                                },
+                                height: "200px", // Increased height for better centering
+                                padding: "0", // Remove default padding
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center", // Center vertically
+                                alignItems: "center", // Center horizontally
+                                "& .MuiMultiSectionDigitalClockSection-item": {
+                                  scrollBehavior: "smooth",
+                                  height: "30px", // Fixed height for items
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  "&:focus": {
+                                    scrollSnapAlign: "center",
+                                  },
+                                  "&.Mui-selected": {
+                                    scrollSnapAlign: "center",
+                                    scrollBehavior: "smooth",
+                                    position: "relative",
+                                    transform: "translateY(0)",
+                                    borderRadius: "4px",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                                  },
+                                },
+                              },
+                            },
+                          },
+                          left: "25px !important",
+                          top: "50px !important",
                         },
                       },
                     }}
@@ -167,7 +262,7 @@ export default class NotesForm extends React.Component<
             </div>
           ) : (
             <div
-              className="flex-1 p-3 border-gray-300 rounded-md cursor-pointer"
+              className="flex-1 p-3 ml-16 border-gray-300 rounded-md cursor-pointer"
               onClick={this.toggleDatePicker}
             >
               {this.state.date.format("MM/DD/YYYY hh:mm A")}
@@ -184,7 +279,10 @@ export default class NotesForm extends React.Component<
             />
           </IconButton>
         </div>
-        <div className="flex justify-center gap-4 border-t pt-2">
+        <div
+          className="flex justify-center gap-4 border-t pt-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             className="bg-[#525b28] text-white px-4 py-2 rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
             onClick={this.handleCancel}
