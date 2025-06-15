@@ -11,6 +11,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { NotesFormProp, NotesFormState } from "../../TS_INTERFACE/gInterface";
 import { Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export default class NotesForm extends React.Component<
   NotesFormProp,
@@ -66,6 +67,20 @@ export default class NotesForm extends React.Component<
     }
   };
 
+  togglePicker = (type: "date" | "time" | "both") => {
+    if (type === "both") {
+      this.setState({
+        openDatePicker: !this.state.openDatePicker,
+        openTimePicker: !this.state.openTimePicker,
+        time: moment(),
+      });
+    } else if (type === "date") {
+      this.toggleDatePicker();
+    } else if (type === "time") {
+      this.toggleTimePicker();
+    }
+  };
+
   toggleDatePicker = () => {
     this.setState({
       openDatePicker: !this.state.openDatePicker,
@@ -106,22 +121,31 @@ export default class NotesForm extends React.Component<
       return <Navigate to="/notes" />;
     }
     return (
-      <div
-        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 bg-white border border-gray-300 rounded-md shadow-md p-4"
+      <motion.div
+        className="fixed top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-150 h-200 bg-white border border-gray-300 rounded-md shadow-md p-4"
+        animate={{
+          left:
+            this.state.openDatePicker && this.state.openTimePicker
+              ? "49%"
+              : "50%",
+          x:
+            this.state.openDatePicker && this.state.openTimePicker ? "-10%" : 0,
+        }}
+        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
         onClick={this.handleFormClick}
       >
-        <div className="bg-[#525b28] text-white p-2 text-lg rounded-t-md text-center">
+        <div className="bg-[#525b28] text-white p-2 text-3xl rounded-t-md text-center mb-5">
           <input
             type="text"
             placeholder="Title"
-            className="w-full bg-transparent border-none text-white text-lg text-center focus:outline-none"
+            className="w-full bg-transparent border-none text-white text-center focus:outline-none focus:placeholder-transparent"
             value={this.state.title}
             onChange={this.onTitleChange}
           />
         </div>
         <div className="mb-2">
           <textarea
-            className="w-full h-72 p-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none"
+            className="w-full h-125 p-2 bg-gray-100 border border-gray-300 text-3xl rounded-md focus:placeholder-transparent  focus:outline-none"
             value={this.state.noteSnippet}
             onChange={this.onNoteSnippetChange}
             placeholder="Write your note here..."
@@ -131,7 +155,7 @@ export default class NotesForm extends React.Component<
           <input
             type="text"
             placeholder="Tags"
-            className="w-full p-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none"
+            className="w-full p-2 text-2xl bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:placeholder-transparent"
             value={this.state.tags}
             onChange={this.onTagsChange}
           />
@@ -154,14 +178,8 @@ export default class NotesForm extends React.Component<
                     slotProps={{
                       textField: {
                         size: "small",
-                        style: {},
-                        sx: {
-                          "& .Mui-focused": {
-                            "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#525b28", // Custom green border on focus
-                            },
-                          },
-                        },
+                        style: { width: "100%", display: "none" },
+
                         InputProps: {
                           style: {
                             paddingLeft: "50px",
@@ -169,12 +187,17 @@ export default class NotesForm extends React.Component<
                           endAdornment: null,
                         },
                       },
+                      layout: {
+                        sx: {
+                          alignContent: "center",
+                        },
+                      },
                       popper: {
                         placement: "bottom",
                         disablePortal: true,
                         sx: {
-                          left: "35px !important",
-                          top: "50px !important",
+                          left: "910px !important",
+                          top: "300px !important",
                         },
                       },
                     }}
@@ -193,14 +216,8 @@ export default class NotesForm extends React.Component<
                     slotProps={{
                       textField: {
                         size: "small",
-                        style: { width: "100%" },
-                        sx: {
-                          "& .Mui-focused": {
-                            "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#525b28", // Custom green border on focus
-                            },
-                          },
-                        },
+                        style: { width: "100%", display: "none" },
+
                         InputProps: {
                           style: {
                             paddingLeft: "50px",
@@ -251,8 +268,8 @@ export default class NotesForm extends React.Component<
                               },
                             },
                           },
-                          left: "25px !important",
-                          top: "50px !important",
+                          left: "85% !important",
+                          top: "350px !important",
                         },
                       },
                     }}
@@ -262,18 +279,24 @@ export default class NotesForm extends React.Component<
             </div>
           ) : (
             <div
-              className="flex-1 p-3 ml-16 border-gray-300 rounded-md cursor-pointer"
-              onClick={this.toggleDatePicker}
+              className="flex-1 p-3 text-center ml-25 border-gray-300 text-2xl rounded-md cursor-pointer"
+              onClick={() => this.togglePicker("both")}
             >
               {this.state.date.format("MM/DD/YYYY hh:mm A")}
             </div>
           )}
-          <IconButton onClick={this.toggleDatePicker} className="z-10">
+          <IconButton
+            onClick={() => this.togglePicker("date")}
+            className="z-10"
+          >
             <CalendarTodayIcon
               color={this.state.openDatePicker ? "primary" : "inherit"}
             />
           </IconButton>
-          <IconButton onClick={this.toggleTimePicker} className="z-10">
+          <IconButton
+            onClick={() => this.togglePicker("time")}
+            className="z-10"
+          >
             <AccessTimeIcon
               color={this.state.openTimePicker ? "primary" : "inherit"}
             />
@@ -284,19 +307,19 @@ export default class NotesForm extends React.Component<
           onClick={(e) => e.stopPropagation()}
         >
           <button
-            className="bg-[#525b28] text-white px-4 py-2 rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
+            className="bg-[#525b28] text-white px-4 py-2 mt-1 text-2xl  rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
             onClick={this.handleCancel}
           >
             Cancel
           </button>
           <button
-            className="bg-[#525b28] text-white px-4 py-2 rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
+            className="bg-[#525b28] text-white px-4 py-2 mt-1 text-2xl rounded-md hover:bg-[#525b28]/80 hover:text-white hover:shadow-md"
             onClick={this.onSubmit}
           >
             {this.state.id ? "Save Changes" : "Add Note"}
           </button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 }

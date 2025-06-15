@@ -72,7 +72,7 @@ const AddNoteForm = ({ onClose }: NotesFormProp) => {
   }, []);
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg relative">
+    <div className="relative">
       <NotesForm
         onSubmit={handleSubmit}
         onClose={() => {
