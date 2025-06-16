@@ -82,7 +82,7 @@ const AddNoteForm = ({ onClose }: NotesFormProp) => {
 
       <motion.div
         key={animationKey}
-        className="animation-container absolute inset-0 flex flex-col items-center mt-62 ml-38 justify-center bg-white rounded-lg"
+        className="animation-container absolute inset-0 flex flex-col items-center mt-92 ml-45 justify-center bg-white rounded-lg"
         initial={{ opacity: 0 }}
         animate={{ opacity: isAnimating ? 1 : 0 }}
         transition={{ duration: 0.1, ease: "easeOut" }}

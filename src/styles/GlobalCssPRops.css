@@ -4,6 +4,7 @@
   --base-rem: 62.5%; /* Sets 1rem = 10px */
   --primary-color: white;
   --dashboard-text: #525b44;
+  font-family: sans-serif;
 }
 html {
   font-size: var(--base-rem);

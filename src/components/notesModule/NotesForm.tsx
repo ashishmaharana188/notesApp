@@ -67,12 +67,23 @@ export default class NotesForm extends React.Component<
     }
   };
 
+  onDateTimeInputChange = (e: any) => {
+    const input = e.target.value;
+    const parsed = moment(input, "MM/DD/YYYY hh:mm A", true);
+    if (parsed.isValid()) {
+      this.setState({
+        date: parsed,
+        time: parsed,
+      });
+    }
+  };
+
   togglePicker = (type: "date" | "time" | "both") => {
     if (type === "both") {
+      const newState = !this.state.openDatePicker && !this.state.openTimePicker;
       this.setState({
-        openDatePicker: !this.state.openDatePicker,
-        openTimePicker: !this.state.openTimePicker,
-        time: moment(),
+        openDatePicker: newState,
+        openTimePicker: newState,
       });
     } else if (type === "date") {
       this.toggleDatePicker();
@@ -120,18 +131,17 @@ export default class NotesForm extends React.Component<
     if (this.state.redirect) {
       return <Navigate to="/notes" />;
     }
+    const isBothOpen = this.state.openDatePicker && this.state.openTimePicker;
     return (
       <motion.div
         className="fixed top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-150 h-200 bg-white border border-gray-300 rounded-md shadow-md p-4"
         animate={{
           left:
             this.state.openDatePicker && this.state.openTimePicker
-              ? "49%"
-              : "50%",
-          x:
-            this.state.openDatePicker && this.state.openTimePicker ? "-10%" : 0,
+              ? "46%"
+              : "50%", // Direct left shift
         }}
-        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration: 0.25, ease: [0.05, 0.05, 0.01, 0.01] }}
         onClick={this.handleFormClick}
       >
         <div className="bg-[#525b28] text-white p-2 text-3xl rounded-t-md text-center mb-5">
@@ -145,7 +155,7 @@ export default class NotesForm extends React.Component<
         </div>
         <div className="mb-2">
           <textarea
-            className="w-full h-125 p-2 bg-gray-100 border border-gray-300 text-3xl rounded-md focus:placeholder-transparent  focus:outline-none"
+            className="w-full h-125 p-2 bg-gray-100 border resize-none  border-gray-300 text-3xl rounded-md focus:placeholder-transparent  focus:outline-none"
             value={this.state.noteSnippet}
             onChange={this.onNoteSnippetChange}
             placeholder="Write your note here..."
@@ -164,127 +174,129 @@ export default class NotesForm extends React.Component<
           className="mb-2 flex items-center relative"
           onClick={(e) => e.stopPropagation()}
         >
-          {this.state.openDatePicker || this.state.openTimePicker ? (
-            <div className="flex-1 border-gray-300 rounded-md">
-              {this.state.openDatePicker && (
-                <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <DatePicker
-                    value={this.state.date}
-                    onChange={this.onDateChange}
-                    open={this.state.openDatePicker}
-                    onOpen={() => this.setState({ openDatePicker: true })}
-                    onClose={() => {}}
-                    onAccept={() => {}}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        style: { width: "100%", display: "none" },
+          <div className="flex-1 border-gray-300 rounded-md">
+            {this.state.openDatePicker && (
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <DatePicker
+                  value={this.state.date}
+                  onChange={this.onDateChange}
+                  open={this.state.openDatePicker}
+                  onOpen={() => this.setState({ openDatePicker: true })}
+                  onClose={() => {}}
+                  onAccept={() => {}}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      style: { width: "100%", display: "none" },
 
-                        InputProps: {
-                          style: {
-                            paddingLeft: "50px",
-                          },
-                          endAdornment: null,
+                      InputProps: {
+                        style: {
+                          paddingLeft: "50px",
                         },
+                        endAdornment: null,
                       },
-                      layout: {
-                        sx: {
-                          alignContent: "center",
-                        },
+                    },
+                    layout: {
+                      sx: {
+                        alignContent: "center",
                       },
-                      popper: {
-                        placement: "bottom",
-                        disablePortal: true,
-                        sx: {
-                          left: "910px !important",
-                          top: "300px !important",
-                        },
+                    },
+                    popper: {
+                      sx: {
+                        left: isBothOpen ? "61% !important" : "65% !important",
+                        top: "390px !important",
                       },
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-              {this.state.openTimePicker && (
-                <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <TimePicker
-                    value={this.state.time}
-                    onChange={this.onTimeChange}
-                    open={this.state.openTimePicker}
-                    onOpen={() => this.setState({ openTimePicker: true })}
-                    onClose={() => {}}
-                    onAccept={() => {}}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        style: { width: "100%", display: "none" },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+            {this.state.openTimePicker && (
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <TimePicker
+                  value={this.state.time}
+                  onChange={this.onTimeChange}
+                  open={this.state.openTimePicker}
+                  onOpen={() => this.setState({ openTimePicker: true })}
+                  onClose={() => {}}
+                  onAccept={() => {}}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      style: { width: "100%", display: "none" },
 
-                        InputProps: {
-                          style: {
-                            paddingLeft: "50px",
-                          },
-                          endAdornment: null,
+                      InputProps: {
+                        style: {
+                          paddingLeft: "50px",
                         },
+                        endAdornment: null,
                       },
-                      layout: {
-                        sx: {
-                          alignContent: "center",
-                        },
+                    },
+                    layout: {
+                      sx: {
+                        alignContent: "center",
                       },
+                    },
 
-                      popper: {
-                        sx: {
-                          "& .MuiPickersLayout-root": {
-                            "& .MuiPickersLayout-contentWrapper": {
-                              "& .MuiMultiSectionDigitalClockSection-root": {
-                                scrollbarWidth: "none",
-                                "-ms-overflow-style": "none",
-                                "&::-webkit-scrollbar": {
-                                  display: "none",
-                                },
-                                height: "200px", // Increased height for better centering
-                                padding: "0", // Remove default padding
+                    popper: {
+                      sx: {
+                        "& .MuiPickersLayout-root": {
+                          "& .MuiPickersLayout-contentWrapper": {
+                            "& .MuiMultiSectionDigitalClockSection-root": {
+                              scrollbarWidth: "none",
+                              "-ms-overflow-style": "none",
+                              "&::-webkit-scrollbar": {
+                                display: "none",
+                              },
+                              height: "200px", // Increased height for better centering
+                              padding: "0", // Remove default padding
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "center", // Center vertically
+                              alignItems: "center", // Center horizontally
+                              "& .MuiMultiSectionDigitalClockSection-item": {
+                                scrollBehavior: "smooth",
+                                height: "30px", // Fixed height for items
                                 display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "center", // Center vertically
-                                alignItems: "center", // Center horizontally
-                                "& .MuiMultiSectionDigitalClockSection-item": {
+                                alignItems: "center",
+                                justifyContent: "center",
+                                "&:focus": {
+                                  scrollSnapAlign: "center",
+                                },
+                                "&.Mui-selected": {
+                                  scrollSnapAlign: "center",
                                   scrollBehavior: "smooth",
-                                  height: "30px", // Fixed height for items
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  "&:focus": {
-                                    scrollSnapAlign: "center",
-                                  },
-                                  "&.Mui-selected": {
-                                    scrollSnapAlign: "center",
-                                    scrollBehavior: "smooth",
-                                    position: "relative",
-                                    transform: "translateY(0)",
-                                    borderRadius: "4px",
-                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                  },
+                                  position: "relative",
+                                  transform: "translateY(0)",
+                                  borderRadius: "4px",
+                                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
                                 },
                               },
                             },
                           },
-                          left: "85% !important",
-                          top: "350px !important",
                         },
+                        left: isBothOpen ? "85% !important" : "65% !important",
+                        top: "50% !important",
                       },
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-            </div>
-          ) : (
-            <div
-              className="flex-1 p-3 text-center ml-25 border-gray-300 text-2xl rounded-md cursor-pointer"
-              onClick={() => this.togglePicker("both")}
-            >
-              {this.state.date.format("MM/DD/YYYY hh:mm A")}
-            </div>
-          )}
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          </div>
+
+          <input
+            type="text"
+            className="flex-1 p-3 text-center text-3xl rounded-md focus:outline-none focus:border-[#525b28]"
+            value={
+              this.state.date.format("MM/DD/YYYY") +
+              " " +
+              this.state.time.format("hh:mm A")
+            }
+            onChange={this.onDateTimeInputChange}
+            onClick={() => this.togglePicker("both")}
+          />
+
           <IconButton
             onClick={() => this.togglePicker("date")}
             className="z-10"
