@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useOutletContext } from "react-router-dom";
 import AddNoteButton from "./AddNoteButton";
 import NotesTimeline from "./NotesTimeLine";
 import NotesTimelineFilter from "./NotesTimelineFilter";
@@ -7,6 +7,10 @@ import { NotesTimelineRef } from "../../TS_INTERFACE/gInterface";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NotesDashboardPage = () => {
+  const { isSidebarOpen, sidebarWidth } = useOutletContext<{
+    isSidebarOpen: boolean;
+    sidebarWidth: number;
+  }>(); // Access sidebar state
   const location = useLocation();
   const selectedSlot = location.state?.selectedSlot;
   const timelineRef = useRef<NotesTimelineRef>(null);
@@ -47,7 +51,13 @@ const NotesDashboardPage = () => {
   }, []);
 
   return (
-    <div className="w-full h-full bg-grey">
+    <div
+      className="h-full bg-grey transition-all duration-300"
+      style={{
+        marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0px",
+        width: isSidebarOpen ? `calc(100% - ${sidebarWidth}px)` : "100%",
+      }}
+    >
       <AnimatePresence>
         {visible && (
           <motion.p

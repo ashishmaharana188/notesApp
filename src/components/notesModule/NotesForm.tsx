@@ -187,7 +187,7 @@ export default class NotesForm extends React.Component<
                   slotProps={{
                     textField: {
                       size: "small",
-                      style: { width: "100%", display: "none" },
+                      style: { width: "100%", display: "none", opacity: 0 },
 
                       InputProps: {
                         style: {

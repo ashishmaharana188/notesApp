@@ -67,23 +67,28 @@ const NoteCard = React.memo(
         style={{ transformOrigin: "center right" }}
         className="w-120 mb-2 ml-3 bg-white rounded-lg shadow-md p-5 border border-gray-200"
       >
-        <h2 className="text-xl font-bold text-black">
+        <h2 className="text-2xl font-bold text-black">
           {note?.title || "Untitled Note"}
         </h2>
 
-        <p className="text-gray-800 mt-2">
+        <p className="text-xl mt-3 text-gray-800 mt-2">
           {note?.noteSnippet || "No content available"}
         </p>
 
-        <p className="text-gray-500 text-sm mt-2">
-          {note?.date ? new Date(note.date).toLocaleDateString() : "No date"}
-        </p>
-        <p className="text-gray-500 text-sm mt-2">
-          {note?.time ? new Date(note.time).toLocaleTimeString() : "No Time"}
-        </p>
-
-        <div className="flex justify-end mt-2">
-          <p className="inline-block p-2 pl-3 pr-3 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+        <div className="flex justify-between items-center mt-2">
+          <div className="flex flex-col mt-5">
+            <p className="text-xl mt-3 text-gray-500">
+              {note?.date
+                ? new Date(note.date).toLocaleDateString()
+                : "No date"}
+            </p>
+            <p className="text-xl mt-2 text-gray-500">
+              {note?.time
+                ? new Date(note.time).toLocaleTimeString()
+                : "No Time"}
+            </p>
+          </div>
+          <p className="text-xl text-black h-9 bg-[#525b28]/30 mt-15 rounded-lg px-3 py-1 hover:bg-[#525b28]/20 transition">
             {note?.tags || "No tags"}
           </p>
         </div>
@@ -92,14 +97,14 @@ const NoteCard = React.memo(
           {onEdit ? (
             <button
               onClick={onEdit}
-              className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              className="p-2 rounded-lg hover:bg-[#525b28]/30 transition"
             >
               <EditIcon className="text-gray-600" />
             </button>
           ) : (
             <Link
               to={`/edit/${note?.id}`}
-              className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              className="p-2 rounded-lg hover:bg-[#525b28]/30 transition"
             >
               <EditIcon className="text-gray-600" />
             </Link>

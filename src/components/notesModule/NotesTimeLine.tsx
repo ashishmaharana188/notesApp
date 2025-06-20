@@ -188,7 +188,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                       >
                         <div
                           key={time}
-                          className="text-center text-gray-500 font-bold text-2xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
+                          className="text-center text-gray-500 font-bold text-3xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
                         >
                           {moment(time, "HH:mm").format(
                             is24Hour ? "HH:mm" : "hh:mm A"
