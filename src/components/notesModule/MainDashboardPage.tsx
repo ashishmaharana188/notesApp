@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -10,6 +10,8 @@ const MainDashboardPage = () => {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const isResizing = useRef(false);
   const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const location = useLocation();
 
   const startResizing = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -73,7 +75,11 @@ const MainDashboardPage = () => {
                     <li>
                       <Link
                         to="/notes/timeline"
-                        className="block text-3xl py-1 px-3 rounded-md ml-9 mt-5 hover:border transition delay-10 hover:bg-[#625b28] hover:ml-1 transition-colors w-60"
+                        className={`block text-3xl py-1 px-3 rounded-md ml-9 mt-5 hover:border hover:bg-white hover:text-[#625b28] hover:ml-1  w-60 ${
+                          location.pathname === "/notes/timeline" && !isHovered
+                            ? "bg-white text-[#625b28]"
+                            : "hover:bg-white hover:text-[#625b28] group-hover:bg-transparent group-hover:text-white"
+                        }`}
                       >
                         Timeline
                       </Link>
@@ -81,7 +87,13 @@ const MainDashboardPage = () => {
                     <li>
                       <Link
                         to="/notes/list"
-                        className="block text-3xl py-1 px-3 rounded-md ml-9 mt-5 transition delay-100 hover:border hover:bg-[#625b28] hover:-ml-1 transition-colors break-words w-60"
+                        className={`block text-3xl py-1 px-3 rounded-md ml-9 mt-5 hover:border hover:bg-white hover:text-[#625b28] hover:ml-1  w-60 ${
+                          location.pathname === "/notes/list"
+                            ? "bg-white text-[#625b28]"
+                            : "hover:bg-white hover:text-[#625b28] group-hover:bg-transparent group-hover:text-white"
+                        }`}
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
                       >
                         List View
                       </Link>
@@ -93,6 +105,7 @@ const MainDashboardPage = () => {
                 <Link
                   to="/attendance"
                   className="block text-4xl py-2 px-3 ml-4 mt-5 border rounded-md hover:bg-white hover:text-[#625b28] hover:-ml-1 transition-colors w-100"
+                  onClick={() => setIsHovered(false)}
                 >
                   Attendance Dashboard
                 </Link>
