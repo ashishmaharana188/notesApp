@@ -7,7 +7,7 @@ import "../../styles/header/HeaderPage.css";
 
 const MainDashboardPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(250);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
   const isResizing = useRef(false);
   const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState(false);
 
@@ -21,7 +21,7 @@ const MainDashboardPage = () => {
   const resize = (e: MouseEvent) => {
     if (!isResizing.current) return;
     const newWidth = e.clientX;
-    if (newWidth >= 240 && newWidth <= 500) {
+    if (newWidth >= 30 && newWidth <= 300) {
       setSidebarWidth(newWidth);
     }
   };
@@ -44,7 +44,7 @@ const MainDashboardPage = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div
-        className={`bg-[#525b28] text-white h-full transition-all duration-300 ease-in-out flex flex-col fixed top-0 left-0 z-50 ${
+        className={`bg-[#525b28] text-white h-full cursor-pointer transition-all duration-300 ease-in-out flex flex-col fixed top-0 left-0 z-50 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full hidden"
         }`}
         style={{ width: `${isSidebarOpen ? sidebarWidth : 0}px` }}
@@ -54,12 +54,14 @@ const MainDashboardPage = () => {
             <ul>
               <li className="mb-4">
                 <div
-                  className="block py-1 px-3 border rounded-md ml-10 mt-5 transition delay-10 hover:bg-[#625b28] hover:ml-1 transition-colors break-words w-70"
+                  className={`block py-1 px-3 border cursor-pointer rounded-md ml-4 mt-10 transition delay-10 hover:bg-white hover:text-[#625b28] hover:ml-1 transition-colors w-100 ${
+                    isNotesDropdownOpen
+                      ? "bg-white text-[#625b28] hover:bg-white hover:border-[#625b28] transition-all"
+                      : ""
+                  }`}
                   onClick={toggleNotesDropdown}
                 >
-                  <span className="text-2xl mt-5 break-words flex-1">
-                    Notes Dashboard
-                  </span>
+                  <span className="text-4xl mt-5 flex-1">Notes Dashboard</span>
                   {isNotesDropdownOpen ? (
                     <ExpandLessIcon className="ml-2 flex-shrink-0" />
                   ) : (
@@ -67,11 +69,11 @@ const MainDashboardPage = () => {
                   )}
                 </div>
                 {isNotesDropdownOpen && (
-                  <ul className="pl-4 mt-5 space-y-2">
+                  <ul className="mt-9 mb-3">
                     <li>
                       <Link
                         to="/notes/timeline"
-                        className="block py-1 px-3 rounded-md ml-9 mt-5 border transition delay-10 hover:bg-[#625b28] hover:ml-1 transition-colors break-words w-60"
+                        className="block text-3xl py-1 px-3 rounded-md ml-9 mt-5 hover:border transition delay-10 hover:bg-[#625b28] hover:ml-1 transition-colors w-60"
                       >
                         Timeline
                       </Link>
@@ -79,7 +81,7 @@ const MainDashboardPage = () => {
                     <li>
                       <Link
                         to="/notes/list"
-                        className="block py-1 px-3 rounded-md ml-9 mt-5 border transition delay-100 hover:bg-[#625b28] hover:-ml-1 transition-colors break-words w-60"
+                        className="block text-3xl py-1 px-3 rounded-md ml-9 mt-5 transition delay-100 hover:border hover:bg-[#625b28] hover:-ml-1 transition-colors break-words w-60"
                       >
                         List View
                       </Link>
@@ -87,10 +89,10 @@ const MainDashboardPage = () => {
                   </ul>
                 )}
               </li>
-              <li className="mb-4">
+              <li className="mt-5 mb-4">
                 <Link
                   to="/attendance"
-                  className="block py-2 px-3 ml-7 mt-5  rounded-md hover:bg-[#625b28] transition-colors break-words max-w-full"
+                  className="block text-4xl py-2 px-3 ml-4 mt-5 border rounded-md hover:bg-white hover:text-[#625b28] hover:-ml-1 transition-colors w-100"
                 >
                   Attendance Dashboard
                 </Link>
@@ -98,7 +100,7 @@ const MainDashboardPage = () => {
               <li className="mb-4">
                 <Link
                   to="/"
-                  className="block py-2 px-3 ml-7 mt-5  rounded-md hover:bg-[#625b28] transition-colors break-words max-w-full"
+                  className="block text-4xl py-2 px-3 ml-4 mt-5 border hover:-ml-1 rounded-md hover:bg-white hover:text-[#625b28] transition-colors break-words w-100"
                 >
                   Home
                 </Link>
@@ -119,7 +121,7 @@ const MainDashboardPage = () => {
         {/* Toggle Sidebar Button */}
         <button
           onClick={toggleSidebar}
-          className=" text-white fixed top-8 w-8 h-8 left-4 z-50 rounded-md bg-white transition-colors"
+          className=" text-white fixed top-8 w-8 h-8 left-4 z-50 rounded-md hover:bg-white transition-colors"
         >
           <MenuIcon />
         </button>
