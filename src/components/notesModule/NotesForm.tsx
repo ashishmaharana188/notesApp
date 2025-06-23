@@ -174,7 +174,7 @@ const NotesForm: React.FC<NotesFormProp> = ({ note, onClose, onSubmit }) => {
                   popper: {
                     sx: {
                       left: isBothOpen ? "61% !important" : "65% !important",
-                      top: "390px !important",
+                      top: "37% !important",
                     },
                     anchorEl: anchorDivRef.current,
                   },
@@ -193,18 +193,7 @@ const NotesForm: React.FC<NotesFormProp> = ({ note, onClose, onSubmit }) => {
                   setState((prev) => ({ ...prev, openTimePicker: true }))
                 }
                 onClose={() => {}}
-                onAccept={() => {
-                  console.log("OK clicked");
-                  if (state.openDatePicker && state.openTimePicker) {
-                    setState((prev) => ({
-                      ...prev,
-                      openDatePicker: false,
-                      openTimePicker: false,
-                    }));
-                  } else if (state.openTimePicker) {
-                    setState((prev) => ({ ...prev, openTimePicker: false }));
-                  }
-                }}
+                onAccept={() => {}}
                 slotProps={{
                   textField: {
                     size: "small",
@@ -251,6 +240,7 @@ const NotesForm: React.FC<NotesFormProp> = ({ note, onClose, onSubmit }) => {
                     },
                     anchorEl: anchorDivRef.current,
                   },
+                  actionBar: { actions: [] },
                 }}
               />
             </LocalizationProvider>

@@ -77,7 +77,7 @@ const EditNotePage = () => {
   if (!isFormVisible) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center modal-overlay bg-black bg-opacity-50 z-50">
+    <div className="fixed inset-0 flex items-center justify-center modal-overlay bg-whitesmoke bg-opacity-50 z-50">
       <div ref={formRef} className="bg-white rounded-lg shadow-lg z-51">
         <NotesForm
           note={note}

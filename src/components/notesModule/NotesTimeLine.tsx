@@ -145,7 +145,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             return (
               <div key={date} className="flex flex-row items-start">
                 <div
-                  className={`text-2xl font-bold text-white mt-25 w-48 sticky left-0`}
+                  className={`text-2xl font-bold text-black mt-25 w-48 sticky left-0`}
                   style={{
                     transform: "rotate(-90deg)",
                     transformOrigin: "center",
@@ -188,7 +188,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
                       >
                         <div
                           key={time}
-                          className="text-center text-gray-500 font-bold text-3xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
+                          className="text-center text-black font-bold text-3xl -mt-15 cursor-pointer w-[20vw] min-w-[150px]"
                         >
                           {moment(time, "HH:mm").format(
                             is24Hour ? "HH:mm" : "hh:mm A"

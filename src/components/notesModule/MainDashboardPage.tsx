@@ -50,17 +50,14 @@ const MainDashboardPage = () => {
         style={{ width: `${isSidebarOpen ? sidebarWidth : 0}px` }}
       >
         {isSidebarOpen && (
-          <div className="p-6 flex-1 overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-6 break-words text-center">
-              EMP_TOOLS
-            </h2>
+          <div className="p-6 mt-10 ml-4 flex-1 overflow-y-auto">
             <ul>
               <li className="mb-4">
                 <div
-                  className="flex items-center justify-between cursor-pointer py-2 px-3 rounded-md hover:bg-[#625b28] transition-colors max-w-full"
+                  className="block py-1 px-3 border rounded-md ml-10 mt-5 transition delay-10 hover:bg-[#625b28] hover:ml-1 transition-colors break-words w-70"
                   onClick={toggleNotesDropdown}
                 >
-                  <span className="text-lg ml-7 mt-5 break-words flex-1 pr-2">
+                  <span className="text-2xl mt-5 break-words flex-1">
                     Notes Dashboard
                   </span>
                   {isNotesDropdownOpen ? (
@@ -74,7 +71,7 @@ const MainDashboardPage = () => {
                     <li>
                       <Link
                         to="/notes/timeline"
-                        className="block py-2 px-3 ml-7 mt-5  rounded-md hover:bg-[#625b28] transition-colors break-words max-w-full"
+                        className="block py-1 px-3 rounded-md ml-9 mt-5 border transition delay-10 hover:bg-[#625b28] hover:ml-1 transition-colors break-words w-60"
                       >
                         Timeline
                       </Link>
@@ -82,7 +79,7 @@ const MainDashboardPage = () => {
                     <li>
                       <Link
                         to="/notes/list"
-                        className="block py-2 px-3 rounded-md ml-7 mt-5  hover:bg-[#625b28] transition-colors break-words max-w-full"
+                        className="block py-1 px-3 rounded-md ml-9 mt-5 border transition delay-100 hover:bg-[#625b28] hover:-ml-1 transition-colors break-words w-60"
                       >
                         List View
                       </Link>
