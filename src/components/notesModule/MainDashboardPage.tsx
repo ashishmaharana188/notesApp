@@ -7,7 +7,7 @@ import "../../styles/header/HeaderPage.css";
 
 const MainDashboardPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [sidebarWidth, setSidebarWidth] = useState(325);
   const isResizing = useRef(false);
   const [isNotesDropdownOpen, setIsNotesDropdownOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -23,7 +23,7 @@ const MainDashboardPage = () => {
   const resize = (e: MouseEvent) => {
     if (!isResizing.current) return;
     const newWidth = e.clientX;
-    if (newWidth >= 30 && newWidth <= 300) {
+    if (newWidth >= 50 && newWidth <= 325) {
       setSidebarWidth(newWidth);
     }
   };

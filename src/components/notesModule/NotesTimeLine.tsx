@@ -145,7 +145,7 @@ const NotesTimeline = forwardRef<unknown, NotesTimelineProps>((props, ref) => {
             return (
               <div key={date} className="flex flex-row items-start">
                 <div
-                  className={`text-2xl font-bold text-black mt-25 w-48 sticky left-0`}
+                  className={`text-2xl font-bold text-black -mr-15 ml-10 mt-65 w-48 sticky left-0`}
                   style={{
                     transform: "rotate(-90deg)",
                     transformOrigin: "center",
