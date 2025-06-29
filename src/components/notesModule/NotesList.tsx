@@ -10,10 +10,11 @@ class NoteList extends Component<NoteListProps> {
     return (
       <div className="mt-40 space-y-4">
         {notes.length === 0 ? (
-          <p className="text-6xl">No notes available</p>
+          <p className="mt-60 ml-330 font-bold text-7xl">No notes available</p>
         ) : (
           notes.map((note) => <NoteCard key={note.id} note={note} />)
         )}
+        <div></div>
       </div>
     );
   }

@@ -8,8 +8,8 @@ import EditNotePage from "../components/notesModule/EditNoteCard";
 
 const AttendanceDashboard = () => (
   <div className="p-4">
-    <h2 className="text-7xl font-bold">Attendance Dashboard</h2>
-    <p className="text-2xl font-bold">
+    <h2 className="mt-100 ml-350 text-7xl font-bold">Attendance Dashboard</h2>
+    <p className="text-2xl ml-350 font-bold">
       This is the Attendance Dashboard (placeholder).
     </p>
   </div>
@@ -34,11 +34,11 @@ function AppRouter() {
           <Route
             index
             element={
-              <div className="p-4 flex flex-col">
-                <p className="text-9xl font-bold text-black-200 break-words mt-2">
+              <div className="mt-100 ml-400 p-4 flex flex-col">
+                <p className="text-8xl font-bold text-black-200 break-words mt-2">
                   Version 1.0
                 </p>
-                <p className="text-end text-5xl font-bold text-black-200 font-bold break-words">
+                <p className="text-end text-4xl font-bold text-black-200 font-bold break-words">
                   Files Draw
                 </p>
               </div>

@@ -90,9 +90,11 @@ const NotesDashboardPage = () => {
         />
       </div>
 
-      <div className="fixed bottom-5 right-1 flex items-center space-x-4">
+      <div className="fixed bottom-5 right-6 flex space-x-4">
         <label className="flex items-center cursor-pointer">
-          <span className="mr-2 text-xl font-bold text-white">Filters</span>
+          <span className="mr-2 text-2xl font-bold text-[#525b28]">
+            Filters
+          </span>
           <input
             type="checkbox"
             checked={filterButton}
@@ -100,12 +102,16 @@ const NotesDashboardPage = () => {
             className="hidden"
             disabled={isNoteFormVisible}
           />
-          <div className={"relative w-16 h-8 rounded-full transition"}>
+          <div
+            className={
+              "relative w-16 h-8 p-4 rounded-full bg-[#FAEBD7] transition"
+            }
+          >
             <div
-              className={`absolute top-1 bottom-1 left-1 w-5 h-6 bg-[#525b28] rounded-full transition-transform ${
+              className={`absolute top-1.5 left-1 w-6 h-6 bg-[#525b28] rounded-full transition-transform ${
                 filterButton
-                  ? "translate-x-9 bg-[#525b28]"
-                  : "translate-x-0 bg-[#525b28]"
+                  ? "translate-x-7 bg-[#525b28]"
+                  : "translate-x-0.5 bg-[#525b28]"
               }`}
             ></div>
           </div>
