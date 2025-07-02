@@ -44,34 +44,28 @@ const files: FileItem[] = [
   { id: 124, label: "sir" },
 ];
 
-// Flatten into a single stack: group, then all notes for that group
+// Build stack: for each group, place the group tab just before the first note of that group
 function getStack(files: FileItem[]) {
   const stack: { type: "group" | "note"; data: FileItem }[] = [];
-  let currentGroup: string | null = null;
-  let groupNotes: FileItem[] = [];
-  for (const file of files) {
+  let groupTab: FileItem | null = null;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     if (file.group) {
-      // Push previous group notes
-      if (groupNotes.length) {
-        groupNotes.forEach((n) => stack.push({ type: "note", data: n }));
-        groupNotes = [];
+      groupTab = file;
+    } else if (file.id) {
+      if (groupTab) {
+        stack.push({ type: "group", data: groupTab });
+        groupTab = null;
       }
-      stack.push({ type: "group", data: file });
-      currentGroup = file.group;
-    } else if (file.id && file.label && currentGroup) {
-      groupNotes.push(file);
+      stack.push({ type: "note", data: file });
     }
-  }
-  // Push last group notes
-  if (groupNotes.length) {
-    groupNotes.forEach((n) => stack.push({ type: "note", data: n }));
   }
   return stack;
 }
 
-// Generate a slight horizontal offset for each row
+// Horizontal offset for each row
 function getOffset(idx: number) {
-  const offsets = [0, 18, 36, 12, 28, 8, 24, 32, 16, 20];
+  const offsets = [0, 10, 20, 30, 40];
   return offsets[idx % offsets.length];
 }
 
@@ -90,7 +84,7 @@ function FolderTab({
         d={`
           M2,22
           Q2,8 14,8
-          L${width - 14},8
+          L${width - 10},8
           Q${width - 2},8 ${width - 2},22
           Z
         `}
@@ -115,7 +109,8 @@ function FolderTab({
 
 export default function RetroFolderUI() {
   const stack = getStack(files);
-  const rowHeight = 38; // 32px card + 6px overlap
+  const rowHeight = 40;
+  const overlap = 7;
 
   return (
     <div
@@ -132,7 +127,7 @@ export default function RetroFolderUI() {
       <div
         style={{
           position: "relative",
-          width: 540,
+          width: 700,
           minHeight: 900,
           background: "#fff",
           border: "2px solid #222",
@@ -145,94 +140,123 @@ export default function RetroFolderUI() {
           padding: 32,
         }}
       >
-        {/* Overlayed stack */}
         <div
           style={{
             position: "relative",
             width: "100%",
-            height: stack.length * rowHeight + 40,
+            height: stack.length * (rowHeight - overlap) + rowHeight + 40,
           }}
         >
-          {stack.map((item, idx) => {
-            const left = getOffset(idx);
-            return (
-              <div
-                key={idx}
-                style={{
-                  position: "absolute",
-                  top: idx * rowHeight,
-                  left,
-                  width: "85%",
-                  zIndex: 1000 - idx,
-                  pointerEvents: "none",
-                }}
-              >
-                {/* Tab overlays the card below */}
-                <div style={{ position: "relative", width: "100%" }}>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: -18,
-                      left: 0,
-                      width: "100%",
-                    }}
-                  >
+          {stack
+            .slice()
+            .reverse()
+            .map((item, idx) => {
+              // idx=0 is the bottom-most (should be not be covered), idx=stack.length-1 is the top-most (half visible)
+              const top = idx * (rowHeight - overlap);
+              const left = getOffset(idx);
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    position: "absolute",
+                    top,
+                    left,
+                    width: "85%",
+                    zIndex: idx + 1, // Ascending order from bottom to top
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div style={{ position: "relative", width: "100%" }}>
+                    {/* Tab overlays the card below */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -20,
+                        left: 0,
+                        width: "100%",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {item.type === "group" ? (
+                        <div style={{ position: "relative", width: "100%" }}>
+                          {/* Tab - overlaps card */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: -20, // only the tab moves
+                              left: 0,
+                              pointerEvents: "none",
+                            }}
+                          >
+                            <FolderTab
+                              label={item.data.group}
+                              width={80}
+                              isGroup
+                            />
+                          </div>
+
+                          {/* Label row - stays flat */}
+                          <div
+                            style={{
+                              width: "60%",
+                              display: "flex",
+                              alignItems: "center",
+                              background: "#555",
+                              color: "#fff",
+                              border: "2px solid #222",
+                              borderRadius: 10,
+                              fontWeight: 700,
+                              fontSize: 14,
+                              padding: "0 18px",
+                              height: 24,
+                            }}
+                          >
+                            <span style={{ marginLeft: 8 }}>
+                              {item.data.group}
+                            </span>
+                            <span
+                              style={{ marginLeft: "auto", marginRight: 8 }}
+                            >
+                              002
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <FolderTab label={String(item.data.id)} width={60} />
+                      )}
+                    </div>
+                    {/* Card */}
                     {item.type === "group" ? (
+                      <div style={{ height: 24 }} />
+                    ) : (
                       <div
                         style={{
                           width: "100%",
+                          height: rowHeight,
                           display: "flex",
                           alignItems: "center",
-                          background: "#111",
-                          color: "#fff",
+                          background: "#fff",
+                          color: "#111",
                           border: "2px solid #222",
                           borderRadius: 10,
-                          fontWeight: 700,
+                          fontWeight: 400,
                           fontSize: 14,
-                          padding: "0 18px",
-                          height: 24,
+                          boxSizing: "border-box",
+                          boxShadow: "0 1px 2px #0001",
+                          overflow: "visible",
+                          position: "relative",
+                          marginTop: 6,
                         }}
                       >
-                        <FolderTab label={item.data.group} width={60} isGroup />
-                        <span style={{ marginLeft: 8 }}>{item.data.group}</span>
-                        <span style={{ marginLeft: "auto", marginRight: 8 }}>
-                          002
+                        <span style={{ marginLeft: 68 }}>
+                          {item.data.label}
                         </span>
                       </div>
-                    ) : (
-                      <FolderTab label={String(item.data.id)} width={60} />
                     )}
                   </div>
-                  {/* Card */}
-                  {item.type === "group" ? (
-                    <div style={{ height: 24 }} />
-                  ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: 32,
-                        display: "flex",
-                        alignItems: "center",
-                        background: "#fff",
-                        color: "#111",
-                        border: "2px solid #222",
-                        borderRadius: 10,
-                        fontWeight: 400,
-                        fontSize: 14,
-                        boxSizing: "border-box",
-                        boxShadow: "0 1px 2px #0001",
-                        overflow: "visible",
-                        position: "relative",
-                        marginTop: 6,
-                      }}
-                    >
-                      <span style={{ marginLeft: 68 }}>{item.data.label}</span>
-                    </div>
-                  )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
         {/* Bottom tag */}
         <div
