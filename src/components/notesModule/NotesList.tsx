@@ -1,8 +1,7 @@
 import { Component } from "react";
 import { connect } from "react-redux";
-import NoteCard from "./NotesCard";
 import { NoteListProps } from "../../TS_INTERFACE/gInterface";
-import RetroFolderUI from "./drawFolder";
+import FilesDraw from "./drawFolder";
 
 class NoteList extends Component<NoteListProps> {
   render() {
@@ -13,9 +12,8 @@ class NoteList extends Component<NoteListProps> {
         {notes.length === 0 ? (
           <p className="mt-60 ml-330 font-bold text-7xl">No notes available</p>
         ) : (
-          notes.map((note) => <NoteCard key={note.id} note={note} />)
+          <FilesDraw />
         )}
-        <RetroFolderUI />
       </div>
     );
   }
