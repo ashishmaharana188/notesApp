@@ -37,6 +37,7 @@ class FilesDraw extends Component<NoteListProps> {
                       }}
                     >
                       <span
+                        key={note.id}
                         style={{
                           display: "inline-block",
                           transform: "skewX(-5deg)",
@@ -46,6 +47,16 @@ class FilesDraw extends Component<NoteListProps> {
                         {note.title.toUpperCase() || "Default Title"}
                       </span>
                     </div>
+                    <div
+                      className="text-3xl text-black text-center font-bold w-334 bg-black border-2 rounded-xl h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        top: `${topOffset}px`,
+                        zIndex: zIndex - 1,
+                        clipPath: "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                        transformOrigin: "center",
+                        overflow: "hidden",
+                      }}
+                    ></div>
 
                     <div>
                       <div
@@ -84,6 +95,15 @@ class FilesDraw extends Component<NoteListProps> {
                       </div>
                       <div
                         className="text-3xl text-center w-333 bg-white border-2 rounded-xl  h-20 absolute top-253 left-220 -translate-x-1/2 -translate-y-1/2 z-50" // Fixed w-340 to w-333
+                        style={{
+                          clipPath:
+                            "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                          transformOrigin: "center",
+                          overflow: "hidden",
+                        }}
+                      ></div>
+                      <div
+                        className="text-3xl text-center w-334 bg-black border-2 rounded-xl  h-20 absolute top-253 left-220 -translate-x-1/2 -translate-y-1/2 z-49" // Fixed w-340 to w-333
                         style={{
                           clipPath:
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
