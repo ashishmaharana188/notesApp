@@ -2,20 +2,11 @@ import { Component } from "react";
 import { connect } from "react-redux";
 import { NoteListProps, notesReducerIntf } from "../../TS_INTERFACE/gInterface";
 
-/**
- * FilesDraw – renders grouped notes as "folders" stacked on top of each other.
- *
- * 𝗩𝗲𝗿𝘁𝗶𝗰𝗮𝗹 𝗹𝗮𝘆𝗼𝘂𝘁 (⏬ y‑axis):
- *   • A group header (white+black+SVG) occupies 20 px.
- *   • The first note starts 20 px **above** that header (so top‑offset − 20).
- *   • Each additional note climbs a further 20 px.
- *   • Therefore the total height consumed by a group = 20 (header‑gap)
- *     + 20 × notes.length.
- *   • We keep a running y‑cursor that walks upward so that the next group’s
- *     header begins immediately after the last note of the previous group –
- *     no 100 px fixed gap any more.
- */
 class FilesDraw extends Component<NoteListProps> {
+  getRandomLeftPosition = () => {
+    return Math.floor(Math.random() * (750 - 250 + 1)) + 250;
+  };
+
   render() {
     const { notes } = this.props;
     console.log("Notes data:", notes);
@@ -75,6 +66,9 @@ class FilesDraw extends Component<NoteListProps> {
                 <div key={firstChar}>
                   {groupNotes.map(
                     (note: notesReducerIntf, noteIndex: number) => {
+                      const numLabel = String(
+                        notes.findIndex((n) => n.id === note.id) + 1
+                      ).padStart(3, "0");
                       const topOffset =
                         groupTopOffset - HEADER_GAP - noteIndex * NOTE_SPACING;
                       const zIndex = groupZIndex - noteIndex - 1;
@@ -87,28 +81,76 @@ class FilesDraw extends Component<NoteListProps> {
 
                       return (
                         <div key={note.id}>
+                          {/* SVG roof */}
+                          <div
+                            className="absolute -translate-x-1/2 -translate-y-1/2"
+                            style={{
+                              top: `${groupTopOffset - 40}px`,
+                              left: `${this.getRandomLeftPosition()}px`,
+                              zIndex: groupZIndex - 1,
+                              transform: "rotateY(20deg)",
+                            }}
+                          >
+                            <svg
+                              viewBox="0 0 100 200"
+                              className="w-[400px] h-[100px]"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M20 130 L60 50 Q70 40,85 40 H410 Q425 40,435 60 L470 130 Z"
+                                fill="white"
+                                stroke="black"
+                                strokeWidth="3"
+                              />
+                              <text
+                                x="347"
+                                y="72"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                style={{
+                                  fill: "black",
+                                  fontSize: "3.5rem",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {note.title.toUpperCase() || "DEFAULT TITLE"}
+                              </text>
+                              <text
+                                x="115"
+                                y="72"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                style={{
+                                  fontSize: "3.5rem",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {numLabel}
+                              </text>
+                            </svg>
+                          </div>
+
                           {/* white note bar */}
                           <div
-                            className="text-3xl text-black text-center font-bold w-333 bg-white border-2 rounded-xl h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2"
+                            className="text-3xl text-black text-center font-bold w-333 bg-white border-2 border-t-0 rounded-xl h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2"
                             style={{
                               top: `${topOffset}px`,
                               zIndex: zIndex,
                               clipPath:
                                 "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
                             }}
-                          >
-                            <span
-                              style={{
-                                display: "inline-block",
-                                transform: "skewX(-2deg)",
-                                marginTop: "4px",
-                              }}
-                            >
-                              {note.title.toUpperCase() || "DEFAULT TITLE"}
-                            </span>
-                          </div>
+                          ></div>
 
                           {/* black shadow under note */}
+                          <div
+                            className="w-334 h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                            style={{
+                              top: `${topOffset - 2}px`,
+                              zIndex: zIndex - 1,
+                              clipPath:
+                                "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                            }}
+                          />
                           <div
                             className="w-334 h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                             style={{
@@ -126,8 +168,8 @@ class FilesDraw extends Component<NoteListProps> {
                               <div
                                 className="absolute -translate-x-1/2 -translate-y-1/2"
                                 style={{
-                                  top: `${groupTopOffset - 20}px`,
-                                  left: "250px",
+                                  top: `${groupTopOffset - 23}px`,
+                                  left: `${this.getRandomLeftPosition()}px`,
                                   zIndex: groupZIndex - 1,
                                   transform: "rotateY(20deg)",
                                 }}
@@ -138,17 +180,20 @@ class FilesDraw extends Component<NoteListProps> {
                                   xmlns="http://www.w3.org/2000/svg"
                                 >
                                   <path
-                                    d="M60 130 L100 50 Q110 40,125 40 H280 Q295 40,305 60 L341 130 Z"
+                                    d="M40 130 L80 50 Q90 40,105 40 H320 Q335 40,345 60 L380 130 Z"
                                     fill="black"
                                     stroke="white"
                                     strokeWidth="3"
                                   />
                                   <text
-                                    x="200"
-                                    y="80"
+                                    x="120"
+                                    y="72"
                                     textAnchor="middle"
                                     dominantBaseline="middle"
-                                    style={{ fill: "white", fontSize: "4rem" }}
+                                    style={{
+                                      fill: "white",
+                                      fontSize: "3.5rem",
+                                    }}
                                   >
                                     {firstChar}
                                   </text>
@@ -186,7 +231,6 @@ class FilesDraw extends Component<NoteListProps> {
                 </div>
               );
 
-              /* 4️⃣  Advance both z‑cursor and y‑cursor for the next group */
               nextZ -= 3 + 2 * groupNotes.length;
               yCursor -= HEADER_GAP + groupNotes.length * NOTE_SPACING;
 
