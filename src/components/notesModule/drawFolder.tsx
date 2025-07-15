@@ -19,7 +19,7 @@ import { NoteListProps, notesReducerIntf } from "../../TS_INTERFACE/gInterface";
 class FilesDraw extends Component<NoteListProps> {
   /** Returns a pseudo‑random x‑position for decorative SVGs */
   getRandomLeftPosition = () =>
-    Math.floor(Math.random() * (750 - 250 + 1)) + 250;
+    Math.floor(Math.random() * (760 - 250 + 1)) + 250;
 
   render() {
     const { notes } = this.props;
@@ -51,14 +51,24 @@ class FilesDraw extends Component<NoteListProps> {
     const NOTE_SPACING = 20; // distance between consecutive notes
 
     return (
-      <div>
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          height: "100vh",
+          width: "100vw",
+          overflow: "hidden",
+        }}
+      >
         {notes.length === 0 ? (
           <p>No notes available.</p>
         ) : (
           <div className="relative bg-whitesmoke rounded-xl w-full h-full pl-220 pr-220 pt-400 z-0">
             {/* binder rails – unchanged */}
-            <div className="absolute rounded-xl border-2 bg-white left-49 bottom-140 w-1 h-300" />
-            <div className="absolute rounded-xl border-2 bg-white right-49 bottom-140 w-1 h-300" />
+            <div className="absolute rounded-sm border-3 w-338 bottom-438 left-51 bg-white h-2 z-300" />
+            <div className="absolute rounded-xl border-2 bg-white left-51 bottom-140 w-1 h-300" />
+            <div className="absolute rounded-xl border-2 bg-white right-51 bottom-140 w-1 h-300" />
             <div className="absolute rounded-xl border-3 bg-white right-21.5 bottom-100 w-2 h-40 rotate-5" />
             <div className="absolute rounded-sm border-3 w-400 bottom-136 left-20 bg-white h-4 z-300" />
             <div className="absolute rounded-xl border-3 bg-white left-21.5 bottom-100 w-2 h-40 -rotate-5" />
@@ -86,7 +96,7 @@ class FilesDraw extends Component<NoteListProps> {
                     <div
                       className="absolute -translate-x-1/2 -translate-y-1/2"
                       style={{
-                        top: `${topOffset - 30}px`,
+                        top: `${topOffset - 25}px`,
                         left: `${this.getRandomLeftPosition()}px`,
                         zIndex: zIndexWhite,
                         transform: "rotateY(20deg)",
