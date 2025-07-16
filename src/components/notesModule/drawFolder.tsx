@@ -2,24 +2,10 @@ import { Component } from "react";
 import { connect } from "react-redux";
 import { NoteListProps, notesReducerIntf } from "../../TS_INTERFACE/gInterface";
 
-/**
- * <FilesDraw />
- *
- * ────────────────────────────────────────────────────────────────────────────────
- * Fixes
- * 1.  Each note now occupies its *own* two‑slot z‑index layer: one for the white
- *     bar and one for its black shadow. That prevents later notes from masking
- *     earlier shadows.
- * 2.  The duplicate shadow <div> has been removed – a single shadow is enough.
- * 3.  The SVG roof now aligns per‑note (topOffset − 38) and uses the same
- *     z‑index as the white bar so it sits above the shadow but below the next
- *     note.
- * ────────────────────────────────────────────────────────────────────────────────
- */
 class FilesDraw extends Component<NoteListProps> {
   /** Returns a pseudo‑random x‑position for decorative SVGs */
   getRandomLeftPosition = () =>
-    Math.floor(Math.random() * (760 - 250 + 1)) + 250;
+    Math.floor(Math.random() * (900 - 120 + 1)) + 250;
 
   render() {
     const { notes } = this.props;
@@ -46,9 +32,12 @@ class FilesDraw extends Component<NoteListProps> {
     let nextZ = totalLayers;
 
     /* 3️⃣  Running y‑cursor (starts at the same initial 630px) */
-    let yCursor = 630; // first group header position
-    const HEADER_GAP = 20; // distance between header and its first note
-    const NOTE_SPACING = 20; // distance between consecutive notes
+    let yCursor = 792; // first group header position
+    const HEADER_GAP = 37; // distance between header and its first note
+    const NOTE_SPACING = 32; // distance between consecutive notes
+
+    const groupLeftPositions = [300, 650, 950];
+    const noteLeftPositions = [650, 920];
 
     return (
       <div
@@ -67,15 +56,18 @@ class FilesDraw extends Component<NoteListProps> {
           <div className="relative bg-whitesmoke rounded-xl w-full h-full pl-220 pr-220 pt-400 z-0">
             {/* binder rails – unchanged */}
             <div className="absolute rounded-sm border-3 w-338 bottom-438 left-51 bg-white h-2 z-300" />
-            <div className="absolute rounded-xl border-2 bg-white left-51 bottom-140 w-1 h-300" />
-            <div className="absolute rounded-xl border-2 bg-white right-51 bottom-140 w-1 h-300" />
-            <div className="absolute rounded-xl border-3 bg-white right-21.5 bottom-100 w-2 h-40 rotate-5" />
-            <div className="absolute rounded-sm border-3 w-400 bottom-136 left-20 bg-white h-4 z-300" />
-            <div className="absolute rounded-xl border-3 bg-white left-21.5 bottom-100 w-2 h-40 -rotate-5" />
+            <div className="absolute rounded-xl border-2 bg-white left-51 bottom-70 w-1 h-330" />
+            <div className="absolute rounded-xl border-2 bg-white right-51 bottom-70 w-1 h-330" />
+            <div className="absolute rounded-xl border-3 bg-white right-21.5 bottom-18 w-2 h-56 rotate-5" />
+            <div className="absolute rounded-sm border-3 w-520 bottom-70 left-20 bg-white h-4 z-300" />
+            <div className="absolute rounded-xl border-3 bg-white left-21.5 bottom-18 w-2 h-56 -rotate-5" />
 
-            {groupArray.map(([firstChar, groupNotes]) => {
+            {groupArray.map(([firstChar, groupNotes], groupIndex) => {
               const groupTopOffset = yCursor; // dynamic
               const groupZIndex = nextZ;
+
+              const groupLeft =
+                groupLeftPositions[groupIndex % groupLeftPositions.length];
 
               /* Render each note inside the group */
               const groupContent = groupNotes.map((note, noteIndex) => {
@@ -84,6 +76,9 @@ class FilesDraw extends Component<NoteListProps> {
                 ).padStart(3, "0");
                 const topOffset =
                   groupTopOffset - HEADER_GAP - noteIndex * NOTE_SPACING;
+
+                const noteLeft =
+                  noteLeftPositions[noteIndex % noteLeftPositions.length];
 
                 // ── z‑index per note ───────────────────────────────────────────
 
@@ -97,14 +92,14 @@ class FilesDraw extends Component<NoteListProps> {
                       className="absolute -translate-x-1/2 -translate-y-1/2"
                       style={{
                         top: `${topOffset - 25}px`,
-                        left: `${this.getRandomLeftPosition()}px`,
+                        left: `${noteLeft}px`,
                         zIndex: zIndexWhite,
                         transform: "rotateY(20deg)",
                       }}
                     >
                       <svg
                         viewBox="0 0 100 200"
-                        className="w-[450px] h-[100px]"
+                        className="w-[570px] h-[140px]"
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
@@ -140,7 +135,7 @@ class FilesDraw extends Component<NoteListProps> {
 
                     {/* ── white note bar ──────────────────────────────────────── */}
                     <div
-                      className="text-3xl text-black text-center font-bold w-333 bg-white border-2 border-t-0 rounded-xl h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2"
+                      className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl h-20 absolute left-280 -translate-x-1/2 -translate-y-1/2"
                       style={{
                         top: `${topOffset}px`,
                         zIndex: zIndexWhite,
@@ -150,7 +145,7 @@ class FilesDraw extends Component<NoteListProps> {
 
                     {/* ── black shadow ───────────────────────────────────────── */}
                     <div
-                      className="w-334 h-20 absolute left-220 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                      className="w-454 h-20 absolute left-280 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                       style={{
                         top: `${topOffset - 2}px`,
                         zIndex: zIndexShadow,
@@ -166,14 +161,14 @@ class FilesDraw extends Component<NoteListProps> {
                           className="absolute -translate-x-1/2 -translate-y-1/2"
                           style={{
                             top: `${groupTopOffset - 23}px`,
-                            left: `${this.getRandomLeftPosition()}px`,
+                            left: `${groupLeft}px`,
                             zIndex: groupZIndex - 1,
                             transform: "rotateY(20deg)",
                           }}
                         >
                           <svg
                             viewBox="0 0 400 200"
-                            className="w-[200px] h-[100px]"
+                            className="w-[350px] h-[170px]"
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
@@ -196,10 +191,10 @@ class FilesDraw extends Component<NoteListProps> {
 
                         {/* white header bar */}
                         <div
-                          className="w-333 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
+                          className="w-453 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
                           style={{
                             top: `${groupTopOffset}px`,
-                            left: "550px",
+                            left: "700px",
                             zIndex: groupZIndex,
                             clipPath:
                               "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
@@ -207,10 +202,10 @@ class FilesDraw extends Component<NoteListProps> {
                         />
                         {/* black header shadow */}
                         <div
-                          className="w-334 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                          className="w-454 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                           style={{
                             top: `${groupTopOffset}px`,
-                            left: "550px",
+                            left: "700px",
                             zIndex: groupZIndex - 1,
                             clipPath:
                               "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
