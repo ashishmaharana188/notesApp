@@ -8,7 +8,7 @@ class NoteList extends Component<NoteListProps> {
     const { notes } = this.props; // Destructure notes from props
 
     return (
-      <div className="mt-40 space-y-4">
+      <div>
         {notes.length === 0 ? (
           <p className="mt-60 ml-330 font-bold text-7xl">No notes available</p>
         ) : (

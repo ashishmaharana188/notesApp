@@ -3,7 +3,7 @@ import { Dispatch } from "redux";
 
 // Existing interfaces
 export interface notesReducerIntf {
-  id?: string;
+  id: string;
   title: string;
   noteSnippet: string;
   tags: string;
@@ -93,3 +93,7 @@ export interface NavigationState {
   selectedSlot?: SlotContext;
 }
 // *** End of Highlighted Change ***
+
+export interface FilesDrawState {
+  selectedNoteId: string | null;
+}
