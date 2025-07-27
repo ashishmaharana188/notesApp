@@ -1,36 +1,103 @@
 import { Component } from "react";
 import { connect } from "react-redux";
-import { motion } from "framer-motion";
+import { motion, PanInfo } from "framer-motion";
 import { NoteListProps, notesReducerIntf } from "../../TS_INTERFACE/gInterface";
 
 // Define FilesDrawState interface if not already in gInterface
 interface FilesDrawState {
   selectedNoteId: string | null;
   dragY: Record<string, number>;
+  finalHeight: Record<string, number>;
+  topOffsetY: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
   state: FilesDrawState = {
     selectedNoteId: null,
     dragY: {},
+    finalHeight: {},
+    topOffsetY: {},
   };
 
-  handleDragStart = (noteId: string) => {
-    this.setState({ selectedNoteId: noteId });
+  heightLockRef = new Map<string, boolean>();
+
+  handleDragStart = (note: notesReducerIntf) => {
+    console.log(`handleDragStart - noteId: ${note.id}`);
+    this.setState({ selectedNoteId: note.id });
+    this.heightLockRef.set(note.id, false);
   };
 
-  handleDrag = (noteId: string, info: { offset: { y: number } }) => {
-    this.setState((prevState) => ({
-      dragY: { ...prevState.dragY, [noteId]: info.offset.y },
-    }));
+  handleDrag = (note: notesReducerIntf, info: PanInfo) => {
+    const noteId = note.id;
+    const dragY = info.offset.y;
+    const currentHeight = this.calculateDynamicHeight(noteId, dragY);
+    console.log(
+      `handleDrag - noteId: ${noteId}, dragY: ${dragY}, currentHeight: ${currentHeight}`
+    );
+    if (currentHeight < 600 && !this.heightLockRef.get(noteId)) {
+      this.setState({
+        dragY: { ...this.state.dragY, [noteId]: dragY },
+      });
+    }
+    if (currentHeight >= 600 && !this.heightLockRef.get(noteId)) {
+      console.log(
+        `Locking height at 600px and topOffsetY at ${dragY} for noteId: ${noteId}`
+      );
+      this.setState(
+        (prevState) => ({
+          finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
+          topOffsetY: { ...prevState.topOffsetY, [noteId]: dragY },
+          dragY: { ...prevState.dragY, [noteId]: 0 },
+        }),
+        () => {
+          console.log(
+            `State after lock - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}`
+          );
+        }
+      );
+      this.heightLockRef.set(noteId, true);
+    }
   };
 
-  handleDragEnd = (noteId: string) => {
+  handleDragEnd = (note: notesReducerIntf) => {
+    const noteId = note.id;
     const dragY = this.state.dragY[noteId] || 0;
-    this.setState({
-      selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
-      dragY: { ...this.state.dragY, [noteId]: 0 },
-    });
+    const dynamicHeight = this.calculateDynamicHeight(noteId, dragY);
+    console.log(
+      `handleDragEnd - noteId: ${noteId}, dragY: ${dragY}, dynamicHeight: ${dynamicHeight}`
+    );
+    if (dynamicHeight >= 600) {
+      console.log(`Finalizing lock for noteId: ${noteId}`);
+      this.setState(
+        {
+          selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
+        },
+        () => {
+          console.log(
+            `State after drag end - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}`
+          );
+        }
+      );
+    } else {
+      this.setState({
+        dragY: { ...this.state.dragY, [noteId]: 0 },
+        selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
+      });
+    }
+  };
+
+  calculateDynamicHeight = (noteId: string, dragY: number): number => {
+    const isSelected = noteId === this.state.selectedNoteId;
+    console.log(
+      `calculateDynamicHeight - noteId: ${noteId}, dragY: ${dragY}, isSelected: ${isSelected}`
+    );
+    if (!isSelected) return this.state.finalHeight[noteId] || 30;
+    const baseHeight = 30;
+    const heightChange = Math.abs(dragY) * 1.9;
+    const newHeight = baseHeight + heightChange;
+    const result = Math.min(600, newHeight); // Cap at 600px
+    console.log(`calculateDynamicHeight - calculated height: ${result}`);
+    return result;
   };
 
   render() {
@@ -58,7 +125,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     let yCursor = 814;
     const HEADER_GAP = 38;
     const NOTE_SPACING = 25;
-    const SVG_HEIGHT = 140; // SVG div height
 
     const groupLeftPositions = [300, 650, 950];
     const noteLeftPositions = [570, 860];
@@ -99,16 +165,28 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const zIndexShadow = zIndexWhite - 1;
 
                   const dragY = this.state.dragY[note.id] || 0;
-                  const svgTop = isSelected
-                    ? topOffset + dragY + 20
-                    : topOffset - 20;
-                  const whiteTop = isSelected
-                    ? topOffset + 30 + dragY
-                    : topOffset; // Dynamic top adjustment
-                  const shadowTop = isSelected ? whiteTop - 2 : topOffset - 2;
-                  const dynamicHeight = isSelected
-                    ? 30 + Math.abs(dragY) * 1.9
-                    : 30; // Height adjusts with dragY
+                  const finalHeight =
+                    this.state.finalHeight[note.id] ||
+                    this.calculateDynamicHeight(note.id, dragY);
+                  const topOffsetY = this.state.topOffsetY[note.id] || 0;
+                  const svgTop =
+                    finalHeight >= 600
+                      ? topOffset + topOffsetY + 20
+                      : isSelected
+                      ? topOffset + dragY + 20
+                      : topOffset - 20;
+                  const whiteTop =
+                    finalHeight >= 600
+                      ? topOffset + topOffsetY + 30
+                      : isSelected
+                      ? topOffset + 30 + dragY
+                      : topOffset;
+                  const shadowTop =
+                    finalHeight >= 600
+                      ? topOffset + topOffsetY + 29
+                      : isSelected
+                      ? topOffset + dragY + 29
+                      : topOffset - 2;
 
                   return (
                     <div key={note.id}>
@@ -118,22 +196,26 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
                           zIndex: zIndexWhite,
-                          cursor: "grab",
+                          cursor: finalHeight < 600 ? "grab" : "default",
                           width: "598px",
                           height: "140px",
                           clipPath:
                             "polygon(40% 100%, 50% 25%, 50% 0%, 50% 20%, 100% 17%, 95% 18.2%, 100% 50%, 96% 100%)",
                         }}
-                        drag="y"
-                        dragConstraints={{ top: -600, bottom: 600 }}
+                        drag={finalHeight < 600 ? "y" : false} // Disable drag at 600px
+                        dragConstraints={
+                          finalHeight < 600
+                            ? { top: -600, bottom: 600 }
+                            : { top: 0, bottom: 0 }
+                        }
                         dragElastic={0.2}
                         dragTransition={{
                           bounceStiffness: 600,
                           bounceDamping: 20,
                         }}
-                        onDragStart={() => this.handleDragStart(note.id)}
-                        onDrag={(e, info) => this.handleDrag(note.id, info)}
-                        onDragEnd={() => this.handleDragEnd(note.id)}
+                        onDragStart={() => this.handleDragStart(note)}
+                        onDrag={(event, info) => this.handleDrag(note, info)}
+                        onDragEnd={() => this.handleDragEnd(note)}
                       >
                         <svg
                           viewBox="0 0 100 200"
@@ -175,7 +257,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
                         style={{
                           top: `${whiteTop}px`,
-                          height: `${dynamicHeight}px`,
+                          height: `${finalHeight}px`,
                           zIndex: zIndexWhite,
                           clipPath:
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
@@ -187,7 +269,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                         style={{
                           top: `${shadowTop}px`,
-                          height: `${dynamicHeight}px`,
+                          height: `${finalHeight}px`,
                           zIndex: zIndexShadow,
                           clipPath:
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
