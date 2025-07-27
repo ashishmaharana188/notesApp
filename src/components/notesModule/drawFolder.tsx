@@ -1,34 +1,41 @@
 import { Component } from "react";
 import { connect } from "react-redux";
-import {
-  NoteListProps,
-  notesReducerIntf,
-  FilesDrawState,
-} from "../../TS_INTERFACE/gInterface";
+import { motion } from "framer-motion";
+import { NoteListProps, notesReducerIntf } from "../../TS_INTERFACE/gInterface";
+
+// Define FilesDrawState interface if not already in gInterface
+interface FilesDrawState {
+  selectedNoteId: string | null;
+  dragY: Record<string, number>;
+}
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
-  /** Returns a pseudo‑random x‑position for decorative SVGs */
-  state = {
+  state: FilesDrawState = {
     selectedNoteId: null,
+    dragY: {},
   };
 
-  handleNoteClick = (noteId: string, title: string, numLabel: string) => {
-    console.log("Clicked note details:", {
-      id: noteId,
-      title: title,
-      label: numLabel,
-      currentlySelected: this.state.selectedNoteId,
-    });
+  handleDragStart = (noteId: string) => {
+    this.setState({ selectedNoteId: noteId });
+  };
 
+  handleDrag = (noteId: string, info: { offset: { y: number } }) => {
     this.setState((prevState) => ({
-      selectedNoteId: prevState.selectedNoteId === noteId ? null : noteId,
+      dragY: { ...prevState.dragY, [noteId]: info.offset.y },
     }));
+  };
+
+  handleDragEnd = (noteId: string) => {
+    const dragY = this.state.dragY[noteId] || 0;
+    this.setState({
+      selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
+      dragY: { ...this.state.dragY, [noteId]: 0 },
+    });
   };
 
   render() {
     const { notes } = this.props;
 
-    /* 1️⃣  Group notes by first letter and sort alphabetically */
     const groupedNotes: Record<string, notesReducerIntf[]> = notes.reduce(
       (acc, note) => {
         const firstChar = (note.title.charAt(0) || "A").toUpperCase();
@@ -42,17 +49,16 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       a.localeCompare(b)
     );
 
-    /* 2️⃣  z‑index bookkeeping */
     const totalLayers = groupArray.reduce(
       (sum, [, g]) => sum + 3 + 2 * g.length,
       0
     );
     let nextZ = totalLayers;
 
-    /* 3️⃣  Running y‑cursor (starts at the same initial 630px) */
-    let yCursor = 814; // first group header position
-    const HEADER_GAP = this.state.selectedNoteId ? 38 : 37; // distance between header and its first note
-    const NOTE_SPACING = 25; // distance between consecutive notes
+    let yCursor = 814;
+    const HEADER_GAP = 38;
+    const NOTE_SPACING = 25;
+    const SVG_HEIGHT = 140; // SVG div height
 
     const groupLeftPositions = [300, 650, 950];
     const noteLeftPositions = [570, 860];
@@ -62,7 +68,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         {notes.length === 0 ? (
           <p>No notes available.</p>
         ) : (
-          <div className="grid grid-cols-1 grid-rows-1  relative h-[800px] w-[1200px] min-w-[500px] min-h-[928px] mt-0 p-0">
+          <div className="grid grid-cols-1 grid-rows-1 relative h-[800px] w-[1200px] min-w-[500px] min-h-[928px] mt-0 p-0">
             <div>
               <div className="absolute rounded-xl border-2 bg-white left-[2%] bottom-[10%] w-1 h-6/7" />
               <div className="absolute rounded-xl border-2 bg-white right-[2%] bottom-[10%] w-1 h-6/7" />
@@ -72,13 +78,12 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
             </div>
             <div className="absolute">
               {groupArray.map(([firstChar, groupNotes], groupIndex) => {
-                const groupTopOffset = yCursor; // dynamic
+                const groupTopOffset = yCursor;
                 const groupZIndex = nextZ;
 
                 const groupLeft =
                   groupLeftPositions[groupIndex % groupLeftPositions.length];
 
-                /* Render each note inside the group */
                 const groupContent = groupNotes.map((note, noteIndex) => {
                   const isSelected = note.id === this.state.selectedNoteId;
                   const numLabel = String(
@@ -90,33 +95,45 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const noteLeft =
                     noteLeftPositions[noteIndex % noteLeftPositions.length];
 
-                  // ── z‑index per note ───────────────────────────────────────────
-
                   const zIndexWhite = groupZIndex - 2 * noteIndex - 1;
                   const zIndexShadow = zIndexWhite - 1;
 
+                  const dragY = this.state.dragY[note.id] || 0;
+                  const svgTop = isSelected
+                    ? topOffset + dragY + 20
+                    : topOffset - 20;
+                  const whiteTop = isSelected
+                    ? topOffset + 30 + dragY
+                    : topOffset; // Dynamic top adjustment
+                  const shadowTop = isSelected ? whiteTop - 2 : topOffset - 2;
+                  const dynamicHeight = isSelected
+                    ? 30 + Math.abs(dragY) * 1.9
+                    : 30; // Height adjusts with dragY
+
                   return (
                     <div key={note.id}>
-                      {/* ── SVG roof (white) ───────────────────────────────────── */}
-                      <div
-                        className="absolute  -translate-x-1/2 -translate-y-1/2"
+                      <motion.div
+                        className="absolute -translate-x-1/2 -translate-y-1/2"
                         style={{
-                          top: `${
-                            isSelected ? topOffset - 585 : topOffset - 20
-                          }px`,
+                          top: `${svgTop}px`,
                           left: `${noteLeft}px`,
                           zIndex: zIndexWhite,
-
-                          cursor: "pointer",
-                          width: "590px",
+                          cursor: "grab",
+                          width: "598px",
                           height: "140px",
                           clipPath:
                             "polygon(40% 100%, 50% 25%, 50% 0%, 50% 20%, 100% 17%, 95% 18.2%, 100% 50%, 96% 100%)",
                         }}
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent click from bubbling
-                          this.handleNoteClick(note.id, note.title, numLabel);
+                        drag="y"
+                        dragConstraints={{ top: -600, bottom: 600 }}
+                        dragElastic={0.2}
+                        dragTransition={{
+                          bounceStiffness: 600,
+                          bounceDamping: 20,
                         }}
+                        onDragStart={() => this.handleDragStart(note.id)}
+                        onDrag={(e, info) => this.handleDrag(note.id, info)}
+                        onDragEnd={() => this.handleDragEnd(note.id)}
                       >
                         <svg
                           viewBox="0 0 100 200"
@@ -152,14 +169,13 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             {numLabel}
                           </text>
                         </svg>
-                      </div>
+                      </motion.div>
 
-                      {/* ── white note bar ──────────────────────────────────────── */}
-                      <div
-                        className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2"
+                      <motion.div
+                        className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
                         style={{
-                          top: `${isSelected ? topOffset - 275 : topOffset}px`,
-                          height: isSelected ? "600px" : "30px",
+                          top: `${whiteTop}px`,
+                          height: `${dynamicHeight}px`,
                           zIndex: zIndexWhite,
                           clipPath:
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
@@ -167,24 +183,19 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         }}
                       />
 
-                      {/* ── black shadow ───────────────────────────────────────── */}
-                      <div
+                      <motion.div
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                         style={{
-                          top: `${
-                            isSelected ? topOffset - 277 : topOffset - 2
-                          }px`,
-                          height: isSelected ? "601px" : "30px",
+                          top: `${shadowTop}px`,
+                          height: `${dynamicHeight}px`,
                           zIndex: zIndexShadow,
                           clipPath:
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
                         }}
                       />
 
-                      {/* ── Group header embellishments (only on first note) ───── */}
                       {noteIndex === 0 && (
                         <>
-                          {/* black SVG roof */}
                           <div
                             className="absolute -translate-x-1/2 -translate-y-1/2"
                             style={{
@@ -216,7 +227,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             </svg>
                           </div>
 
-                          {/* white header bar */}
                           <div
                             className="w-453 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
                             style={{
@@ -227,7 +237,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                                 "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
                             }}
                           />
-                          {/* black header shadow */}
                           <div
                             className="w-454 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                             style={{
@@ -244,7 +253,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   );
                 });
 
-                /* Move bookkeeping cursors for next group */
                 nextZ -= 3 + 2 * groupNotes.length;
                 yCursor -= HEADER_GAP + groupNotes.length * NOTE_SPACING;
 
