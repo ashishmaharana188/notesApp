@@ -91,8 +91,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     console.log(
       `calculateDynamicHeight - noteId: ${noteId}, dragY: ${dragY}, isSelected: ${isSelected}`
     );
-    if (!isSelected) return this.state.finalHeight[noteId] || 30;
-    const baseHeight = 30;
+    if (!isSelected) return this.state.finalHeight[noteId] || 50;
+    const baseHeight = 50;
     const heightChange = Math.abs(dragY) * 1.9;
     const newHeight = baseHeight + heightChange;
     const result = Math.min(600, newHeight); // Cap at 600px
@@ -122,9 +122,9 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     );
     let nextZ = totalLayers;
 
-    let yCursor = 814;
-    const HEADER_GAP = 38;
-    const NOTE_SPACING = 25;
+    let yCursor = 820;
+    const HEADER_GAP = 30;
+    const NOTE_SPACING = 30;
 
     const groupLeftPositions = [300, 650, 950];
     const noteLeftPositions = [570, 860];
@@ -139,7 +139,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
               <div className="absolute rounded-xl border-2 bg-white left-[2%] bottom-[10%] w-1 h-6/7" />
               <div className="absolute rounded-xl border-2 bg-white right-[2%] bottom-[10%] w-1 h-6/7" />
               <div className="absolute rounded-xl border-2 bg-white right-[0.5%] top-[90%] w-1 h-[10%] rotate-10" />
-              <div className="absolute rounded-sm border-2 w-[100%] top-[90%] bg-white h-2 z-30" />
+              <div className="absolute rounded-sm border-2 w-[100%] top-[90%] bg-white h-4 z-300" />
               <div className="absolute rounded-xl border-2 bg-white left-[0.5%] top-[90%] w-1 h-[10%] -rotate-10" />
             </div>
             <div className="absolute">
@@ -200,7 +200,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           width: "598px",
                           height: "140px",
                           clipPath:
-                            "polygon(40% 100%, 50% 25%, 50% 0%, 50% 20%, 100% 17%, 95% 18.2%, 100% 50%, 96% 100%)",
+                            "polygon(40% 100%, 50% 25%, 50% 0%, 50% 20%, 90% 20%, 92% 15.2%, 100% 60%, 90% 100%)",
                         }}
                         drag={finalHeight < 600 ? "y" : false} // Disable drag at 600px
                         dragConstraints={
@@ -252,7 +252,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           </text>
                         </svg>
                       </motion.div>
-
                       <motion.div
                         className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
                         style={{
@@ -264,7 +263,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           transform: "rotateX(-5deg)",
                         }}
                       />
-
                       <motion.div
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                         style={{
@@ -275,7 +273,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
                         }}
                       />
-
                       {noteIndex === 0 && (
                         <>
                           <div
@@ -284,6 +281,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                               top: `${groupTopOffset - 23}px`,
                               left: `${groupLeft}px`,
                               zIndex: groupZIndex - 1,
+                              clipPath:
+                                "polygon(1% 100%, 20% 20%, 50% 16%, 90% 20%, 85% 20%, 100% 80%, 67% 60%, 0% 60%)",
                             }}
                           >
                             <svg
@@ -310,7 +309,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           </div>
 
                           <div
-                            className="w-453 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
+                            className="w-453 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
                             style={{
                               top: `${groupTopOffset}px`,
                               left: "600px",
@@ -320,7 +319,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             }}
                           />
                           <div
-                            className="w-454 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                            className="w-454 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                             style={{
                               top: `${groupTopOffset}px`,
                               left: "600px",
