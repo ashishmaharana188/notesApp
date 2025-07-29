@@ -200,7 +200,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           width: "598px",
                           height: "140px",
                           clipPath:
-                            "polygon(40% 100%, 50% 25%, 50% 0%, 50% 20%, 90% 20%, 92% 15.2%, 100% 60%, 90% 100%)",
+                            "polygon(40% 100%, 50% 25%, 50% 0%, 50% 17%, 90% 20%, 94% 19%, 100% 70%, 90% 100%)",
                         }}
                         drag={finalHeight < 600 ? "y" : false} // Disable drag at 600px
                         dragConstraints={
