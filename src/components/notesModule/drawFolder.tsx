@@ -31,12 +31,14 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const noteId = note.id;
     const dragY = info.offset.y;
     const currentHeight = this.calculateDynamicHeight(noteId, dragY);
+    const currentTopOffsetY = this.state.topOffsetY[noteId] || 0;
     console.log(
-      `handleDrag - noteId: ${noteId}, dragY: ${dragY}, currentHeight: ${currentHeight}`
+      `handleDrag - noteId: ${noteId}, dragY: ${dragY}, currentHeight: ${currentHeight}, topOffsetY: ${currentTopOffsetY}`
     );
     if (currentHeight < 600 && !this.heightLockRef.get(noteId)) {
       this.setState({
         dragY: { ...this.state.dragY, [noteId]: dragY },
+        topOffsetY: { ...this.state.topOffsetY, [noteId]: dragY },
       });
     }
     if (currentHeight >= 600 && !this.heightLockRef.get(noteId)) {
@@ -47,11 +49,11 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         (prevState) => ({
           finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
           topOffsetY: { ...prevState.topOffsetY, [noteId]: dragY },
-          dragY: { ...prevState.dragY, [noteId]: 0 },
+          dragY: { ...prevState.dragY, [noteId]: dragY },
         }),
         () => {
           console.log(
-            `State after lock - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}`
+            `State after lock - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}, dragY: ${this.state.dragY[noteId]}`
           );
         }
       );
@@ -63,26 +65,43 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const noteId = note.id;
     const dragY = this.state.dragY[noteId] || 0;
     const dynamicHeight = this.calculateDynamicHeight(noteId, dragY);
+    const currentTopOffsetY = this.state.topOffsetY[noteId] || 0;
     console.log(
-      `handleDragEnd - noteId: ${noteId}, dragY: ${dragY}, dynamicHeight: ${dynamicHeight}`
+      `handleDragEnd - noteId: ${noteId}, dragY: ${dragY}, dynamicHeight: ${dynamicHeight}, topOffsetY: ${currentTopOffsetY}`
     );
-    if (this.heightLockRef.get(noteId) || dynamicHeight > 400) {
-      console.log(`Fixing to 600px for noteId: ${noteId}`);
-      const targetDragY = (600 - 50) / 1.9; // Calculate dragY for 600px (≈ 289.47px)
+    if (dynamicHeight >= 600) {
+      console.log(`Locking to 600px for noteId: ${noteId}`);
       this.setState(
         (prevState) => ({
-          finalHeight: { ...prevState.finalHeight, [noteId]: 600 }, // Force 600px
-          topOffsetY: { ...prevState.topOffsetY, [noteId]: -targetDragY }, // Set to 600px offset
+          finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
+          topOffsetY: { ...prevState.topOffsetY, [noteId]: currentTopOffsetY },
           dragY: { ...prevState.dragY, [noteId]: 0 },
-          selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
+          selectedNoteId: this.state.selectedNoteId,
         }),
         () => {
           console.log(
-            `State after drag end - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}`
+            `State after drag end - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}, dragY: ${this.state.dragY[noteId]}`
           );
         }
       );
-      this.heightLockRef.set(noteId, true); // Ensure drag is disabled
+      this.heightLockRef.set(noteId, true);
+    } else if (dynamicHeight > 400) {
+      console.log(
+        `Stopping at current position for noteId: ${noteId}, topOffsetY: ${currentTopOffsetY}`
+      );
+      this.setState(
+        (prevState) => ({
+          finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
+          topOffsetY: { ...prevState.topOffsetY, [noteId]: currentTopOffsetY },
+          dragY: { ...prevState.dragY, [noteId]: currentTopOffsetY }, // Preserve offset visually
+          selectedNoteId: this.state.selectedNoteId,
+        }),
+        () => {
+          console.log(
+            `State after drag end - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}, dragY: ${this.state.dragY[noteId]}`
+          );
+        }
+      );
     } else {
       console.log(`Resetting to default for noteId: ${noteId}`);
       const topOffset = this.calculateInitialTopOffset(note, this.props.notes);
@@ -90,16 +109,16 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         (prevState) => ({
           dragY: { ...prevState.dragY, [noteId]: 0 },
           finalHeight: { ...prevState.finalHeight, [noteId]: 50 },
-          topOffsetY: { ...prevState.topOffsetY, [noteId]: topOffset }, // Reset to initial topOffset
-          selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
+          topOffsetY: { ...prevState.topOffsetY, [noteId]: topOffset },
+          selectedNoteId: null,
         }),
         () => {
           console.log(
-            `State after reset - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}`
+            `State after reset - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}, dragY: ${this.state.dragY[noteId]}`
           );
         }
       );
-      this.heightLockRef.set(noteId, false); // Enable drag
+      this.heightLockRef.set(noteId, false);
     }
   };
 
@@ -112,7 +131,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const baseHeight = 50;
     const heightChange = Math.abs(dragY) * 1.9;
     const newHeight = baseHeight + heightChange;
-    const result = Math.min(600, newHeight); // Cap at 600px
+    const result = Math.min(600, newHeight);
     console.log(`calculateDynamicHeight - calculated height: ${result}`);
     return result;
   };
@@ -137,8 +156,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         }, {} as Record<string, notesReducerIntf[]>)
         [char].some((n) => n.id === note.id)
     );
-    const groupTopOffset = 820 - (groupIndex + 1) * (30 + notes.length * 30); // Approximate yCursor logic
-    return groupTopOffset - 30 - noteIndex * 30; // HEADER_GAP + NOTE_SPACING
+    const groupTopOffset = 820 - (groupIndex + 1) * (30 + notes.length * 30);
+    return groupTopOffset - 30 - noteIndex * 30;
   };
 
   render() {
@@ -213,17 +232,23 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const svgTop =
                     finalHeight >= 600
                       ? topOffset + topOffsetY + 20
+                      : isSelected && finalHeight > 400
+                      ? topOffset + topOffsetY + 20
                       : isSelected
                       ? topOffset + dragY + 20
                       : topOffset - 20;
                   const whiteTop =
                     finalHeight >= 600
                       ? topOffset + topOffsetY + 30
+                      : isSelected && finalHeight > 400
+                      ? topOffset + topOffsetY + 30
                       : isSelected
                       ? topOffset + 30 + dragY
                       : topOffset;
                   const shadowTop =
                     finalHeight >= 600
+                      ? topOffset + topOffsetY + 29
+                      : isSelected && finalHeight > 400
                       ? topOffset + topOffsetY + 29
                       : isSelected
                       ? topOffset + dragY + 29
@@ -243,7 +268,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           clipPath:
                             "polygon(40% 100%, 50% 25%, 50% 0%, 50% 17%, 90% 20%, 94% 19%, 100% 70%, 90% 100%)",
                         }}
-                        drag={finalHeight < 600 ? "y" : false} // Disable drag at 600px
+                        drag={finalHeight < 600 ? "y" : false}
                         dragConstraints={
                           finalHeight < 600
                             ? { top: -600, bottom: 600 }
