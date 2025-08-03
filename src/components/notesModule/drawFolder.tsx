@@ -20,10 +20,13 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
   };
 
   heightLockRef = new Map<string, boolean>();
+  heightSnapshotRef = new Map<string, number>();
+  heightSnapshotRef400 = new Map<string, number>();
 
   handleDragStart = (note: notesReducerIntf) => {
     console.log(`handleDragStart - noteId: ${note.id}`);
     this.setState({ selectedNoteId: note.id });
+    console.log("Drag started for", note.id);
     this.heightLockRef.set(note.id, false);
   };
 
@@ -35,66 +38,61 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     console.log(
       `handleDrag - noteId: ${noteId}, dragY: ${dragY}, currentHeight: ${currentHeight}, topOffsetY: ${currentTopOffsetY}`
     );
-    if (currentHeight < 600 && !this.heightLockRef.get(noteId)) {
-      this.setState({
-        dragY: { ...this.state.dragY, [noteId]: dragY },
-        topOffsetY: { ...this.state.topOffsetY, [noteId]: dragY },
-      });
+
+    // This block is modified to allow dragY and topOffsetY to update
+    // even when the height exceeds 600px.
+    this.setState({
+      dragY: { ...this.state.dragY, [noteId]: dragY },
+      topOffsetY: { ...this.state.topOffsetY, [noteId]: dragY },
+    });
+
+    if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
+      this.heightSnapshotRef.set(noteId, dragY); // snapshot dragY only
+      console.log(`Snapshotting dragY at ${dragY} for height >= 600`);
     }
-    if (currentHeight >= 600 && !this.heightLockRef.get(noteId)) {
-      console.log(
-        `Locking height at 600px and topOffsetY at ${dragY} for noteId: ${noteId}`
-      );
-      this.setState(
-        (prevState) => ({
-          finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
-          topOffsetY: { ...prevState.topOffsetY, [noteId]: dragY },
-          dragY: { ...prevState.dragY, [noteId]: dragY },
-        }),
-        () => {
-          console.log(
-            `State after lock - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}, dragY: ${this.state.dragY[noteId]}`
-          );
-        }
-      );
-      this.heightLockRef.set(noteId, true);
+    // New logic to snapshot when height first exceeds 400px
+    else if (
+      currentHeight > 400 &&
+      !this.heightSnapshotRef400.has(noteId) &&
+      !this.heightSnapshotRef.has(noteId)
+    ) {
+      this.heightSnapshotRef400.set(noteId, dragY);
+      console.log(`Snapshotting dragY at ${dragY} for height > 400`);
     }
   };
 
   handleDragEnd = (note: notesReducerIntf) => {
     const noteId = note.id;
     const dragY = this.state.dragY[noteId] || 0;
-    const dynamicHeight = this.calculateDynamicHeight(noteId, dragY);
+    const snapshotY600 = this.heightSnapshotRef.get(noteId);
+    const snapshotY400 = this.heightSnapshotRef400.get(noteId); // <-- Get the new snapshot value
+    const dynamicHeight = this.calculateDynamicHeight(
+      noteId,
+      snapshotY600 ?? dragY
+    );
     const currentTopOffsetY = this.state.topOffsetY[noteId] || 0;
     console.log(
       `handleDragEnd - noteId: ${noteId}, dragY: ${dragY}, dynamicHeight: ${dynamicHeight}, topOffsetY: ${currentTopOffsetY}`
     );
+
     if (dynamicHeight >= 600) {
-      console.log(`Locking to 600px for noteId: ${noteId}`);
-      this.setState(
-        (prevState) => ({
-          finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
-          topOffsetY: { ...prevState.topOffsetY, [noteId]: currentTopOffsetY },
-          dragY: { ...prevState.dragY, [noteId]: 0 },
-          selectedNoteId: this.state.selectedNoteId,
-        }),
-        () => {
-          console.log(
-            `State after drag end - finalHeight: ${this.state.finalHeight[noteId]}, topOffsetY: ${this.state.topOffsetY[noteId]}, dragY: ${this.state.dragY[noteId]}`
-          );
-        }
-      );
-      this.heightLockRef.set(noteId, true);
+      const lockedDragY = snapshotY600 ?? dragY;
+      this.setState((prevState) => ({
+        finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
+        topOffsetY: { ...prevState.topOffsetY, [noteId]: lockedDragY },
+        dragY: { ...prevState.dragY, [noteId]: lockedDragY },
+      }));
     } else if (dynamicHeight > 400) {
       console.log(
-        `Stopping at current position for noteId: ${noteId}, topOffsetY: ${currentTopOffsetY}`
+        `Stopping at snapshot position for noteId: ${noteId}, snapshotY400: ${snapshotY400}`
       );
+      // Use the snapshot value here instead of the final drag position
+      const lockedDragY = snapshotY400 ?? currentTopOffsetY;
       this.setState(
         (prevState) => ({
           finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
-          topOffsetY: { ...prevState.topOffsetY, [noteId]: currentTopOffsetY },
-          dragY: { ...prevState.dragY, [noteId]: currentTopOffsetY }, // Preserve offset visually
-          selectedNoteId: this.state.selectedNoteId,
+          topOffsetY: { ...prevState.topOffsetY, [noteId]: lockedDragY },
+          dragY: { ...prevState.dragY, [noteId]: lockedDragY },
         }),
         () => {
           console.log(
@@ -104,12 +102,12 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       );
     } else {
       console.log(`Resetting to default for noteId: ${noteId}`);
-      const topOffset = this.calculateInitialTopOffset(note, this.props.notes);
+      const originalOffset = this.state.topOffsetY[noteId] || 0;
       this.setState(
         (prevState) => ({
           dragY: { ...prevState.dragY, [noteId]: 0 },
           finalHeight: { ...prevState.finalHeight, [noteId]: 50 },
-          topOffsetY: { ...prevState.topOffsetY, [noteId]: topOffset },
+          topOffsetY: { ...prevState.topOffsetY, [noteId]: originalOffset },
           selectedNoteId: null,
         }),
         () => {
@@ -119,6 +117,10 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         }
       );
       this.heightLockRef.set(noteId, false);
+      this.heightSnapshotRef.delete(noteId);
+      this.heightSnapshotRef400.delete(noteId); // <-- Clear the new snapshot map
+      this.setState({ selectedNoteId: null });
+      console.log("Resetting lock for", noteId);
     }
   };
 
@@ -129,35 +131,11 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     );
     if (!isSelected) return this.state.finalHeight[noteId] || 50;
     const baseHeight = 50;
-    const heightChange = Math.abs(dragY) * 1.9;
+    const heightChange = Math.abs(dragY) * 2.01;
     const newHeight = baseHeight + heightChange;
-    const result = Math.min(600, newHeight);
-    console.log(`calculateDynamicHeight - calculated height: ${result}`);
-    return result;
-  };
 
-  calculateInitialTopOffset = (
-    note: notesReducerIntf,
-    notes: notesReducerIntf[]
-  ): number => {
-    const noteIndex = notes.findIndex((n) => n.id === note.id);
-    const groupIndex = Object.keys(
-      notes.reduce((acc, n) => {
-        const firstChar = (n.title.charAt(0) || "A").toUpperCase();
-        (acc[firstChar] ??= []).push(n);
-        return acc;
-      }, {} as Record<string, notesReducerIntf[]>)
-    ).findIndex((char) =>
-      notes
-        .reduce((acc, n) => {
-          const firstChar = (n.title.charAt(0) || "A").toUpperCase();
-          (acc[firstChar] ??= []).push(n);
-          return acc;
-        }, {} as Record<string, notesReducerIntf[]>)
-        [char].some((n) => n.id === note.id)
-    );
-    const groupTopOffset = 820 - (groupIndex + 1) * (30 + notes.length * 30);
-    return groupTopOffset - 30 - noteIndex * 30;
+    console.log(`calculateDynamicHeight - calculated height: ${newHeight}`);
+    return newHeight;
   };
 
   render() {
@@ -176,12 +154,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       a.localeCompare(b)
     );
 
-    const totalLayers = groupArray.reduce(
-      (sum, [, g]) => sum + 3 + 2 * g.length,
-      0
-    );
-    let nextZ = totalLayers;
-
+    let nextZ = 1000;
     let yCursor = 820;
     const HEADER_GAP = 30;
     const NOTE_SPACING = 30;
@@ -196,21 +169,27 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         ) : (
           <div className="grid grid-cols-1 grid-rows-1 relative h-[800px] w-[1200px] min-w-[500px] min-h-[928px] mt-0 p-0">
             <div>
-              <div className="absolute rounded-xl border-2 bg-white left-[2%] bottom-[10%] w-1 h-6/7" />
-              <div className="absolute rounded-xl border-2 bg-white right-[2%] bottom-[10%] w-1 h-6/7" />
               <div className="absolute rounded-xl border-2 bg-white right-[0.5%] top-[90%] w-1 h-[10%] rotate-10" />
-              <div className="absolute rounded-sm border-2 w-[100%] top-[90%] bg-white h-4 z-300" />
+              <div className="absolute rounded-sm border-2 w-[100%] top-[90%] bg-white h-4 z-2000" />
               <div className="absolute rounded-xl border-2 bg-white left-[0.5%] top-[90%] w-1 h-[10%] -rotate-10" />
             </div>
             <div className="absolute">
               {groupArray.map(([firstChar, groupNotes], groupIndex) => {
                 const groupTopOffset = yCursor;
-                const groupZIndex = nextZ;
+                const groupZIndexBase = nextZ;
 
                 const groupLeft =
                   groupLeftPositions[groupIndex % groupLeftPositions.length];
 
-                const groupContent = groupNotes.map((note, noteIndex) => {
+                // Corrected z-index for the group note components
+                const groupHeaderZIndex =
+                  groupZIndexBase + 3 * groupNotes.length + 3;
+                const groupCardZIndex =
+                  groupZIndexBase + 3 * groupNotes.length + 2;
+                const groupShadowZIndex =
+                  groupZIndexBase + 3 * groupNotes.length + 1;
+
+                const subNoteContent = groupNotes.map((note, noteIndex) => {
                   const isSelected = note.id === this.state.selectedNoteId;
                   const numLabel = String(
                     notes.findIndex((n) => n.id === note.id) + 1
@@ -218,62 +197,62 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const topOffset =
                     groupTopOffset - HEADER_GAP - noteIndex * NOTE_SPACING;
 
+                  if (this.state.topOffsetY[note.id] === undefined) {
+                    this.setState((prevState) => ({
+                      topOffsetY: {
+                        ...prevState.topOffsetY,
+                        [note.id]: topOffset,
+                      },
+                    }));
+                  }
+
                   const noteLeft =
                     noteLeftPositions[noteIndex % noteLeftPositions.length];
 
-                  const zIndexWhite = groupZIndex - 2 * noteIndex - 1;
-                  const zIndexShadow = zIndexWhite - 1;
-
                   const dragY = this.state.dragY[note.id] || 0;
+
+                  const isDragging = note.id === this.state.selectedNoteId;
+
                   const finalHeight =
-                    this.state.finalHeight[note.id] ||
-                    this.calculateDynamicHeight(note.id, dragY);
-                  const topOffsetY = this.state.topOffsetY[note.id] || 0;
-                  const svgTop =
-                    finalHeight >= 600
-                      ? topOffset + topOffsetY + 20
-                      : isSelected && finalHeight > 400
-                      ? topOffset + topOffsetY + 20
-                      : isSelected
-                      ? topOffset + dragY + 20
-                      : topOffset - 20;
+                    isDragging || this.state.finalHeight[note.id] === undefined
+                      ? this.calculateDynamicHeight(note.id, dragY)
+                      : this.state.finalHeight[note.id];
+
+                  const heightDifference = finalHeight - 50;
+
+                  const svgTop = topOffset + dragY - 10;
                   const whiteTop =
-                    finalHeight >= 600
-                      ? topOffset + topOffsetY + 30
-                      : isSelected && finalHeight > 400
-                      ? topOffset + topOffsetY + 30
-                      : isSelected
-                      ? topOffset + 30 + dragY
-                      : topOffset;
+                    topOffset + 10 - (isSelected ? heightDifference / 2 : 0);
                   const shadowTop =
-                    finalHeight >= 600
-                      ? topOffset + topOffsetY + 29
-                      : isSelected && finalHeight > 400
-                      ? topOffset + topOffsetY + 29
-                      : isSelected
-                      ? topOffset + dragY + 29
-                      : topOffset - 2;
+                    topOffset + 9 - (isSelected ? heightDifference / 2 : 0);
+
+                  // Corrected z-index logic for sub-notes, stacked below group note but above each other
+                  const noteZIndexBase =
+                    groupZIndexBase + (groupNotes.length - 1 - noteIndex) * 3;
+                  const zIndexShadow = noteZIndexBase;
+                  const zIndexSvg = noteZIndexBase + 1;
+                  const zIndexWhite = noteZIndexBase + 2;
 
                   return (
                     <div key={note.id}>
                       <motion.div
                         className="absolute -translate-x-1/2 -translate-y-1/2"
+                        animate={{
+                          y: isSelected ? dragY : 0,
+                        }}
+                        transition={{ duration: -10 }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
-                          zIndex: zIndexWhite,
+                          zIndex: zIndexSvg,
                           cursor: finalHeight < 600 ? "grab" : "default",
                           width: "598px",
                           height: "140px",
                           clipPath:
                             "polygon(40% 100%, 50% 25%, 50% 0%, 50% 17%, 90% 20%, 94% 19%, 100% 70%, 90% 100%)",
                         }}
-                        drag={finalHeight < 600 ? "y" : false}
-                        dragConstraints={
-                          finalHeight < 600
-                            ? { top: -600, bottom: 600 }
-                            : { top: 0, bottom: 0 }
-                        }
+                        drag="y"
+                        dragConstraints={{ top: -1000, bottom: 1000 }}
                         dragElastic={0.2}
                         dragTransition={{
                           bounceStiffness: 600,
@@ -339,71 +318,68 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
                         }}
                       />
-                      {noteIndex === 0 && (
-                        <>
-                          <div
-                            className="absolute -translate-x-1/2 -translate-y-1/2"
-                            style={{
-                              top: `${groupTopOffset - 23}px`,
-                              left: `${groupLeft}px`,
-                              zIndex: groupZIndex - 1,
-                              clipPath:
-                                "polygon(1% 100%, 20% 20%, 50% 16%, 90% 20%, 85% 20%, 100% 80%, 67% 60%, 0% 60%)",
-                            }}
-                          >
-                            <svg
-                              viewBox="0 0 400 200"
-                              className="w-[350px] h-[170px]"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M40 130 L80 50 Q90 40,105 40 H320 Q335 40,345 60 L380 130 Z"
-                                fill="black"
-                                stroke="white"
-                                strokeWidth={3}
-                              />
-                              <text
-                                x="120"
-                                y="72"
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                style={{ fill: "white", fontSize: "3.5rem" }}
-                              >
-                                {firstChar}
-                              </text>
-                            </svg>
-                          </div>
-
-                          <div
-                            className="w-453 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
-                            style={{
-                              top: `${groupTopOffset}px`,
-                              left: "600px",
-                              zIndex: groupZIndex,
-                              clipPath:
-                                "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
-                            }}
-                          />
-                          <div
-                            className="w-454 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
-                            style={{
-                              top: `${groupTopOffset}px`,
-                              left: "600px",
-                              zIndex: groupZIndex - 1,
-                              clipPath:
-                                "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
-                            }}
-                          />
-                        </>
-                      )}
                     </div>
                   );
                 });
 
-                nextZ -= 3 + 2 * groupNotes.length;
+                nextZ -= 3 * groupNotes.length + 3;
                 yCursor -= HEADER_GAP + groupNotes.length * NOTE_SPACING;
 
-                return <div key={firstChar}>{groupContent}</div>;
+                return (
+                  <div key={firstChar}>
+                    <div
+                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        top: `${groupTopOffset - 23}px`,
+                        left: `${groupLeft}px`,
+                        zIndex: groupHeaderZIndex - 1,
+                        clipPath:
+                          "polygon(1% 100%, 20% 20%, 50% 16%, 90% 20%, 85% 20%, 100% 80%, 67% 60%, 0% 60%)",
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 400 200"
+                        className="w-[350px] h-[170px]"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M40 130 L80 50 Q90 40,105 40 H320 Q335 40,345 60 L380 130 Z"
+                          fill="black"
+                          stroke="white"
+                          strokeWidth={3}
+                        />
+                        <text
+                          x="120"
+                          y="72"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          style={{ fill: "white", fontSize: "3.5rem" }}
+                        >
+                          {firstChar}
+                        </text>
+                      </svg>
+                    </div>
+                    <div
+                      className="w-453 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
+                      style={{
+                        top: `${groupTopOffset}px`,
+                        left: "600px",
+                        zIndex: groupCardZIndex,
+                        clipPath: "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                      }}
+                    />
+                    <div
+                      className="w-454 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                      style={{
+                        top: `${groupTopOffset}px`,
+                        left: "600px",
+                        zIndex: groupShadowZIndex,
+                        clipPath: "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                      }}
+                    />
+                    {subNoteContent}
+                  </div>
+                );
               })}
             </div>
           </div>
