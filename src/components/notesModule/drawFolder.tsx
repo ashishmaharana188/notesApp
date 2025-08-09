@@ -55,30 +55,39 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
     const snapshotY600 = this.heightSnapshotRef.get(noteId);
     const snapshotY400 = this.heightSnapshotRef400.get(noteId);
+
     const dynamicHeight = this.calculateDynamicHeight(
       noteId,
       snapshotY600 ?? finalDragY
     );
+    const baseOffset =
+      this.state.topOffsetY[noteId] ??
+      this.state.initialTopOffsetY[noteId] ??
+      0;
 
     if (dynamicHeight >= 600) {
       const lockedDragY = snapshotY600 ?? finalDragY;
+      const newTopOffset = baseOffset + lockedDragY;
+      console.log(
+        `Base Offset: ${baseOffset}, Locked Drag Y: ${lockedDragY}, New Top Offset: ${newTopOffset}`
+      );
+
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
-        topOffsetY: {
-          ...prevState.topOffsetY,
-          [noteId]: prevState.topOffsetY[noteId] + lockedDragY, // commit translate
-        },
+        topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
+
         dragY: { ...prevState.dragY, [noteId]: 0 },
         selectedNoteId: null,
       }));
     } else if (dynamicHeight > 400) {
-      const lockedDragY = snapshotY400 ?? finalDragY;
+      const lockedDragY = finalDragY;
+      const newTopOffset = baseOffset + lockedDragY;
+      console.log(
+        `Base Offset: ${baseOffset}, Locked Drag Y: ${lockedDragY}, New Top Offset: ${newTopOffset}`
+      );
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
-        topOffsetY: {
-          ...prevState.topOffsetY,
-          [noteId]: prevState.topOffsetY[noteId] + lockedDragY, // commit translate
-        },
+        topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
         dragY: { ...prevState.dragY, [noteId]: 0 },
         selectedNoteId: null,
       }));
@@ -170,6 +179,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
                   const defaultTopOffset =
                     groupTopOffset - HEADER_GAP - noteIndex * NOTE_SPACING;
+
                   const topOffset =
                     this.state.topOffsetY[note.id] !== undefined
                       ? this.state.topOffsetY[note.id]
@@ -201,8 +211,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       : this.state.finalHeight[note.id];
 
                   const svgTop = topOffset - 10;
-                  const whiteTop = topOffset + 10;
-                  const shadowTop = topOffset + 9;
+                  const whiteTop = topOffset + 5;
+                  const shadowTop = topOffset + 4;
 
                   // Corrected z-index logic for sub-notes, stacked below group note but above each other
                   const noteZIndexBase =
@@ -216,7 +226,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="absolute -translate-x-1/2 -translate-y-1/2"
                         animate={{
-                          y: isSelected ? dragY : 0,
+                          y: isSelected ? dragY * 2 : 0,
                         }}
                         transition={{ duration: -1 }}
                         style={{
