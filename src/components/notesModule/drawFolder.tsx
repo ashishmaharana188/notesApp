@@ -105,6 +105,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         dragY: { ...prevState.dragY, [noteId]: 0 },
         finalHeight: { ...prevState.finalHeight, [noteId]: 50 },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: originalOffset },
+        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 },
         selectedNoteId: null,
       }));
       this.heightLockRef.set(noteId, false);
@@ -120,8 +121,10 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     );
     if (!isSelected) return this.state.finalHeight[noteId] || 50;
     const baseHeight = this.state.finalHeight[noteId] || 50;
-    const heightChange = Math.abs(dragY) * 2;
-    const newHeight = baseHeight + heightChange;
+    const newHeight = baseHeight - dragY * 2;
+
+    console.log(`calculateDynamicHeight - calculated height: ${newHeight}`);
+    return newHeight;
 
     console.log(`calculateDynamicHeight - calculated height: ${newHeight}`);
     return newHeight;
