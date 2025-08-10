@@ -10,6 +10,7 @@ interface FilesDrawState {
   finalHeight: Record<string, number>;
   topOffsetY: Record<string, number>;
   initialTopOffsetY: Record<string, number>;
+  dragOffsetY: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -19,6 +20,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     finalHeight: {},
     topOffsetY: {},
     initialTopOffsetY: {},
+    dragOffsetY: {},
   };
 
   heightLockRef = new Map<string, boolean>();
@@ -75,8 +77,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
-
         dragY: { ...prevState.dragY, [noteId]: 0 },
+        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: lockedDragY },
         selectedNoteId: null,
       }));
     } else if (dynamicHeight > 400) {
@@ -89,6 +91,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
         dragY: { ...prevState.dragY, [noteId]: 0 },
+        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: lockedDragY },
         selectedNoteId: null,
       }));
     } else {
@@ -204,6 +207,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const dragY = this.state.dragY[note.id] || 0;
 
                   const isDragging = note.id === this.state.selectedNoteId;
+                  const dragOffset = this.state.dragOffsetY[note.id] || 0;
 
                   const finalHeight =
                     isDragging || this.state.finalHeight[note.id] === undefined
@@ -212,7 +216,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
                   const svgTop = isDragging
                     ? topOffset - 10 + dragY
-                    : topOffset - 10;
+                    : topOffset - 10 + dragOffset;
                   const whiteTop = topOffset + 5;
                   const shadowTop = topOffset + 3.5;
 
@@ -227,6 +231,9 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                     <div key={note.id}>
                       <motion.div
                         className="absolute -translate-x-1/2 -translate-y-1/2"
+                        animate={{
+                          y: isSelected ? dragY : 0,
+                        }}
                         transition={{ duration: 0 }}
                         style={{
                           top: `${svgTop}px`,
