@@ -11,6 +11,7 @@ interface FilesDrawState {
   topOffsetY: Record<string, number>;
   initialTopOffsetY: Record<string, number>;
   dragOffsetY: Record<string, number>;
+  lockedDragY: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -21,6 +22,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     topOffsetY: {},
     initialTopOffsetY: {},
     dragOffsetY: {},
+    lockedDragY: {},
   };
 
   heightLockRef = new Map<string, boolean>();
@@ -34,10 +36,26 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
   handleDrag = (note: notesReducerIntf, info: PanInfo) => {
     const noteId = note.id;
     const currentHeight = this.calculateDynamicHeight(noteId, info.offset.y);
+    const previousOffset = this.state.dragOffsetY[noteId] || 0;
 
+    // Check if we're crossing 600px threshold during drag
     if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
       this.heightSnapshotRef.set(noteId, info.offset.y);
+
+      this.setState((prevState) => ({
+        dragY: { ...prevState.dragY, [noteId]: info.offset.y },
+        lockedDragY: {
+          ...prevState.lockedDragY,
+          [noteId]: info.offset.y + previousOffset, // Include previous offset
+        },
+        dragOffsetY: {
+          ...prevState.dragOffsetY,
+          [noteId]: previousOffset,
+        },
+      }));
+      return;
     }
+
     if (
       currentHeight > 250 &&
       currentHeight < 600 &&
@@ -68,10 +86,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
     if (dynamicHeight >= 600) {
       const lockedDragY = snapshotY600 ?? finalDragY;
-      const newTopOffset = baseOffset + lockedDragY;
-      console.log(
-        `Base Offset: ${baseOffset}, Locked Drag Y: ${lockedDragY}, New Top Offset: ${newTopOffset}`
-      );
+      const previousOffset = this.state.dragOffsetY[noteId] || 0;
+      const newTopOffset = 515;
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
@@ -79,7 +95,14 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         dragY: { ...prevState.dragY, [noteId]: 0 },
         dragOffsetY: {
           ...prevState.dragOffsetY,
-          [noteId]: (prevState.dragOffsetY[noteId] || 0) + lockedDragY,
+          [noteId]:
+            (prevState.dragOffsetY[noteId] || 0) +
+            (lockedDragY - (snapshotY600 ?? 0)),
+          // keep accumulated offset, don’t reset to 0
+        },
+        lockedDragY: {
+          ...prevState.lockedDragY,
+          [noteId]: lockedDragY + previousOffset, // Include previous offset
         },
         selectedNoteId: null,
       }));
@@ -215,6 +238,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const dragY = this.state.dragY[note.id] || 0;
 
                   const isDragging = note.id === this.state.selectedNoteId;
+                  const initialLockedDragY =
+                    this.state.lockedDragY[note.id] || 0;
                   const dragOffset = this.state.dragOffsetY[note.id] || 0;
 
                   const finalHeight =
@@ -222,9 +247,18 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       ? this.calculateDynamicHeight(note.id, dragY)
                       : this.state.finalHeight[note.id];
 
+                  const wasLocked =
+                    (this.state.finalHeight[note.id] || 0) >= 600;
+
                   const svgTop = isDragging
-                    ? topOffset - 10 + dragOffset + dragY
+                    ? wasLocked
+                      ? // use current locked visual top and subtract dragY for smooth movement
+                        topOffset - 10 + initialLockedDragY + dragY
+                      : topOffset - 10 + (dragOffset + dragY)
+                    : wasLocked
+                    ? topOffset - 10 + initialLockedDragY
                     : topOffset - 10 + dragOffset;
+
                   const whiteTop = topOffset + 5;
                   const shadowTop = topOffset + 3.5;
 
@@ -242,7 +276,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         animate={{
                           y: isSelected ? dragY : 0,
                         }}
-                        transition={{ duration: 0 }}
+                        transition={{ duration: -1 }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
@@ -254,7 +288,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             "polygon(40% 100%, 50% 25%, 50% 0%, 50% 17%, 90% 20%, 94% 19%, 100% 70%, 90% 100%)",
                         }}
                         drag={
-                          (this.state.finalHeight[note.id] || 50) < 600
+                          (this.state.finalHeight[note.id] || 50) < 601
                             ? "y"
                             : false
                         }
