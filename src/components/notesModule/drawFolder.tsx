@@ -210,9 +210,11 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       ? this.calculateDynamicHeight(note.id, dragY)
                       : this.state.finalHeight[note.id];
 
-                  const svgTop = topOffset - 10;
+                  const svgTop = isDragging
+                    ? topOffset - 10 + dragY
+                    : topOffset - 10;
                   const whiteTop = topOffset + 5;
-                  const shadowTop = topOffset + 4;
+                  const shadowTop = topOffset + 3.5;
 
                   // Corrected z-index logic for sub-notes, stacked below group note but above each other
                   const noteZIndexBase =
@@ -225,10 +227,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                     <div key={note.id}>
                       <motion.div
                         className="absolute -translate-x-1/2 -translate-y-1/2"
-                        animate={{
-                          y: isSelected ? dragY * 2 : 0,
-                        }}
-                        transition={{ duration: -1 }}
+                        transition={{ duration: 0 }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
