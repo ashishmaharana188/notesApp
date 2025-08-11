@@ -12,6 +12,7 @@ interface FilesDrawState {
   initialTopOffsetY: Record<string, number>;
   dragOffsetY: Record<string, number>;
   lockedDragY: Record<string, number>;
+  svgTop: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -23,6 +24,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     initialTopOffsetY: {},
     dragOffsetY: {},
     lockedDragY: {},
+    svgTop: {},
   };
 
   heightLockRef = new Map<string, boolean>();
@@ -35,8 +37,29 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
   handleDrag = (note: notesReducerIntf, info: PanInfo) => {
     const noteId = note.id;
-    const currentHeight = this.calculateDynamicHeight(noteId, info.offset.y);
+    const dragY = info.offset.y;
+    const currentHeight = this.calculateDynamicHeight(noteId, dragY);
     const previousOffset = this.state.dragOffsetY[noteId] || 0;
+
+    if (this.heightSnapshotRef.has(noteId) && currentHeight < 600) {
+      // Unlock 600px lock and fall back to 250px logic
+      this.heightSnapshotRef.delete(noteId);
+
+      // Figure out where the SVG is right now
+      const currentSvgTop =
+        (this.state.topOffsetY[noteId] ?? 0) -
+        10 +
+        (this.state.lockedDragY[noteId] || 0) +
+        dragY;
+
+      const newDragOffsetY =
+        currentSvgTop - (this.state.topOffsetY[noteId] ?? 0) + 10;
+
+      this.setState((prev) => ({
+        dragOffsetY: { ...prev.dragOffsetY, [noteId]: newDragOffsetY },
+        lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
+      }));
+    }
 
     // Check if we're crossing 600px threshold during drag
     if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
