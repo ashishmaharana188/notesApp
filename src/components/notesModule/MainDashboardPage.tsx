@@ -62,7 +62,7 @@ const MainDashboardPage = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div
-        className={`bg-[#525b28] text-white h-full cursor-pointer transition-all duration-100 ease-in-out flex flex-col fixed top-0 left-0 z-50 ${
+        className={`bg-[#525b28] text-white h-full cursor-pointer transition-all duration-100 ease-in-out flex flex-col fixed top-0 left-0 z-3000 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full hidden"
         }`}
         style={{ width: `${isSidebarOpen ? sidebarWidth : 0}px` }}
@@ -159,14 +159,14 @@ const MainDashboardPage = () => {
         {!isSidebarOpen || isHovered ? (
           <div
             ref={buttonRef}
-            className="fixed cursor-pointer top-8 w-8 h-8 left-4 z-50 rounded-full bg-black flex items-center justify-center transition"
+            className="fixed cursor-pointer top-8 w-8 h-8 left-4 z-50 rounded-full bg-black flex items-center justify-center transition z-3001"
             style={{ width: "20px", height: "20px" }}
             onClick={toggleSidebar}
             onMouseLeave={() => setIsHovered(false)}
           />
         ) : (
           <div
-            className="fixed  top-8 w-8 h-8 left-4 z-50 rounded-full bg-white flex items-center justify-center"
+            className="fixed  top-8 w-8 h-8 left-4 z-50 rounded-full bg-white flex items-center justify-center z-3001"
             style={{ width: "20px", height: "20px" }}
             onClick={toggleSidebar}
           />

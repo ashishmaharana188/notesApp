@@ -107,7 +107,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       0;
 
     if (dynamicHeight >= 600) {
-      const lockedDragY = snapshotY600 ?? finalDragY;
       const previousOffset = this.state.dragOffsetY[noteId] || 0;
       const newTopOffset = 515;
       const currentSvgTopDuringDrag =
