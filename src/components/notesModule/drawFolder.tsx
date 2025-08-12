@@ -30,24 +30,9 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
   heightLockRef = new Map<string, boolean>();
   heightSnapshotRef = new Map<string, number>();
   heightSnapshotRef250 = new Map<string, number>();
-  unlockFrom600: { noteId: string; startSvgTop: number } | null = null;
 
   handleDragStart = (note: notesReducerIntf) => {
-    const noteId = note.id;
-    this.setState({ selectedNoteId: noteId });
-
-    // Save current visual svgTop as baseline when drag starts
-    const wasLocked = (this.state.finalHeight[noteId] || 0) >= 600;
-    if (wasLocked) {
-      const svgTopAtStart =
-        (this.state.topOffsetY[noteId] ?? 0) -
-        10 +
-        (this.state.lockedDragY[noteId] || 0);
-
-      this.setState((prev) => ({
-        svgTop: { ...prev.svgTop, [noteId]: svgTopAtStart },
-      }));
-    }
+    this.setState({ selectedNoteId: note.id });
   };
 
   handleDrag = (note: notesReducerIntf, info: PanInfo) => {
@@ -56,38 +41,23 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const currentHeight = this.calculateDynamicHeight(noteId, dragY);
     const previousOffset = this.state.dragOffsetY[noteId] || 0;
 
-    let justUnlocked = false;
-
-    // inside handleDrag(...)
     if (this.heightSnapshotRef.has(noteId) && currentHeight < 600) {
-      // Unlock from 600px: record the fact but don't rebase offsets mid-drag
+      // Unlock 600px lock and fall back to 250px logic
       this.heightSnapshotRef.delete(noteId);
 
-      // anchor the visual top at the start of the unlock (use svgTop if available)
-      const startSvgTop =
-        this.state.svgTop[noteId] ??
+      // Figure out where the SVG is right now
+      const currentSvgTop =
         (this.state.topOffsetY[noteId] ?? 0) -
-          10 +
-          (this.state.lockedDragY[noteId] || 0);
+        10 +
+        (this.state.lockedDragY[noteId] || 0);
 
-      // record for handleDragEnd to finalize once
-      this.unlockFrom600 = { noteId, startSvgTop };
+      const newDragOffsetY =
+        currentSvgTop - (this.state.topOffsetY[noteId] ?? 0) + 10;
 
-      // don't change dragOffsetY or lockedDragY here — keep them for finalization step
-      // keep >250px snapshot logic but don't run it on the same frame as we unlocked
-      if (!this.heightSnapshotRef250.has(noteId) && currentHeight > 250) {
-        this.heightSnapshotRef250.set(noteId, info.offset.y);
-      }
-    }
-
-    // Only run >250px logic if we did NOT just unlock
-    if (
-      !justUnlocked &&
-      currentHeight > 250 &&
-      currentHeight < 600 &&
-      !this.heightSnapshotRef250.has(noteId)
-    ) {
-      this.heightSnapshotRef250.set(noteId, info.offset.y);
+      this.setState((prev) => ({
+        dragOffsetY: { ...prev.dragOffsetY, [noteId]: newDragOffsetY },
+        lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
+      }));
     }
 
     // Check if we're crossing 600px threshold during drag
@@ -123,7 +93,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
   handleDragEnd = (note: notesReducerIntf, info: PanInfo) => {
     const noteId = note.id;
-    const finalDragY = info.offset.y;
+    const finalDragY = info.offset.y; // where it ended visually
 
     const snapshotY600 = this.heightSnapshotRef.get(noteId);
 
@@ -131,45 +101,40 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       noteId,
       snapshotY600 ?? finalDragY
     );
-
     const baseOffset =
       this.state.topOffsetY[noteId] ??
       this.state.initialTopOffsetY[noteId] ??
       0;
 
-    // Final visual svgTop at drag end
-    const wasLocked = (this.state.finalHeight[noteId] || 0) >= 600;
-    const finalSvgTop = wasLocked
-      ? (this.state.svgTop[noteId] ??
-          baseOffset - 10 + (this.state.lockedDragY[noteId] || 0)) + finalDragY
-      : baseOffset - 10 + ((this.state.dragOffsetY[noteId] || 0) + finalDragY);
-
     if (dynamicHeight >= 600) {
       const lockedDragY = snapshotY600 ?? finalDragY;
       const previousOffset = this.state.dragOffsetY[noteId] || 0;
       const newTopOffset = 515;
+      const currentSvgTopDuringDrag =
+        (this.state.topOffsetY[noteId] ?? 0) -
+        10 +
+        previousOffset +
+        2 * finalDragY;
+      const requiredLockedDragY =
+        snapshotY600 ?? currentSvgTopDuringDrag - (515 - 10);
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
         dragY: { ...prevState.dragY, [noteId]: 0 },
-        dragOffsetY: {
-          ...prevState.dragOffsetY,
-          [noteId]:
-            (prevState.dragOffsetY[noteId] || 0) +
-            (lockedDragY - (snapshotY600 ?? 0)),
-        },
+        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 },
         lockedDragY: {
           ...prevState.lockedDragY,
-          [noteId]: lockedDragY + previousOffset,
+          [noteId]: requiredLockedDragY,
         },
-        svgTop: { ...prevState.svgTop, [noteId]: finalSvgTop }, // save visual position
         selectedNoteId: null,
       }));
     } else if (dynamicHeight > 250) {
       const lockedDragY = finalDragY;
       const newTopOffset = baseOffset + lockedDragY;
-
+      console.log(
+        `Base Offset: ${baseOffset}, Locked Drag Y: ${lockedDragY}, New Top Offset: ${newTopOffset}`
+      );
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
@@ -178,7 +143,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           ...prevState.dragOffsetY,
           [noteId]: (prevState.dragOffsetY[noteId] || 0) + lockedDragY,
         },
-        svgTop: { ...prevState.svgTop, [noteId]: finalSvgTop }, // save visual position
         selectedNoteId: null,
       }));
     } else {
@@ -188,7 +152,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         finalHeight: { ...prevState.finalHeight, [noteId]: 50 },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: originalOffset },
         dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 },
-        svgTop: { ...prevState.svgTop, [noteId]: originalOffset - 10 }, // reset svgTop to base
         selectedNoteId: null,
       }));
       this.heightLockRef.set(noteId, false);
@@ -308,17 +271,17 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       : this.state.finalHeight[note.id];
 
                   const wasLocked =
-                    (this.state.finalHeight[note.id] || 0) >= 600;
+                    (this.state.finalHeight[note.id] || 0) >= 600 &&
+                    !!this.state.lockedDragY[note.id];
 
                   const svgTop = isDragging
                     ? wasLocked
-                      ? (this.state.svgTop[note.id] ??
-                          topOffset - 10 + initialLockedDragY) + dragY
+                      ? // use current locked visual top and subtract dragY for smooth movement
+                        topOffset - 10 + initialLockedDragY + dragY
                       : topOffset - 10 + (dragOffset + dragY)
-                    : this.state.svgTop[note.id] ??
-                      (wasLocked
-                        ? topOffset - 10 + initialLockedDragY
-                        : topOffset - 10 + dragOffset);
+                    : wasLocked
+                    ? topOffset - 10 + initialLockedDragY
+                    : topOffset - 10 + dragOffset;
 
                   const whiteTop = topOffset + 5;
                   const shadowTop = topOffset + 3.5;
