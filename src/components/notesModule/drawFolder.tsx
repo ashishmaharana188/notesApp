@@ -33,6 +33,17 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
   handleDragStart = (note: notesReducerIntf) => {
     this.setState({ selectedNoteId: note.id });
+
+    // If we are starting a drag and the committed height is < 600,
+    // we are NOT in a 600 lock. Nuke any stale 600-lock markers/anchors.
+    const noteId = note.id;
+    const committed = this.state.finalHeight[noteId] ?? 50;
+    if (committed < 600) {
+      this.heightSnapshotRef.delete(noteId);
+      this.setState((prev) => ({
+        lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
+      }));
+    }
   };
 
   handleDrag = (note: notesReducerIntf, info: PanInfo) => {
@@ -40,40 +51,32 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const dragY = info.offset.y;
     const currentHeight = this.calculateDynamicHeight(noteId, dragY);
 
-    // Unlock from 600-lock if dragging back down below 600
+    // If we were in 600-lock and now dropped below 600: unlock cleanly
     if (this.heightSnapshotRef.has(noteId) && currentHeight < 600) {
       this.heightSnapshotRef.delete(noteId);
 
-      // carry the anchor back from locked → offset
+      // carry the anchor back from locked → offset (seamless handoff)
       const lockedAnchor = this.state.lockedDragY[noteId] || 0;
-
       this.setState((prev) => ({
         dragOffsetY: { ...prev.dragOffsetY, [noteId]: lockedAnchor },
         lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
       }));
-      // let normal drag update continue
+      // continue to update dragY below
     }
 
-    // Enter 600-lock from below for the first time this drag
     if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
-      this.heightSnapshotRef.set(noteId, info.offset.y);
-
-      // carry anchor from offset → locked
       const offsetAnchor = this.state.dragOffsetY[noteId] || 0;
 
       this.setState((prev) => ({
         dragY: { ...prev.dragY, [noteId]: info.offset.y },
         lockedDragY: { ...prev.lockedDragY, [noteId]: offsetAnchor },
-        // dragOffsetY stays as-is but is ignored while locked
       }));
 
-      if (this.heightSnapshotRef250.has(noteId)) {
-        this.heightSnapshotRef250.delete(noteId);
-      }
+      this.heightSnapshotRef.set(noteId, info.offset.y);
+
       return;
     }
 
-    // Mark 250 lock if within that range for the first time
     if (
       currentHeight > 250 &&
       currentHeight < 600 &&
@@ -107,18 +110,34 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     if (dynamicHeight >= 600) {
       const newTopOffset = 515;
 
-      // choose the anchor that was actually driving the element
-      const anchor =
-        this.state.lockedDragY[noteId] != null
-          ? this.state.lockedDragY[noteId]!
-          : this.state.dragOffsetY[noteId] || 0;
+      const finalDragY = info.offset.y;
 
-      // visual top at mouse-up (remember: style includes +dragY and transform adds another +dragY)
+      const topOffsetBefore = this.state.topOffsetY[noteId] ?? 0;
+      const anchor = this.heightSnapshotRef.has(noteId)
+        ? this.state.lockedDragY[noteId] || 0
+        : this.state.dragOffsetY[noteId] || 0;
+
+      // This snapshot was causing the jump when coming from a 250–600 lock.
+      const snapshotY600 = this.heightSnapshotRef.get(noteId);
+
+      // Live visual top at release (top includes +dragY and transform adds another +dragY)
       const currentSvgTopDuringDrag =
-        (this.state.topOffsetY[noteId] ?? 0) - 10 + anchor + 2 * finalDragY;
+        topOffsetBefore - 10 + anchor + 2 * finalDragY;
 
-      const requiredLockedDragY =
-        snapshotY600 ?? currentSvgTopDuringDrag - (newTopOffset - 10);
+      // ✅ FIX: compute the locked anchor from the live frame; do NOT trust the stale snapshot
+      const snappedSvgTop = newTopOffset - 10;
+      const requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
+
+      console.log("[FIX >=600 COMMIT]", {
+        noteId,
+        dynamicHeight,
+        topOffsetBefore,
+        anchor,
+        finalDragY,
+        snapshotY600_discarded: snapshotY600,
+        currentSvgTopDuringDrag,
+        requiredLockedDragY,
+      });
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
@@ -132,7 +151,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         selectedNoteId: null,
       }));
 
-      // Keep marker to indicate 600-lock after commit
       this.heightSnapshotRef.set(noteId, 0);
       return;
     }
@@ -264,28 +282,31 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                     noteLeftPositions[noteIndex % noteLeftPositions.length];
 
                   const dragY = this.state.dragY[note.id] || 0;
-
                   const isDragging = note.id === this.state.selectedNoteId;
 
                   // consider locked if actively locked or finalHeight committed at 600 with locked anchor
+                  const committed600 =
+                    (this.state.finalHeight[note.id] || 0) >= 600 &&
+                    !!this.state.lockedDragY[note.id];
                   const isLocked600 =
-                    this.heightSnapshotRef.has(note.id) ||
-                    ((this.state.finalHeight[note.id] || 0) >= 600 &&
-                      !!this.state.lockedDragY[note.id]);
+                    this.heightSnapshotRef.has(note.id) || committed600;
 
                   // choose anchor consistently
+                  const lockedAnchor = this.state.lockedDragY[note.id];
+                  const offsetAnchor = this.state.dragOffsetY[note.id] || 0;
                   const anchor = isLocked600
-                    ? this.state.lockedDragY[note.id] || 0
-                    : this.state.dragOffsetY[note.id] || 0;
+                    ? lockedAnchor != null
+                      ? lockedAnchor
+                      : offsetAnchor
+                    : offsetAnchor;
 
                   const finalHeight =
-                    isDragging || this.state.finalHeight[note.id] === undefined
+                    isSelected || this.state.finalHeight[note.id] === undefined
                       ? this.calculateDynamicHeight(note.id, dragY)
                       : this.state.finalHeight[note.id];
 
-                  // unified calculation
                   const baseTop = topOffset - 10;
-                  const svgTop = isDragging
+                  const svgTop = isSelected
                     ? baseTop + anchor + dragY
                     : baseTop + anchor;
                   const whiteTop = topOffset + 5;
