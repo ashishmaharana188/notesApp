@@ -36,8 +36,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
   handleDragStart = (note: notesReducerIntf) => {
     this.setState({ selectedNoteId: note.id });
 
-    // If we are starting a drag and the committed height is < 600,
-    // we are NOT in a 600 lock. Nuke any stale 600-lock markers/anchors.
     const noteId = note.id;
     const committed = this.state.finalHeight[noteId] ?? 50;
     if (committed < 600) {
@@ -128,13 +126,9 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
       const topOffsetBefore = this.state.topOffsetY[noteId] ?? 0;
 
-      // This snapshot was causing the jump when coming from a 250–600 lock.
-
-      // Live visual top at release (top includes +dragY and transform adds another +dragY)
-
-      const snapshotDragY = this.heightSnapshotRef.get(noteId) ?? info.offset.y;
       const snapshotSvgTop = this.state.lockedSvgTopY[noteId] ?? 225;
-      const deltaSinceLock = info.offset.y;
+      const deltaSinceLock =
+        this.heightSnapshotRef.get(noteId) ?? info.offset.y;
       const finalLockedSvgTop = snapshotSvgTop + deltaSinceLock;
 
       const snappedSvgTop = newTopOffset - 10;
@@ -142,7 +136,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
       console.log(`[LOCK COMMIT >=600] noteId=${noteId}`);
       console.log(`snapshotSvgTop:`, snapshotSvgTop);
-      console.log(`snapshotDragY:`, snapshotDragY);
       console.log(`currentOffsetY:`, info.offset.y);
       console.log(`deltaSinceLock:`, deltaSinceLock);
       console.log(`finalLockedSvgTop:`, finalLockedSvgTop);
