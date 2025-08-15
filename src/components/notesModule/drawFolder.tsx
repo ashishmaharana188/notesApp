@@ -13,6 +13,7 @@ interface FilesDrawState {
   dragOffsetY: Record<string, number>;
   lockedDragY: Record<string, number>;
   svgTop: Record<string, number>;
+  lockedSvgTopY: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -25,6 +26,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     dragOffsetY: {},
     lockedDragY: {},
     svgTop: {},
+    lockedSvgTopY: {},
   };
 
   heightLockRef = new Map<string, boolean>();
@@ -67,12 +69,26 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
       const offsetAnchor = this.state.dragOffsetY[noteId] || 0;
 
-      this.setState((prev) => ({
-        dragY: { ...prev.dragY, [noteId]: info.offset.y },
-        lockedDragY: { ...prev.lockedDragY, [noteId]: offsetAnchor },
-      }));
+      const visualSvgTop =
+        (this.state.topOffsetY[noteId] ?? 0) -
+        10 +
+        (this.state.dragOffsetY[noteId] || 0) +
+        dragY;
+
+      console.log(`  ENTER 600 LOCK:`);
+      console.log(`    offsetAnchor:`, offsetAnchor);
+      console.log(`    visualSvgTop (snapshot):`, visualSvgTop);
+      console.log(`    topOffsetY:`, this.state.topOffsetY[noteId] ?? 0);
+      console.log(`    dragOffsetY:`, this.state.dragOffsetY[noteId] || 0);
 
       this.heightSnapshotRef.set(noteId, info.offset.y);
+
+      this.setState((prev) => ({
+        ...prev,
+        dragY: { ...prev.dragY, [noteId]: info.offset.y },
+        lockedDragY: { ...prev.lockedDragY, [noteId]: offsetAnchor },
+        lockedSvgTopY: { ...prev.lockedSvgTopY, [noteId]: visualSvgTop },
+      }));
 
       return;
     }
@@ -110,34 +126,26 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     if (dynamicHeight >= 600) {
       const newTopOffset = 515;
 
-      const finalDragY = info.offset.y;
-
       const topOffsetBefore = this.state.topOffsetY[noteId] ?? 0;
-      const anchor = this.heightSnapshotRef.has(noteId)
-        ? this.state.lockedDragY[noteId] || 0
-        : this.state.dragOffsetY[noteId] || 0;
 
       // This snapshot was causing the jump when coming from a 250–600 lock.
-      const snapshotY600 = this.heightSnapshotRef.get(noteId);
 
       // Live visual top at release (top includes +dragY and transform adds another +dragY)
-      const currentSvgTopDuringDrag =
-        topOffsetBefore - 10 + anchor + 2 * finalDragY;
 
-      // ✅ FIX: compute the locked anchor from the live frame; do NOT trust the stale snapshot
+      const snapshotDragY = this.heightSnapshotRef.get(noteId) ?? info.offset.y;
+      const snapshotSvgTop = this.state.lockedSvgTopY[noteId] ?? 225;
+      const deltaSinceLock = info.offset.y;
+      const finalLockedSvgTop = snapshotSvgTop + deltaSinceLock;
+
       const snappedSvgTop = newTopOffset - 10;
       const requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
 
-      console.log("[FIX >=600 COMMIT]", {
-        noteId,
-        dynamicHeight,
-        topOffsetBefore,
-        anchor,
-        finalDragY,
-        snapshotY600_discarded: snapshotY600,
-        currentSvgTopDuringDrag,
-        requiredLockedDragY,
-      });
+      console.log(`[LOCK COMMIT >=600] noteId=${noteId}`);
+      console.log(`snapshotSvgTop:`, snapshotSvgTop);
+      console.log(`snapshotDragY:`, snapshotDragY);
+      console.log(`currentOffsetY:`, info.offset.y);
+      console.log(`deltaSinceLock:`, deltaSinceLock);
+      console.log(`finalLockedSvgTop:`, finalLockedSvgTop);
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
@@ -148,6 +156,11 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           ...prevState.lockedDragY,
           [noteId]: requiredLockedDragY,
         },
+        lockedSvgTopY: {
+          ...prevState.lockedSvgTopY,
+          [noteId]: finalLockedSvgTop,
+        },
+
         selectedNoteId: null,
       }));
 
@@ -282,7 +295,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                     noteLeftPositions[noteIndex % noteLeftPositions.length];
 
                   const dragY = this.state.dragY[note.id] || 0;
-                  const isDragging = note.id === this.state.selectedNoteId;
 
                   // consider locked if actively locked or finalHeight committed at 600 with locked anchor
                   const committed600 =
@@ -306,9 +318,13 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       : this.state.finalHeight[note.id];
 
                   const baseTop = topOffset - 10;
-                  const svgTop = isSelected
+
+                  const svgTop = committed600
+                    ? this.state.lockedSvgTopY[note.id]
+                    : isSelected
                     ? baseTop + anchor + dragY
                     : baseTop + anchor;
+
                   const whiteTop = topOffset + 5;
                   const shadowTop = topOffset + 3.5;
 
