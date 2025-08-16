@@ -51,17 +51,45 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const dragY = info.offset.y;
     const currentHeight = this.calculateDynamicHeight(noteId, dragY);
 
+    console.log(`[DRAG] ===== handleDrag START =====`);
+    console.log(`[DRAG] noteId: ${noteId}`);
+    console.log(`[DRAG] dragY: ${dragY}`);
+    console.log(`[DRAG] currentHeight: ${currentHeight}`);
+    console.log(`[DRAG] State snapshot:`, {
+      finalHeight: this.state.finalHeight[noteId],
+      lockedSvgTopY: this.state.lockedSvgTopY[noteId],
+      lockedDragY: this.state.lockedDragY[noteId],
+      dragOffsetY: this.state.dragOffsetY[noteId],
+      topOffsetY: this.state.topOffsetY[noteId],
+      heightSnapshotRef: this.heightSnapshotRef.get(noteId),
+      heightSnapshotRef250: this.heightSnapshotRef250.get(noteId),
+    });
+
     // If we were in 600-lock and now dropped below 600: unlock cleanly
     if (this.heightSnapshotRef.has(noteId) && currentHeight < 600) {
       this.heightSnapshotRef.delete(noteId);
 
-      // carry the anchor back from locked → offset (seamless handoff)
+      console.log(`[DRAG] ===== UNLOCKING FROM 600 =====`);
+      console.log(
+        `[DRAG] Before unlock - lockedDragY: ${this.state.lockedDragY[noteId]}`
+      );
+      console.log(
+        `[DRAG] Before unlock - dragOffsetY: ${this.state.dragOffsetY[noteId]}`
+      );
+      console.log(
+        `[DRAG] Before unlock - lockedSvgTopY: ${this.state.lockedSvgTopY[noteId]}`
+      );
+
       const lockedAnchor = this.state.lockedDragY[noteId] || 0;
+
+      console.log(
+        `[DRAG] Transferring lockedAnchor: ${lockedAnchor} to dragOffsetY`
+      );
+
       this.setState((prev) => ({
         dragOffsetY: { ...prev.dragOffsetY, [noteId]: lockedAnchor },
         lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
       }));
-      // continue to update dragY below
     }
 
     if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
@@ -120,6 +148,20 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       this.state.initialTopOffsetY[noteId] ??
       0;
 
+    console.log(`[DRAG_END] ===== handleDragEnd START =====`);
+    console.log(`[DRAG_END] noteId: ${noteId}`);
+    console.log(`[DRAG_END] finalDragY: ${finalDragY}`);
+    console.log(`[DRAG_END] snapshotY600: ${snapshotY600}`);
+    console.log(`[DRAG_END] dynamicHeight: ${dynamicHeight}`);
+    console.log(`[DRAG_END] baseOffset: ${baseOffset}`);
+    console.log(`[DRAG_END] Pre-commit state:`, {
+      finalHeight: this.state.finalHeight[noteId],
+      lockedSvgTopY: this.state.lockedSvgTopY[noteId],
+      lockedDragY: this.state.lockedDragY[noteId],
+      dragOffsetY: this.state.dragOffsetY[noteId],
+      topOffsetY: this.state.topOffsetY[noteId],
+    });
+
     // Commit to 600 lock
     if (dynamicHeight >= 600) {
       const newTopOffset = 515;
@@ -134,11 +176,11 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       const snappedSvgTop = newTopOffset - 10;
       const requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
 
-      console.log(`[LOCK COMMIT >=600] noteId=${noteId}`);
-      console.log(`snapshotSvgTop:`, snapshotSvgTop);
-      console.log(`currentOffsetY:`, info.offset.y);
-      console.log(`deltaSinceLock:`, deltaSinceLock);
-      console.log(`finalLockedSvgTop:`, finalLockedSvgTop);
+      console.log(`[DRAG_END] ===== COMMITTING 600 =====`);
+      console.log(`[DRAG_END] finalLockedSvgTop: ${finalLockedSvgTop}`);
+      console.log(`[DRAG_END] requiredLockedDragY: ${requiredLockedDragY}`);
+      console.log(`[DRAG_END] deltaSinceLock: ${deltaSinceLock}`);
+      console.log(`[DRAG_END] snapshotSvgTop: ${snapshotSvgTop}`);
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
@@ -164,6 +206,22 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     // Commit between 250 and 600
     if (dynamicHeight > 250) {
       const finalTop = baseOffset + finalDragY;
+
+      console.log(`[DRAG_END] ===== COMMITTING 250-600 =====`);
+      console.log(`[DRAG_END] finalTop: ${finalTop}`);
+      console.log(
+        `[DRAG_END] Previous dragOffsetY: ${
+          this.state.dragOffsetY[noteId] || 0
+        }`
+      );
+      console.log(
+        `[DRAG_END] New dragOffsetY: ${
+          (this.state.dragOffsetY[noteId] || 0) + finalDragY
+        }`
+      );
+      console.log(
+        `[DRAG_END] lockedSvgTopY (will remain): ${this.state.lockedSvgTopY[noteId]}`
+      );
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
@@ -320,6 +378,33 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
                   const whiteTop = topOffset + 5;
                   const shadowTop = topOffset + 3.5;
+
+                  console.log(`[RENDER] ===== Rendering note ${note.id} =====`);
+                  console.log(`[RENDER] isSelected: ${isSelected}`);
+                  console.log(
+                    `[RENDER] finalHeight: ${this.state.finalHeight[note.id]}`
+                  );
+                  console.log(`[RENDER] committed600: ${committed600}`);
+                  console.log(`[RENDER] isLocked600: ${isLocked600}`);
+                  console.log(`[RENDER] lockedAnchor: ${lockedAnchor}`);
+                  console.log(`[RENDER] offsetAnchor: ${offsetAnchor}`);
+                  console.log(`[RENDER] anchor: ${anchor}`);
+                  console.log(`[RENDER] topOffset: ${topOffset}`);
+                  console.log(`[RENDER] baseTop: ${baseTop}`);
+                  console.log(`[RENDER] dragY: ${dragY}`);
+                  console.log(
+                    `[RENDER] lockedSvgTopY: ${
+                      this.state.lockedSvgTopY[note.id]
+                    }`
+                  );
+                  console.log(
+                    `[RENDER] svgTop calculation:`,
+                    committed600
+                      ? "using lockedSvgTopY"
+                      : "using baseTop + anchor + dragY"
+                  );
+                  console.log(`[RENDER] svgTop final value: ${svgTop}`);
+                  console.log(`[RENDER] =====================================`);
 
                   // Corrected z-index logic for sub-notes, stacked below group note but above each other
                   const noteZIndexBase =
