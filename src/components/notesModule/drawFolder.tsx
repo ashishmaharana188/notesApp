@@ -16,6 +16,7 @@ interface FilesDrawState {
   lockedSvgTopY: Record<string, number>;
   unlockHandoffAnchor: Record<string, number | undefined>;
   unlockInProgress: Record<string, boolean>;
+  lockBaselineRef: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -31,6 +32,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     lockedSvgTopY: {},
     unlockHandoffAnchor: {},
     unlockInProgress: {},
+    lockBaselineRef: {},
   };
 
   heightLockRef = new Map<string, boolean>();
@@ -121,11 +123,24 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         (this.state.dragOffsetY[noteId] || 0) +
         dragY;
 
-      console.log(`ENTER 600 LOCK:`);
-      console.log(`offsetAnchor:`, offsetAnchor);
-      console.log(`visualSvgTop (snapshot):`, visualSvgTop);
-      console.log(`topOffsetY:`, this.state.topOffsetY[noteId] ?? 0);
-      console.log(`dragOffsetY:`, this.state.dragOffsetY[noteId] || 0);
+      const ref = this.state.lockBaselineRef[noteId];
+      const threshold = 5;
+      let incomingLockedTop = visualSvgTop;
+
+      if (ref !== undefined) {
+        const drift = Math.abs(incomingLockedTop - ref);
+        console.log(
+          `[LOCK DRIFT] enter600: ref=${ref}, incoming=${incomingLockedTop}, drift=${drift}`
+        );
+        if (drift > threshold) {
+          console.log(`[LOCK DRIFT] enter600: snapping to ref`);
+          incomingLockedTop = ref;
+        }
+      } else {
+        console.log(
+          `[LOCK DRIFT] enter600: setting baseline ref to incoming=${incomingLockedTop}`
+        );
+      }
 
       this.heightSnapshotRef.set(noteId, info.offset.y);
 
@@ -138,7 +153,14 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         unlockInProgress: { ...(prev.unlockInProgress || {}), [noteId]: false },
         dragY: { ...prev.dragY, [noteId]: info.offset.y },
         lockedDragY: { ...prev.lockedDragY, [noteId]: offsetAnchor },
-        lockedSvgTopY: { ...prev.lockedSvgTopY, [noteId]: visualSvgTop },
+        lockedSvgTopY: { ...prev.lockedSvgTopY, [noteId]: incomingLockedTop },
+        lockBaselineRef: {
+          ...prev.lockBaselineRef,
+          [noteId]:
+            prev.lockBaselineRef[noteId] !== undefined
+              ? prev.lockBaselineRef[noteId]
+              : incomingLockedTop,
+        },
       }));
 
       return;
@@ -187,30 +209,37 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       topOffsetY: this.state.topOffsetY[noteId],
     });
 
-    // Commit to 600 lock
     if (dynamicHeight >= 600) {
       const newTopOffset = 515;
-
       const topOffsetBefore = this.state.topOffsetY[noteId] ?? 0;
 
-      const snapshotSvgTop = this.state.lockedSvgTopY[noteId] ?? 225;
+      // Prefer the visual snapshot captured at ENTER 600 over any fallback.
+      const snapshotSvgTopFromEnter =
+        this.state.lockedSvgTopY[noteId] !== undefined
+          ? this.state.lockedSvgTopY[noteId]
+          : (this.state.topOffsetY[noteId] ?? 0) - 10;
+
+      const snapshotAtLockY = this.heightSnapshotRef.get(noteId); // PanInfo.offset.y captured on ENTER 600
       const deltaSinceLock =
-        this.heightSnapshotRef.get(noteId) ?? info.offset.y;
-      const finalLockedSvgTop = snapshotSvgTop + deltaSinceLock;
+        snapshotAtLockY !== undefined && snapshotAtLockY !== null
+          ? (info.offset.y ?? 0) - snapshotAtLockY
+          : info.offset.y ?? 0;
+
+      // Strict commit: snapshotSvgTop + deltaSinceLock
 
       const snappedSvgTop = newTopOffset - 10;
       let requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
+      if (requiredLockedDragY === 0) requiredLockedDragY = 1;
 
-      if (requiredLockedDragY === 0) {
-        // Use a small non-zero value to maintain lock state
-        requiredLockedDragY = 1;
-      }
+      const finalLockedSvgTop = snapshotSvgTopFromEnter + requiredLockedDragY;
 
-      console.log(`[DRAG_END] ===== COMMITTING 600 =====`);
+      console.log(`[DRAG_END] ===== COMMITTING 600 (strict snapshot) =====`);
       console.log(`[DRAG_END] finalLockedSvgTop: ${finalLockedSvgTop}`);
       console.log(`[DRAG_END] requiredLockedDragY: ${requiredLockedDragY}`);
       console.log(`[DRAG_END] deltaSinceLock: ${deltaSinceLock}`);
-      console.log(`[DRAG_END] snapshotSvgTop: ${snapshotSvgTop}`);
+      console.log(
+        `[DRAG_END] snapshotSvgTop (ENTER600 or baseTop): ${snapshotSvgTopFromEnter}`
+      );
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
@@ -225,6 +254,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           ...prevState.lockedSvgTopY,
           [noteId]: finalLockedSvgTop,
         },
+        // keep previously added fields intact
         unlockHandoffAnchor: {
           ...(prevState.unlockHandoffAnchor || {}),
           [noteId]: undefined,
@@ -233,32 +263,59 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           ...(prevState.unlockInProgress || {}),
           [noteId]: false,
         },
+        // optional: keep baseline ref only if you still want drift guarding
+        // lockBaselineRef: { ...prevState.lockBaselineRef, [noteId]: finalLockedSvgTop },
         selectedNoteId: null,
       }));
 
+      // reset delta origin for next lock-cycle
       this.heightSnapshotRef.set(noteId, 0);
       return;
     }
 
-    // Commit between 250 and 600
     if (dynamicHeight > 250) {
       const finalTop = baseOffset + finalDragY;
 
-      console.log(`[DRAG_END] ===== COMMITTING 250-600 =====`);
-      console.log(`[DRAG_END] finalTop: ${finalTop}`);
+      const prevOffset = this.state.dragOffsetY[noteId] || 0;
+      const handoffAnchor = this.state.unlockHandoffAnchor?.[noteId];
+
+      const baseTopBefore = (baseOffset ?? 0) - 10;
+      const baseTopAfter = finalTop - 10;
+
+      const usedHandoffThisDrag = handoffAnchor !== undefined;
+
+      const lastLiveSvgTop = usedHandoffThisDrag
+        ? baseTopBefore + handoffAnchor + finalDragY * 2 // if you observed *2 works better
+        : baseTopBefore + prevOffset + finalDragY;
+
+      const requiredOffsetAfterCommit = lastLiveSvgTop - baseTopAfter;
+      const defaultAccumulatedOffset = prevOffset + finalDragY;
+
+      const nextOffset = usedHandoffThisDrag
+        ? requiredOffsetAfterCommit
+        : defaultAccumulatedOffset;
+
       console.log(
-        `[DRAG_END] Previous dragOffsetY: ${
-          this.state.dragOffsetY[noteId] || 0
-        }`
+        `[DRAG_END] ===== COMMITTING 250-600 (continuity-safe) =====`
+      );
+      console.log(`[DRAG_END] noteId: ${noteId}`);
+      console.log(`[DRAG_END] dynamicHeight: ${dynamicHeight}`);
+      console.log(`[DRAG_END] baseOffset (pre): ${baseOffset}`);
+      console.log(`[DRAG_END] finalDragY: ${finalDragY}`);
+      console.log(`[DRAG_END] finalTop (post): ${finalTop}`);
+      console.log(`[DRAG_END] baseTopBefore: ${baseTopBefore}`);
+      console.log(`[DRAG_END] baseTopAfter: ${baseTopAfter}`);
+      console.log(`[DRAG_END] prevOffset: ${prevOffset}`);
+      console.log(`[DRAG_END] handoffAnchor: ${handoffAnchor}`);
+      console.log(`[DRAG_END] usedHandoffThisDrag: ${usedHandoffThisDrag}`);
+      console.log(`[DRAG_END] lastLiveSvgTop: ${lastLiveSvgTop}`);
+      console.log(
+        `[DRAG_END] requiredOffsetAfterCommit: ${requiredOffsetAfterCommit}`
       );
       console.log(
-        `[DRAG_END] New dragOffsetY: ${
-          (this.state.dragOffsetY[noteId] || 0) + finalDragY
-        }`
+        `[DRAG_END] defaultAccumulatedOffset: ${defaultAccumulatedOffset}`
       );
-      console.log(
-        `[DRAG_END] lockedSvgTopY (will remain): ${this.state.lockedSvgTopY[noteId]}`
-      );
+      console.log(`[DRAG_END] nextOffset (chosen): ${nextOffset}`);
 
       this.setState((prevState) => ({
         finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
@@ -266,7 +323,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         dragY: { ...prevState.dragY, [noteId]: 0 },
         dragOffsetY: {
           ...prevState.dragOffsetY,
-          [noteId]: (prevState.dragOffsetY[noteId] || 0) + finalDragY,
+          [noteId]: nextOffset,
         },
         selectedNoteId: null,
         unlockHandoffAnchor: {
