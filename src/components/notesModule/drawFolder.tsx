@@ -14,6 +14,8 @@ interface FilesDrawState {
   lockedDragY: Record<string, number>;
   svgTop: Record<string, number>;
   lockedSvgTopY: Record<string, number>;
+  unlockHandoffAnchor: Record<string, number | undefined>;
+  unlockInProgress: Record<string, boolean>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -27,6 +29,8 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     lockedDragY: {},
     svgTop: {},
     lockedSvgTopY: {},
+    unlockHandoffAnchor: {},
+    unlockInProgress: {},
   };
 
   heightLockRef = new Map<string, boolean>();
@@ -40,9 +44,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const committed = this.state.finalHeight[noteId] ?? 50;
     if (committed < 600) {
       this.heightSnapshotRef.delete(noteId);
-      this.setState((prev) => ({
-        lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
-      }));
     }
   };
 
@@ -65,31 +66,50 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       heightSnapshotRef250: this.heightSnapshotRef250.get(noteId),
     });
 
-    // If we were in 600-lock and now dropped below 600: unlock cleanly
     if (this.heightSnapshotRef.has(noteId) && currentHeight < 600) {
-      this.heightSnapshotRef.delete(noteId);
-
       console.log(`[DRAG] ===== UNLOCKING FROM 600 =====`);
-      console.log(
-        `[DRAG] Before unlock - lockedDragY: ${this.state.lockedDragY[noteId]}`
-      );
-      console.log(
-        `[DRAG] Before unlock - dragOffsetY: ${this.state.dragOffsetY[noteId]}`
-      );
-      console.log(
-        `[DRAG] Before unlock - lockedSvgTopY: ${this.state.lockedSvgTopY[noteId]}`
-      );
 
-      const lockedAnchor = this.state.lockedDragY[noteId] || 0;
+      const finalHeightCommitted =
+        this.state.finalHeight[noteId] !== undefined &&
+        this.state.finalHeight[noteId] >= 600;
 
-      console.log(
-        `[DRAG] Transferring lockedAnchor: ${lockedAnchor} to dragOffsetY`
-      );
+      // Only compute handoff when we are truly committed at 600.
+      if (finalHeightCommitted) {
+        const currentLockedSvgTop = this.state.lockedSvgTopY[noteId];
+        if (currentLockedSvgTop != null) {
+          const currentBaseTop = (this.state.topOffsetY[noteId] ?? 0) - 10;
+          const handoffAnchor = currentLockedSvgTop - currentBaseTop;
 
-      this.setState((prev) => ({
-        dragOffsetY: { ...prev.dragOffsetY, [noteId]: lockedAnchor },
-        lockedDragY: { ...prev.lockedDragY, [noteId]: 0 },
-      }));
+          console.log(
+            `[DRAG] Handoff: baseTop=${currentBaseTop}, lockedSvgTop=${currentLockedSvgTop}, handoff=${handoffAnchor}`
+          );
+
+          this.setState((prev) => ({
+            unlockHandoffAnchor: {
+              ...(prev.unlockHandoffAnchor || {}),
+              [noteId]: handoffAnchor,
+            },
+            unlockInProgress: {
+              ...(prev.unlockInProgress || {}),
+              [noteId]: true,
+            },
+          }));
+        }
+      } else {
+        // Not committed: ensure no stale handoff affects active drag path
+        this.setState((prev) => ({
+          unlockHandoffAnchor: {
+            ...(prev.unlockHandoffAnchor || {}),
+            // delete key by omission later; optional no-op here
+          },
+          unlockInProgress: {
+            ...(prev.unlockInProgress || {}),
+            [noteId]: false,
+          },
+        }));
+      }
+
+      this.heightSnapshotRef.delete(noteId);
     }
 
     if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
@@ -101,16 +121,21 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         (this.state.dragOffsetY[noteId] || 0) +
         dragY;
 
-      console.log(`  ENTER 600 LOCK:`);
-      console.log(`    offsetAnchor:`, offsetAnchor);
-      console.log(`    visualSvgTop (snapshot):`, visualSvgTop);
-      console.log(`    topOffsetY:`, this.state.topOffsetY[noteId] ?? 0);
-      console.log(`    dragOffsetY:`, this.state.dragOffsetY[noteId] || 0);
+      console.log(`ENTER 600 LOCK:`);
+      console.log(`offsetAnchor:`, offsetAnchor);
+      console.log(`visualSvgTop (snapshot):`, visualSvgTop);
+      console.log(`topOffsetY:`, this.state.topOffsetY[noteId] ?? 0);
+      console.log(`dragOffsetY:`, this.state.dragOffsetY[noteId] || 0);
 
       this.heightSnapshotRef.set(noteId, info.offset.y);
 
       this.setState((prev) => ({
         ...prev,
+        unlockHandoffAnchor: {
+          ...(prev.unlockHandoffAnchor || {}),
+          [noteId]: undefined,
+        },
+        unlockInProgress: { ...(prev.unlockInProgress || {}), [noteId]: false },
         dragY: { ...prev.dragY, [noteId]: info.offset.y },
         lockedDragY: { ...prev.lockedDragY, [noteId]: offsetAnchor },
         lockedSvgTopY: { ...prev.lockedSvgTopY, [noteId]: visualSvgTop },
@@ -200,7 +225,14 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           ...prevState.lockedSvgTopY,
           [noteId]: finalLockedSvgTop,
         },
-
+        unlockHandoffAnchor: {
+          ...(prevState.unlockHandoffAnchor || {}),
+          [noteId]: undefined,
+        },
+        unlockInProgress: {
+          ...(prevState.unlockInProgress || {}),
+          [noteId]: false,
+        },
         selectedNoteId: null,
       }));
 
@@ -237,6 +269,14 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           [noteId]: (prevState.dragOffsetY[noteId] || 0) + finalDragY,
         },
         selectedNoteId: null,
+        unlockHandoffAnchor: {
+          ...(prevState.unlockHandoffAnchor || {}),
+          [noteId]: undefined,
+        },
+        unlockInProgress: {
+          ...(prevState.unlockInProgress || {}),
+          [noteId]: false,
+        },
       }));
       return;
     }
@@ -248,6 +288,14 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       finalHeight: { ...prevState.finalHeight, [noteId]: 50 },
       topOffsetY: { ...prevState.topOffsetY, [noteId]: originalOffset },
       dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 },
+      unlockHandoffAnchor: {
+        ...(prevState.unlockHandoffAnchor || {}),
+        [noteId]: undefined,
+      },
+      unlockInProgress: {
+        ...(prevState.unlockInProgress || {}),
+        [noteId]: false,
+      },
       selectedNoteId: null,
     }));
     this.heightLockRef.set(noteId, false);
@@ -375,43 +423,46 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
 
                   const baseTop = topOffset - 10;
 
-                  const svgTop = committed600
+                  // Guards
+                  const finalHeightCommitted =
+                    (this.state.finalHeight[note.id] ?? undefined) !==
+                    undefined;
+                  const hasLockedSvg =
+                    this.state.lockedSvgTopY[note.id] !== undefined;
+                  const unlockingNow = !!this.state.unlockInProgress?.[note.id];
+                  const handoffAnchor =
+                    this.state.unlockHandoffAnchor?.[note.id];
+
+                  const allowLockedWhileDragging =
+                    committed600 && finalHeightCommitted;
+
+                  const useLiveContinuity =
+                    isSelected &&
+                    !allowLockedWhileDragging &&
+                    unlockingNow &&
+                    hasLockedSvg;
+
+                  const useHandoff =
+                    isSelected &&
+                    !allowLockedWhileDragging &&
+                    !useLiveContinuity &&
+                    handoffAnchor !== undefined;
+
+                  // Final selection
+                  const svgTop = allowLockedWhileDragging
                     ? isSelected
                       ? this.state.lockedSvgTopY[note.id] + dragY
                       : this.state.lockedSvgTopY[note.id]
                     : isSelected
-                    ? baseTop + anchor + dragY
-                    : baseTop + anchor;
+                    ? useLiveContinuity
+                      ? this.state.lockedSvgTopY[note.id] + dragY // only during unlock frame
+                      : useHandoff
+                      ? baseTop + handoffAnchor + dragY // post-unlock bridge
+                      : baseTop + anchor + dragY // unified live math
+                    : baseTop + anchor; // idle
 
                   const whiteTop = topOffset + 5;
                   const shadowTop = topOffset + 3.5;
-
-                  console.log(`[RENDER] ===== Rendering note ${note.id} =====`);
-                  console.log(`[RENDER] isSelected: ${isSelected}`);
-                  console.log(
-                    `[RENDER] finalHeight: ${this.state.finalHeight[note.id]}`
-                  );
-                  console.log(`[RENDER] committed600: ${committed600}`);
-                  console.log(`[RENDER] isLocked600: ${isLocked600}`);
-                  console.log(`[RENDER] lockedAnchor: ${lockedAnchor}`);
-                  console.log(`[RENDER] offsetAnchor: ${offsetAnchor}`);
-                  console.log(`[RENDER] anchor: ${anchor}`);
-                  console.log(`[RENDER] topOffset: ${topOffset}`);
-                  console.log(`[RENDER] baseTop: ${baseTop}`);
-                  console.log(`[RENDER] dragY: ${dragY}`);
-                  console.log(
-                    `[RENDER] lockedSvgTopY: ${
-                      this.state.lockedSvgTopY[note.id]
-                    }`
-                  );
-                  console.log(
-                    `[RENDER] svgTop calculation:`,
-                    committed600
-                      ? "using lockedSvgTopY"
-                      : "using baseTop + anchor + dragY"
-                  );
-                  console.log(`[RENDER] svgTop final value: ${svgTop}`);
-                  console.log(`[RENDER] =====================================`);
 
                   // Corrected z-index logic for sub-notes, stacked below group note but above each other
                   const noteZIndexBase =
