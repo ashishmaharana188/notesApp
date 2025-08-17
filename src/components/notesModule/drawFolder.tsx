@@ -174,7 +174,12 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       const finalLockedSvgTop = snapshotSvgTop + deltaSinceLock;
 
       const snappedSvgTop = newTopOffset - 10;
-      const requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
+      let requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
+
+      if (requiredLockedDragY === 0) {
+        // Use a small non-zero value to maintain lock state
+        requiredLockedDragY = 1;
+      }
 
       console.log(`[DRAG_END] ===== COMMITTING 600 =====`);
       console.log(`[DRAG_END] finalLockedSvgTop: ${finalLockedSvgTop}`);
@@ -371,7 +376,9 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                   const baseTop = topOffset - 10;
 
                   const svgTop = committed600
-                    ? this.state.lockedSvgTopY[note.id]
+                    ? isSelected
+                      ? this.state.lockedSvgTopY[note.id] + dragY
+                      : this.state.lockedSvgTopY[note.id]
                     : isSelected
                     ? baseTop + anchor + dragY
                     : baseTop + anchor;
