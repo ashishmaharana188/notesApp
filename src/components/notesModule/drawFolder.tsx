@@ -379,12 +379,12 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     const { notes } = this.props;
 
     const groupMap = new Map<string, notesReducerIntf[]>();
-    notes.forEach(note => {
-        const firstChar = (note.title.charAt(0) || "A").toUpperCase();
-        if (!groupMap.has(firstChar)) {
-            groupMap.set(firstChar, []);
-        }
-        groupMap.get(firstChar)!.push(note);
+    notes.forEach((note) => {
+      const firstChar = (note.title.charAt(0) || "A").toUpperCase();
+      if (!groupMap.has(firstChar)) {
+        groupMap.set(firstChar, []);
+      }
+      groupMap.get(firstChar)!.push(note);
     });
 
     const groupArray = Array.from(groupMap.entries());
@@ -535,7 +535,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         animate={{
                           y: isSelected ? dragY : 0,
                         }}
-                        transition={{ duration: 0.1 }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
@@ -599,7 +598,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
                         animate={{ y: isSelected ? dragY : 0 }}
-                        transition={{ duration: 0.1 }}
                         style={{
                           top: `${whiteTop}px`,
                           height: `${finalHeight}px`,
@@ -612,7 +610,6 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                         animate={{ y: isSelected ? dragY : 0 }}
-                        transition={{ duration: 0.1 }}
                         style={{
                           top: `${shadowTop}px`,
                           height: `${finalHeight}px`,
