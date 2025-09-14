@@ -1,4 +1,0 @@
-User case checks:
-
-1. User locks at bewlo 600px, then drags above 600px and releases to lock at 600px. Then user drags below 600px and locks below 600px. In next step when user drags above 600px again and locks at 600px, the svgDiv top height locks at the area the drag was left instead of falling back like earlier. Dragging below nad locking keeps the gap built upon last step, dragging above 600px and locking increases the gap more                                                                                                                                   │
-╰─────────────────────────────
