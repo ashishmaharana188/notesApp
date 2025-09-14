@@ -553,10 +553,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         }
                         dragConstraints={{ top: -1000, bottom: 1000 }}
                         dragElastic={0.2}
-                        dragTransition={{
-                          bounceStiffness: 600,
-                          bounceDamping: 20,
-                        }}
+                        dragTransition={{ power: 0 }}
                         onDragStart={() => this.handleDragStart(note)}
                         onDrag={(event, info) => this.handleDrag(note, info)}
                         onDragEnd={(e, info) => this.handleDragEnd(note, info)}
