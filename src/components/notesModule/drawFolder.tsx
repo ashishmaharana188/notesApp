@@ -231,7 +231,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
       let requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
       if (requiredLockedDragY === 0) requiredLockedDragY = 1;
 
-      const finalLockedSvgTop = snapshotSvgTopFromEnter + requiredLockedDragY;
+      const finalLockedSvgTop = 225; // Hardcoded target for svgTop when locked at 600px
 
       console.log(`[DRAG_END] ===== COMMITTING 600 (strict snapshot) =====`);
       console.log(`[DRAG_END] finalLockedSvgTop: ${finalLockedSvgTop}`);
@@ -245,7 +245,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
         topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
         dragY: { ...prevState.dragY, [noteId]: 0 },
-        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 },
+        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 }, // Reset dragOffsetY as it's a fixed target
         lockedDragY: {
           ...prevState.lockedDragY,
           [noteId]: requiredLockedDragY,
@@ -263,8 +263,10 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
           ...(prevState.unlockInProgress || {}),
           [noteId]: false,
         },
-        // optional: keep baseline ref only if you still want drift guarding
-        // lockBaselineRef: { ...prevState.lockBaselineRef, [noteId]: finalLockedSvgTop },
+        lockBaselineRef: {
+          ...prevState.lockBaselineRef,
+          [noteId]: finalLockedSvgTop,
+        },
         selectedNoteId: null,
       }));
 
