@@ -535,6 +535,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         animate={{
                           y: isSelected ? dragY : 0,
                         }}
+                        transition={{ y: { type: false } }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
@@ -598,6 +599,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
                         animate={{ y: isSelected ? dragY : 0 }}
+                        transition={{ y: { type: false } }}
                         style={{
                           top: `${whiteTop}px`,
                           height: `${finalHeight}px`,
@@ -610,6 +612,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                         animate={{ y: isSelected ? dragY : 0 }}
+                        transition={{ y: { type: false } }}
                         style={{
                           top: `${shadowTop}px`,
                           height: `${finalHeight}px`,
