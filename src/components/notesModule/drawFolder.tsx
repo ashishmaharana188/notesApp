@@ -378,18 +378,16 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
   render() {
     const { notes } = this.props;
 
-    const groupedNotes: Record<string, notesReducerIntf[]> = notes.reduce(
-      (acc, note) => {
+    const groupMap = new Map<string, notesReducerIntf[]>();
+    notes.forEach(note => {
         const firstChar = (note.title.charAt(0) || "A").toUpperCase();
-        (acc[firstChar] ??= []).push(note);
-        return acc;
-      },
-      {} as Record<string, notesReducerIntf[]>
-    );
+        if (!groupMap.has(firstChar)) {
+            groupMap.set(firstChar, []);
+        }
+        groupMap.get(firstChar)!.push(note);
+    });
 
-    const groupArray = Object.entries(groupedNotes).sort(([a], [b]) =>
-      a.localeCompare(b)
-    );
+    const groupArray = Array.from(groupMap.entries());
 
     let nextZ = 1000;
     let yCursor = 820;
@@ -537,7 +535,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                         animate={{
                           y: isSelected ? dragY : 0,
                         }}
-                        transition={{ duration: -1 }}
+                        transition={{ duration: 0.1 }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
@@ -601,7 +599,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
                         animate={{ y: isSelected ? dragY : 0 }}
-                        transition={{ duration: -1 }}
+                        transition={{ duration: 0.1 }}
                         style={{
                           top: `${whiteTop}px`,
                           height: `${finalHeight}px`,
@@ -614,7 +612,7 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                       <motion.div
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
                         animate={{ y: isSelected ? dragY : 0 }}
-                        transition={{ duration: -1 }}
+                        transition={{ duration: 0.1 }}
                         style={{
                           top: `${shadowTop}px`,
                           height: `${finalHeight}px`,
