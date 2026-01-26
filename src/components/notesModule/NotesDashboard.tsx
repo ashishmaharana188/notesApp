@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useOutletContext } from "react-router-dom";
+import { useLocation } from "react-router-dom"; // Removed useOutletContext as we don't need to manually handle layout anymore
 import AddNoteButton from "./AddNoteButton";
 import NotesTimeline from "./NotesTimeLine";
 import NotesTimelineFilter from "./NotesTimelineFilter";
@@ -7,10 +7,9 @@ import { NotesTimelineRef } from "../../TS_INTERFACE/gInterface";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NotesDashboardPage = () => {
-  const { isSidebarOpen, sidebarWidth } = useOutletContext<{
-    isSidebarOpen: boolean;
-    sidebarWidth: number;
-  }>(); // Access sidebar state
+  // REMOVED: const { isSidebarOpen, sidebarWidth } ...
+  // We no longer need to watch the sidebar here; the parent handles the layout.
+
   const location = useLocation();
   const selectedSlot = location.state?.selectedSlot;
   const timelineRef = useRef<NotesTimelineRef>(null);
@@ -51,13 +50,9 @@ const NotesDashboardPage = () => {
   }, []);
 
   return (
-    <div
-      className="h-full bg-grey transition-all duration-300"
-      style={{
-        marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0px",
-        width: isSidebarOpen ? `calc(100% - ${sidebarWidth}px)` : "100%",
-      }}
-    >
+    // FIX: Removed style={{ marginLeft: ... }}
+    // Replaced with 'w-full' to simply fill the container the parent provides.
+    <div className="h-full w-full bg-grey transition-all duration-300">
       <AnimatePresence>
         {visible && (
           <motion.p

@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { connect } from "react-redux";
-import { motion } from "framer-motion";
+import { motion, PanInfo } from "framer-motion";
 import { NoteListProps, notesReducerIntf } from "../../TS_INTERFACE/gInterface";
 
 // Define FilesDrawState interface if not already in gInterface
@@ -8,6 +8,15 @@ interface FilesDrawState {
   selectedNoteId: string | null;
   dragY: Record<string, number>;
   finalHeight: Record<string, number>;
+  topOffsetY: Record<string, number>;
+  initialTopOffsetY: Record<string, number>;
+  dragOffsetY: Record<string, number>;
+  lockedDragY: Record<string, number>;
+  svgTop: Record<string, number>;
+  lockedSvgTopY: Record<string, number>;
+  unlockHandoffAnchor: Record<string, number | undefined>;
+  unlockInProgress: Record<string, boolean>;
+  lockBaselineRef: Record<string, number>;
 }
 
 class FilesDraw extends Component<NoteListProps, FilesDrawState> {
@@ -15,77 +24,375 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
     selectedNoteId: null,
     dragY: {},
     finalHeight: {},
+    topOffsetY: {},
+    initialTopOffsetY: {},
+    dragOffsetY: {},
+    lockedDragY: {},
+    svgTop: {},
+    lockedSvgTopY: {},
+    unlockHandoffAnchor: {},
+    unlockInProgress: {},
+    lockBaselineRef: {},
   };
 
-  handleDragStart = (noteId: string) => {
-    this.setState({ selectedNoteId: noteId });
-  };
+  heightLockRef = new Map<string, boolean>();
+  heightSnapshotRef = new Map<string, number>();
+  heightSnapshotRef250 = new Map<string, number>();
 
-  handleDrag = (noteId: string, info: any) => {
-    const currentDragY = info.offset.y;
-    const currentHeight = this.getDynamicHeight(noteId, currentDragY);
-    if (currentHeight < 600) {
-      this.setState((prevState) => ({
-        dragY: { ...prevState.dragY, [noteId]: currentDragY },
-        finalHeight: { ...prevState.finalHeight, [noteId]: currentHeight },
-      }));
-    } else if (this.state.finalHeight[noteId] !== 600) {
-      this.setState((prevState) => ({
-        finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
-        dragY: { ...prevState.dragY, [noteId]: currentDragY }, // Keep last dragY
-      }));
+  handleDragStart = (note: notesReducerIntf) => {
+    this.setState({ selectedNoteId: note.id });
+
+    const noteId = note.id;
+    const committed = this.state.finalHeight[noteId] ?? 50;
+    if (committed < 600) {
+      this.heightSnapshotRef.delete(noteId);
     }
   };
 
-  handleDragEnd = (noteId: string) => {
-    const dragY = this.state.dragY[noteId] || 0;
-    const finalHeight = this.getDynamicHeight(noteId, dragY);
-    this.setState((prevState) => ({
-      selectedNoteId: dragY === 0 ? null : this.state.selectedNoteId,
-      dragY: { ...prevState.dragY, [noteId]: 0 },
-      finalHeight: {
-        ...prevState.finalHeight,
-        [noteId]: finalHeight >= 600 ? 600 : finalHeight,
-      },
-    }));
+  handleDrag = (note: notesReducerIntf, info: PanInfo) => {
+    const noteId = note.id;
+    const dragY = info.offset.y;
+    const currentHeight = this.calculateDynamicHeight(noteId, dragY);
+
+    console.log(`[DRAG] ===== handleDrag START =====`);
+    console.log(`[DRAG] noteId: ${noteId}`);
+    console.log(`[DRAG] dragY: ${dragY}`);
+    console.log(`[DRAG] currentHeight: ${currentHeight}`);
+    console.log(`[DRAG] State snapshot:`, {
+      finalHeight: this.state.finalHeight[noteId],
+      lockedSvgTopY: this.state.lockedSvgTopY[noteId],
+      lockedDragY: this.state.lockedDragY[noteId],
+      dragOffsetY: this.state.dragOffsetY[noteId],
+      topOffsetY: this.state.topOffsetY[noteId],
+      heightSnapshotRef: this.heightSnapshotRef.get(noteId),
+      heightSnapshotRef250: this.heightSnapshotRef250.get(noteId),
+    });
+
+    if (this.heightSnapshotRef.has(noteId) && currentHeight < 600) {
+      console.log(`[DRAG] ===== UNLOCKING FROM 600 =====`);
+
+      const finalHeightCommitted =
+        this.state.finalHeight[noteId] !== undefined &&
+        this.state.finalHeight[noteId] >= 600;
+
+      // Only compute handoff when we are truly committed at 600.
+      if (finalHeightCommitted) {
+        const currentLockedSvgTop = this.state.lockedSvgTopY[noteId];
+        if (currentLockedSvgTop != null) {
+          const currentBaseTop = (this.state.topOffsetY[noteId] ?? 0) - 10;
+          const handoffAnchor = currentLockedSvgTop - currentBaseTop;
+
+          console.log(
+            `[DRAG] Handoff: baseTop=${currentBaseTop}, lockedSvgTop=${currentLockedSvgTop}, handoff=${handoffAnchor}`
+          );
+
+          this.setState((prev) => ({
+            unlockHandoffAnchor: {
+              ...(prev.unlockHandoffAnchor || {}),
+              [noteId]: handoffAnchor,
+            },
+            unlockInProgress: {
+              ...(prev.unlockInProgress || {}),
+              [noteId]: true,
+            },
+          }));
+        }
+      } else {
+        // Not committed: ensure no stale handoff affects active drag path
+        this.setState((prev) => ({
+          unlockHandoffAnchor: {
+            ...(prev.unlockHandoffAnchor || {}),
+            // delete key by omission later; optional no-op here
+          },
+          unlockInProgress: {
+            ...(prev.unlockInProgress || {}),
+            [noteId]: false,
+          },
+        }));
+      }
+
+      this.heightSnapshotRef.delete(noteId);
+    }
+
+    if (currentHeight >= 600 && !this.heightSnapshotRef.has(noteId)) {
+      const offsetAnchor = this.state.dragOffsetY[noteId] || 0;
+
+      const visualSvgTop =
+        (this.state.topOffsetY[noteId] ?? 0) -
+        10 +
+        (this.state.dragOffsetY[noteId] || 0) +
+        dragY;
+
+      const ref = this.state.lockBaselineRef[noteId];
+      const threshold = 5;
+      let incomingLockedTop = visualSvgTop;
+
+      if (ref !== undefined) {
+        const drift = Math.abs(incomingLockedTop - ref);
+        console.log(
+          `[LOCK DRIFT] enter600: ref=${ref}, incoming=${incomingLockedTop}, drift=${drift}`
+        );
+        if (drift > threshold) {
+          console.log(`[LOCK DRIFT] enter600: snapping to ref`);
+          incomingLockedTop = ref;
+        }
+      } else {
+        console.log(
+          `[LOCK DRIFT] enter600: setting baseline ref to incoming=${incomingLockedTop}`
+        );
+      }
+
+      this.heightSnapshotRef.set(noteId, info.offset.y);
+
+      this.setState((prev) => ({
+        ...prev,
+        unlockHandoffAnchor: {
+          ...(prev.unlockHandoffAnchor || {}),
+          [noteId]: undefined,
+        },
+        unlockInProgress: { ...(prev.unlockInProgress || {}), [noteId]: false },
+        dragY: { ...prev.dragY, [noteId]: info.offset.y },
+        lockedDragY: { ...prev.lockedDragY, [noteId]: offsetAnchor },
+        lockedSvgTopY: { ...prev.lockedSvgTopY, [noteId]: incomingLockedTop },
+        lockBaselineRef: {
+          ...prev.lockBaselineRef,
+          [noteId]:
+            prev.lockBaselineRef[noteId] !== undefined
+              ? prev.lockBaselineRef[noteId]
+              : incomingLockedTop,
+        },
+      }));
+
+      return;
+    }
+
+    if (
+      currentHeight > 250 &&
+      currentHeight < 600 &&
+      !this.heightSnapshotRef250.has(noteId)
+    ) {
+      this.heightSnapshotRef250.set(noteId, info.offset.y);
+    }
+
+    // Normal drag position update
+    this.setState({
+      dragY: { ...this.state.dragY, [noteId]: info.offset.y },
+    });
   };
 
-  getDynamicHeight = (noteId: string, dragY: number): number => {
+  handleDragEnd = (note: notesReducerIntf, info: PanInfo) => {
+    const noteId = note.id;
+    const finalDragY = info.offset.y;
+
+    const snapshotY600 = this.heightSnapshotRef.get(noteId);
+
+    const dynamicHeight = this.calculateDynamicHeight(
+      noteId,
+      snapshotY600 ?? finalDragY
+    );
+    const baseOffset =
+      this.state.topOffsetY[noteId] ??
+      this.state.initialTopOffsetY[noteId] ??
+      0;
+
+    console.log(`[DRAG_END] ===== handleDragEnd START =====`);
+    console.log(`[DRAG_END] noteId: ${noteId}`);
+    console.log(`[DRAG_END] finalDragY: ${finalDragY}`);
+    console.log(`[DRAG_END] snapshotY600: ${snapshotY600}`);
+    console.log(`[DRAG_END] dynamicHeight: ${dynamicHeight}`);
+    console.log(`[DRAG_END] baseOffset: ${baseOffset}`);
+    console.log(`[DRAG_END] Pre-commit state:`, {
+      finalHeight: this.state.finalHeight[noteId],
+      lockedSvgTopY: this.state.lockedSvgTopY[noteId],
+      lockedDragY: this.state.lockedDragY[noteId],
+      dragOffsetY: this.state.dragOffsetY[noteId],
+      topOffsetY: this.state.topOffsetY[noteId],
+    });
+
+    if (dynamicHeight >= 600) {
+      const newTopOffset = 515;
+      const topOffsetBefore = this.state.topOffsetY[noteId] ?? 0;
+
+      // Prefer the visual snapshot captured at ENTER 600 over any fallback.
+      const snapshotSvgTopFromEnter =
+        this.state.lockedSvgTopY[noteId] !== undefined
+          ? this.state.lockedSvgTopY[noteId]
+          : (this.state.topOffsetY[noteId] ?? 0) - 10;
+
+      const snapshotAtLockY = this.heightSnapshotRef.get(noteId); // PanInfo.offset.y captured on ENTER 600
+      const deltaSinceLock =
+        snapshotAtLockY !== undefined && snapshotAtLockY !== null
+          ? (info.offset.y ?? 0) - snapshotAtLockY
+          : info.offset.y ?? 0;
+
+      // Strict commit: snapshotSvgTop + deltaSinceLock
+
+      const snappedSvgTop = newTopOffset - 10;
+      let requiredLockedDragY = snappedSvgTop - (topOffsetBefore - 10);
+      if (requiredLockedDragY === 0) requiredLockedDragY = 1;
+
+      const finalLockedSvgTop = 225; // Hardcoded target for svgTop when locked at 600px
+
+      console.log(`[DRAG_END] ===== COMMITTING 600 (strict snapshot) =====`);
+      console.log(`[DRAG_END] finalLockedSvgTop: ${finalLockedSvgTop}`);
+      console.log(`[DRAG_END] requiredLockedDragY: ${requiredLockedDragY}`);
+      console.log(`[DRAG_END] deltaSinceLock: ${deltaSinceLock}`);
+      console.log(
+        `[DRAG_END] snapshotSvgTop (ENTER600 or baseTop): ${snapshotSvgTopFromEnter}`
+      );
+
+      this.setState((prevState) => ({
+        finalHeight: { ...prevState.finalHeight, [noteId]: 600 },
+        topOffsetY: { ...prevState.topOffsetY, [noteId]: newTopOffset },
+        dragY: { ...prevState.dragY, [noteId]: 0 },
+        dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 }, // Reset dragOffsetY as it's a fixed target
+        lockedDragY: {
+          ...prevState.lockedDragY,
+          [noteId]: requiredLockedDragY,
+        },
+        lockedSvgTopY: {
+          ...prevState.lockedSvgTopY,
+          [noteId]: finalLockedSvgTop,
+        },
+        // keep previously added fields intact
+        unlockHandoffAnchor: {
+          ...(prevState.unlockHandoffAnchor || {}),
+          [noteId]: undefined,
+        },
+        unlockInProgress: {
+          ...(prevState.unlockInProgress || {}),
+          [noteId]: false,
+        },
+        lockBaselineRef: {
+          ...prevState.lockBaselineRef,
+          [noteId]: finalLockedSvgTop,
+        },
+        selectedNoteId: null,
+      }));
+
+      // reset delta origin for next lock-cycle
+      this.heightSnapshotRef.set(noteId, 0);
+      return;
+    }
+
+    if (dynamicHeight > 250) {
+      const finalTop = baseOffset + finalDragY;
+
+      const prevOffset = this.state.dragOffsetY[noteId] || 0;
+      const handoffAnchor = this.state.unlockHandoffAnchor?.[noteId];
+
+      const baseTopBefore = (baseOffset ?? 0) - 10;
+      const baseTopAfter = finalTop - 10;
+
+      const usedHandoffThisDrag = handoffAnchor !== undefined;
+
+      const lastLiveSvgTop = usedHandoffThisDrag
+        ? baseTopBefore + handoffAnchor + finalDragY * 2 // if you observed *2 works better
+        : baseTopBefore + prevOffset + finalDragY;
+
+      const requiredOffsetAfterCommit = lastLiveSvgTop - baseTopAfter;
+      const defaultAccumulatedOffset = prevOffset + finalDragY;
+
+      const nextOffset = usedHandoffThisDrag
+        ? requiredOffsetAfterCommit
+        : defaultAccumulatedOffset;
+
+      console.log(
+        `[DRAG_END] ===== COMMITTING 250-600 (continuity-safe) =====`
+      );
+      console.log(`[DRAG_END] noteId: ${noteId}`);
+      console.log(`[DRAG_END] dynamicHeight: ${dynamicHeight}`);
+      console.log(`[DRAG_END] baseOffset (pre): ${baseOffset}`);
+      console.log(`[DRAG_END] finalDragY: ${finalDragY}`);
+      console.log(`[DRAG_END] finalTop (post): ${finalTop}`);
+      console.log(`[DRAG_END] baseTopBefore: ${baseTopBefore}`);
+      console.log(`[DRAG_END] baseTopAfter: ${baseTopAfter}`);
+      console.log(`[DRAG_END] prevOffset: ${prevOffset}`);
+      console.log(`[DRAG_END] handoffAnchor: ${handoffAnchor}`);
+      console.log(`[DRAG_END] usedHandoffThisDrag: ${usedHandoffThisDrag}`);
+      console.log(`[DRAG_END] lastLiveSvgTop: ${lastLiveSvgTop}`);
+      console.log(
+        `[DRAG_END] requiredOffsetAfterCommit: ${requiredOffsetAfterCommit}`
+      );
+      console.log(
+        `[DRAG_END] defaultAccumulatedOffset: ${defaultAccumulatedOffset}`
+      );
+      console.log(`[DRAG_END] nextOffset (chosen): ${nextOffset}`);
+
+      this.setState((prevState) => ({
+        finalHeight: { ...prevState.finalHeight, [noteId]: dynamicHeight },
+        topOffsetY: { ...prevState.topOffsetY, [noteId]: finalTop },
+        dragY: { ...prevState.dragY, [noteId]: 0 },
+        dragOffsetY: {
+          ...prevState.dragOffsetY,
+          [noteId]: nextOffset,
+        },
+        selectedNoteId: null,
+        unlockHandoffAnchor: {
+          ...(prevState.unlockHandoffAnchor || {}),
+          [noteId]: undefined,
+        },
+        unlockInProgress: {
+          ...(prevState.unlockInProgress || {}),
+          [noteId]: false,
+        },
+      }));
+      return;
+    }
+
+    // Commit under 250
+    const originalOffset = this.state.initialTopOffsetY[noteId] || 0;
+    this.setState((prevState) => ({
+      dragY: { ...prevState.dragY, [noteId]: 0 },
+      finalHeight: { ...prevState.finalHeight, [noteId]: 50 },
+      topOffsetY: { ...prevState.topOffsetY, [noteId]: originalOffset },
+      dragOffsetY: { ...prevState.dragOffsetY, [noteId]: 0 },
+      unlockHandoffAnchor: {
+        ...(prevState.unlockHandoffAnchor || {}),
+        [noteId]: undefined,
+      },
+      unlockInProgress: {
+        ...(prevState.unlockInProgress || {}),
+        [noteId]: false,
+      },
+      selectedNoteId: null,
+    }));
+    this.heightLockRef.set(noteId, false);
+    this.heightSnapshotRef.delete(noteId);
+    this.heightSnapshotRef250.delete(noteId);
+  };
+
+  calculateDynamicHeight = (noteId: string, dragY: number): number => {
     const isSelected = noteId === this.state.selectedNoteId;
-    const finalHeight = this.state.finalHeight[noteId] || 30;
-    if (!isSelected || finalHeight >= 600) return finalHeight;
-    const baseHeight = 30;
-    const heightChange = dragY * 1.9;
-    let newHeight = baseHeight + heightChange;
-    return newHeight >= 600 ? 600 : Math.max(30, newHeight);
+    console.log(
+      `calculateDynamicHeight - noteId: ${noteId}, dragY: ${dragY}, isSelected: ${isSelected}`
+    );
+    if (!isSelected) return this.state.finalHeight[noteId] || 50;
+    const baseHeight = this.state.finalHeight[noteId] || 50;
+    const newHeight = baseHeight - dragY * 2;
+
+    console.log(`calculateDynamicHeight - calculated height: ${newHeight}`);
+    return newHeight;
   };
 
   render() {
     const { notes } = this.props;
 
-    const groupedNotes: Record<string, notesReducerIntf[]> = notes.reduce(
-      (acc, note) => {
-        const firstChar = (note.title.charAt(0) || "A").toUpperCase();
-        (acc[firstChar] ??= []).push(note);
-        return acc;
-      },
-      {} as Record<string, notesReducerIntf[]>
-    );
+    const groupMap = new Map<string, notesReducerIntf[]>();
+    notes.forEach((note) => {
+      const firstChar = (note.title.charAt(0) || "A").toUpperCase();
+      if (!groupMap.has(firstChar)) {
+        groupMap.set(firstChar, []);
+      }
+      groupMap.get(firstChar)!.push(note);
+    });
 
-    const groupArray = Object.entries(groupedNotes).sort(([a], [b]) =>
-      a.localeCompare(b)
-    );
+    const groupArray = Array.from(groupMap.entries());
 
-    const totalLayers = groupArray.reduce(
-      (sum, [, g]) => sum + 3 + 2 * g.length,
-      0
-    );
-    let nextZ = totalLayers;
-
-    let yCursor = 814;
-    const HEADER_GAP = 38;
-    const NOTE_SPACING = 25;
-    const SVG_HEIGHT = 140; // SVG div height
+    let nextZ = 1000;
+    let yCursor = 820;
+    const HEADER_GAP = 30;
+    const NOTE_SPACING = 30;
 
     const groupLeftPositions = [300, 650, 950];
     const noteLeftPositions = [570, 860];
@@ -97,70 +404,159 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
         ) : (
           <div className="grid grid-cols-1 grid-rows-1 relative h-[800px] w-[1200px] min-w-[500px] min-h-[928px] mt-0 p-0">
             <div>
-              <div className="absolute rounded-xl border-2 bg-white left-[2%] bottom-[10%] w-1 h-6/7" />
-              <div className="absolute rounded-xl border-2 bg-white right-[2%] bottom-[10%] w-1 h-6/7" />
               <div className="absolute rounded-xl border-2 bg-white right-[0.5%] top-[90%] w-1 h-[10%] rotate-10" />
-              <div className="absolute rounded-sm border-2 w-[100%] top-[90%] bg-white h-2 z-30" />
+              <div className="absolute rounded-sm border-2 w-[100%] top-[90%] bg-white h-4 z-2000" />
               <div className="absolute rounded-xl border-2 bg-white left-[0.5%] top-[90%] w-1 h-[10%] -rotate-10" />
             </div>
             <div className="absolute">
               {groupArray.map(([firstChar, groupNotes], groupIndex) => {
                 const groupTopOffset = yCursor;
-                const groupZIndex = nextZ;
+                const groupZIndexBase = nextZ;
 
                 const groupLeft =
                   groupLeftPositions[groupIndex % groupLeftPositions.length];
 
-                const groupContent = groupNotes.map((note, noteIndex) => {
+                // Corrected z-index for the group note components
+                const groupHeaderZIndex =
+                  groupZIndexBase + 3 * groupNotes.length + 3;
+                const groupCardZIndex =
+                  groupZIndexBase + 3 * groupNotes.length + 2;
+                const groupShadowZIndex =
+                  groupZIndexBase + 3 * groupNotes.length + 1;
+
+                const subNoteContent = groupNotes.map((note, noteIndex) => {
                   const isSelected = note.id === this.state.selectedNoteId;
+
                   const numLabel = String(
                     notes.findIndex((n) => n.id === note.id) + 1
                   ).padStart(3, "0");
-                  const topOffset =
+
+                  const defaultTopOffset =
                     groupTopOffset - HEADER_GAP - noteIndex * NOTE_SPACING;
+
+                  const topOffset =
+                    this.state.topOffsetY[note.id] !== undefined
+                      ? this.state.topOffsetY[note.id]
+                      : defaultTopOffset;
+
+                  if (this.state.topOffsetY[note.id] === undefined) {
+                    this.setState((prevState) => ({
+                      topOffsetY: {
+                        ...prevState.topOffsetY,
+                        [note.id]: topOffset,
+                      },
+                      initialTopOffsetY: {
+                        ...prevState.initialTopOffsetY,
+                        [note.id]: topOffset,
+                      },
+                    }));
+                  }
 
                   const noteLeft =
                     noteLeftPositions[noteIndex % noteLeftPositions.length];
 
-                  const zIndexWhite = groupZIndex - 2 * noteIndex - 1;
-                  const zIndexShadow = zIndexWhite - 1;
-
                   const dragY = this.state.dragY[note.id] || 0;
-                  const svgTop = isSelected
-                    ? topOffset + dragY + 20
-                    : topOffset - 20;
-                  const whiteTop = isSelected
-                    ? topOffset + 30 + dragY
-                    : topOffset; // Dynamic top adjustment
-                  const shadowTop = isSelected ? whiteTop - 2 : topOffset - 2;
-                  const dynamicHeight = this.getDynamicHeight(note.id, dragY);
+
+                  // consider locked if actively locked or finalHeight committed at 600 with locked anchor
+                  const committed600 =
+                    (this.state.finalHeight[note.id] || 0) >= 600 &&
+                    !!this.state.lockedDragY[note.id];
+                  const isLocked600 =
+                    this.heightSnapshotRef.has(note.id) || committed600;
+
+                  // choose anchor consistently
+                  const lockedAnchor = this.state.lockedDragY[note.id];
+                  const offsetAnchor = this.state.dragOffsetY[note.id] || 0;
+                  const anchor = isLocked600
+                    ? lockedAnchor != null
+                      ? lockedAnchor
+                      : offsetAnchor
+                    : offsetAnchor;
+
                   const finalHeight =
-                    this.state.finalHeight[note.id] || dynamicHeight;
+                    isSelected || this.state.finalHeight[note.id] === undefined
+                      ? this.calculateDynamicHeight(note.id, dragY)
+                      : this.state.finalHeight[note.id];
+
+                  const baseTop = topOffset - 10;
+
+                  // Guards
+                  const finalHeightCommitted =
+                    (this.state.finalHeight[note.id] ?? undefined) !==
+                    undefined;
+                  const hasLockedSvg =
+                    this.state.lockedSvgTopY[note.id] !== undefined;
+                  const unlockingNow = !!this.state.unlockInProgress?.[note.id];
+                  const handoffAnchor =
+                    this.state.unlockHandoffAnchor?.[note.id];
+
+                  const allowLockedWhileDragging =
+                    committed600 && finalHeightCommitted;
+
+                  const useLiveContinuity =
+                    isSelected &&
+                    !allowLockedWhileDragging &&
+                    unlockingNow &&
+                    hasLockedSvg;
+
+                  const useHandoff =
+                    isSelected &&
+                    !allowLockedWhileDragging &&
+                    !useLiveContinuity &&
+                    handoffAnchor !== undefined;
+
+                  // Final selection
+                  const svgTop = allowLockedWhileDragging
+                    ? isSelected
+                      ? this.state.lockedSvgTopY[note.id] + dragY
+                      : this.state.lockedSvgTopY[note.id]
+                    : isSelected
+                    ? useLiveContinuity
+                      ? this.state.lockedSvgTopY[note.id] + dragY // only during unlock frame
+                      : useHandoff
+                      ? baseTop + handoffAnchor + dragY // post-unlock bridge
+                      : baseTop + anchor + dragY // unified live math
+                    : baseTop + anchor; // idle
+
+                  const whiteTop = topOffset + 5;
+                  const shadowTop = topOffset + 3.5;
+
+                  // Corrected z-index logic for sub-notes, stacked below group note but above each other
+                  const noteZIndexBase =
+                    groupZIndexBase + (groupNotes.length - 1 - noteIndex) * 3;
+                  const zIndexShadow = noteZIndexBase;
+                  const zIndexSvg = noteZIndexBase + 1;
+                  const zIndexWhite = noteZIndexBase + 2;
 
                   return (
                     <div key={note.id}>
                       <motion.div
                         className="absolute -translate-x-1/2 -translate-y-1/2"
+                        animate={{
+                          y: isSelected ? dragY : 0,
+                        }}
+                        transition={{ y: { type: false } }}
                         style={{
                           top: `${svgTop}px`,
                           left: `${noteLeft}px`,
-                          zIndex: zIndexWhite,
-                          cursor: "grab",
+                          zIndex: zIndexSvg,
+                          cursor: finalHeight < 600 ? "grab" : "default",
                           width: "598px",
                           height: "140px",
                           clipPath:
-                            "polygon(40% 100%, 50% 25%, 50% 0%, 50% 20%, 100% 17%, 95% 18.2%, 100% 50%, 96% 100%)",
+                            "polygon(40% 100%, 50% 25%, 50% 0%, 50% 17%, 90% 20%, 94% 19%, 100% 70%, 90% 100%)",
                         }}
-                        drag="y"
-                        dragConstraints={{ top: -600, bottom: 600 }}
+                        drag={
+                          (this.state.finalHeight[note.id] || 50) < 601
+                            ? "y"
+                            : false
+                        }
+                        dragConstraints={{ top: -1000, bottom: 1000 }}
                         dragElastic={0.2}
-                        dragTransition={{
-                          bounceStiffness: 600,
-                          bounceDamping: 20,
-                        }}
-                        onDragStart={() => this.handleDragStart(note.id)}
-                        onDrag={(e, info) => this.handleDrag(note.id, info)}
-                        onDragEnd={() => this.handleDragEnd(note.id)}
+                        dragTransition={{ power: 0 }}
+                        onDragStart={() => this.handleDragStart(note)}
+                        onDrag={(event, info) => this.handleDrag(note, info)}
+                        onDragEnd={(e, info) => this.handleDragEnd(note, info)}
                       >
                         <svg
                           viewBox="0 0 100 200"
@@ -197,9 +593,10 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           </text>
                         </svg>
                       </motion.div>
-
                       <motion.div
                         className="text-3xl text-black text-center font-bold w-453 bg-white border-2 border-t-0 rounded-xl absolute left-240 -translate-x-1/2 -translate-y-1/2"
+                        animate={{ y: isSelected ? dragY : 0 }}
+                        transition={{ y: { type: false } }}
                         style={{
                           top: `${whiteTop}px`,
                           height: `${finalHeight}px`,
@@ -209,9 +606,10 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                           transform: "rotateX(-5deg)",
                         }}
                       />
-
                       <motion.div
                         className="w-454.5 h-20 absolute left-240 -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                        animate={{ y: isSelected ? dragY : 0 }}
+                        transition={{ y: { type: false } }}
                         style={{
                           top: `${shadowTop}px`,
                           height: `${finalHeight}px`,
@@ -220,70 +618,68 @@ class FilesDraw extends Component<NoteListProps, FilesDrawState> {
                             "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
                         }}
                       />
-
-                      {noteIndex === 0 && (
-                        <>
-                          <div
-                            className="absolute -translate-x-1/2 -translate-y-1/2"
-                            style={{
-                              top: `${groupTopOffset - 23}px`,
-                              left: `${groupLeft}px`,
-                              zIndex: groupZIndex - 1,
-                            }}
-                          >
-                            <svg
-                              viewBox="0 0 400 200"
-                              className="w-[350px] h-[170px]"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M40 130 L80 50 Q90 40,105 40 H320 Q335 40,345 60 L380 130 Z"
-                                fill="black"
-                                stroke="white"
-                                strokeWidth={3}
-                              />
-                              <text
-                                x="120"
-                                y="72"
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                style={{ fill: "white", fontSize: "3.5rem" }}
-                              >
-                                {firstChar}
-                              </text>
-                            </svg>
-                          </div>
-
-                          <div
-                            className="w-453 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
-                            style={{
-                              top: `${groupTopOffset}px`,
-                              left: "600px",
-                              zIndex: groupZIndex,
-                              clipPath:
-                                "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
-                            }}
-                          />
-                          <div
-                            className="w-454 h-20 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
-                            style={{
-                              top: `${groupTopOffset}px`,
-                              left: "600px",
-                              zIndex: groupZIndex - 1,
-                              clipPath:
-                                "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
-                            }}
-                          />
-                        </>
-                      )}
                     </div>
                   );
                 });
 
-                nextZ -= 3 + 2 * groupNotes.length;
+                nextZ -= 3 * groupNotes.length + 3;
                 yCursor -= HEADER_GAP + groupNotes.length * NOTE_SPACING;
 
-                return <div key={firstChar}>{groupContent}</div>;
+                return (
+                  <div key={firstChar}>
+                    <div
+                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        top: `${groupTopOffset - 23}px`,
+                        left: `${groupLeft}px`,
+                        zIndex: groupHeaderZIndex - 1,
+                        clipPath:
+                          "polygon(1% 100%, 20% 20%, 50% 16%, 90% 20%, 85% 20%, 100% 80%, 67% 60%, 0% 60%)",
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 400 200"
+                        className="w-[350px] h-[170px]"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M40 130 L80 50 Q90 40,105 40 H320 Q335 40,345 60 L380 130 Z"
+                          fill="black"
+                          stroke="white"
+                          strokeWidth={3}
+                        />
+                        <text
+                          x="120"
+                          y="72"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          style={{ fill: "white", fontSize: "3.5rem" }}
+                        >
+                          {firstChar}
+                        </text>
+                      </svg>
+                    </div>
+                    <div
+                      className="w-453 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-white border-2 rounded-xl"
+                      style={{
+                        top: `${groupTopOffset}px`,
+                        left: "600px",
+                        zIndex: groupCardZIndex,
+                        clipPath: "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                      }}
+                    />
+                    <div
+                      className="w-454 h-18 absolute -translate-x-1/2 -translate-y-1/2 bg-black border-2 rounded-xl"
+                      style={{
+                        top: `${groupTopOffset}px`,
+                        left: "600px",
+                        zIndex: groupShadowZIndex,
+                        clipPath: "polygon(0% 0%, 100% 0%, 99% 100%, 1% 100%)",
+                      }}
+                    />
+                    {subNoteContent}
+                  </div>
+                );
               })}
             </div>
           </div>

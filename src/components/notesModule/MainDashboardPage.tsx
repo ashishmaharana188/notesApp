@@ -56,19 +56,20 @@ const MainDashboardPage = () => {
         button.removeEventListener("mouseleave", handleMouseLeave);
       }
     };
-  }, [isSidebarOpen]); // Re-run when sidebar state changes
+  }, [isSidebarOpen]);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`bg-[#525b28] text-white h-full cursor-pointer transition-all duration-100 ease-in-out flex flex-col fixed top-0 left-0 z-3000 ${
+        className={`bg-[#525b28] text-white h-full cursor-pointer transition-all duration-100 ease-in-out flex flex-col fixed top-0 left-0 z-[3000] ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full hidden"
         }`}
         style={{ width: `${isSidebarOpen ? sidebarWidth : 0}px` }}
       >
         {isSidebarOpen && (
           <div className="p-6 mt-10 ml-4 flex-1 overflow-y-auto">
+            {/* ... Sidebar Content (Unchanged) ... */}
             <ul
               className={`transition-all duration-300 ${
                 isSidebarOpen && !isHovered
@@ -154,24 +155,32 @@ const MainDashboardPage = () => {
         )}
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col transition-all duration-1000">
+      {/* Main Content Wrapper */}
+      <div
+        className="flex-1 flex flex-col transition-all duration-100 ease-in-out"
+        // FIX 1: Margin Left pushes content when sidebar is open
+        style={{
+          marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0px",
+        }}
+      >
         {!isSidebarOpen || isHovered ? (
           <div
             ref={buttonRef}
-            className="fixed cursor-pointer top-8 w-8 h-8 left-4 z-50 rounded-full bg-black flex items-center justify-center transition z-3001"
+            className="fixed cursor-pointer top-8 w-8 h-8 left-4 z-[3001] rounded-full bg-black flex items-center justify-center transition"
             style={{ width: "20px", height: "20px" }}
             onClick={toggleSidebar}
             onMouseLeave={() => setIsHovered(false)}
           />
         ) : (
           <div
-            className="fixed  top-8 w-8 h-8 left-4 z-50 rounded-full bg-white flex items-center justify-center z-3001"
+            className="fixed top-8 w-8 h-8 left-4 z-[3001] rounded-full bg-white flex items-center justify-center"
             style={{ width: "20px", height: "20px" }}
             onClick={toggleSidebar}
           />
         )}
-        <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-112px)]">
+
+        {/* FIX 2: Changed min-h-[calc(100vh-112px)] to h-screen to remove white bottom bar */}
+        <div className="flex-1 flex flex-col relative h-screen">
           <Outlet context={{ isSidebarOpen, sidebarWidth }} />
         </div>
       </div>
